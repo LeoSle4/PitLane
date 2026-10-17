@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Estrella de cuatro puntas para el cielo de la noche. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+    <path
+        android:fillColor="@color/texto_sobre_noche"
+        android:pathData="M8,0C8.8,4.8 11.2,7.2 16,8C11.2,8.8 8.8,11.2 8,16C7.2,11.2 4.8,8.8 0,8C4.8,7.2 7.2,4.8 8,0Z" />
+</vector>

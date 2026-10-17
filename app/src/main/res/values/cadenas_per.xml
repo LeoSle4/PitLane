@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="per_apariencia">Apariencia</string>
+    <string name="per_tema_claro">Claro</string>
+    <string name="per_tema_oscuro">Oscuro</string>
+    <string name="per_tema_sistema">Sistema</string>
+    <string name="per_editar">Editar perfil</string>
+    <string name="per_cerrar_sesion">Cerrar sesión</string>
+    <string name="per_eliminar_cuenta">Eliminar cuenta</string>
+    <string name="per_etiqueta_nombreseditar">Nombres</string>
+    <string name="per_pista_nombreseditar">Tus nombres</string>
+    <string name="per_etiqueta_apellidoseditar">Apellidos</string>
+    <string name="per_pista_apellidoseditar">Tus apellidos</string>
+    <string name="per_etiqueta_telefonoeditar">Celular</string>
+    <string name="per_pista_telefonoeditar">9 dígitos, empieza con 9</string>
+    <string name="per_etiqueta_dnibloqueado">DNI</string>
+    <string name="per_pista_dnibloqueado"></string>
+    <string name="per_etiqueta_correobloqueado">Correo electrónico</string>
+    <string name="per_pista_correobloqueado"></string>
+    <string name="per_titulo">Perfil</string>
+    <string name="per_seccion_cuenta">Cuenta</string>
+    <string name="per_seccion_preferencias">Preferencias</string>
+    <string name="per_seccion_sesion">Sesión</string>
+</resources>
