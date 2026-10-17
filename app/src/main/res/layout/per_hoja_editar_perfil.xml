@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/encabezado"
+        layout="@layout/hoja_encabezado" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:id="@+id/llCampoNombresEditar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/per_etiqueta_nombreseditar" />
+
+                <EditText
+                    android:id="@+id/etNombresEditar"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/per_pista_nombreseditar"
+                    android:importantForAutofill="no"
+                    android:inputType="textPersonName|textCapWords" />
+
+                <TextView
+                    android:id="@+id/txtErrorNombresEditar"
+                    style="@style/Campo.Error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llCampoApellidosEditar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/per_etiqueta_apellidoseditar" />
+
+                <EditText
+                    android:id="@+id/etApellidosEditar"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/per_pista_apellidoseditar"
+                    android:importantForAutofill="no"
+                    android:inputType="textPersonName|textCapWords" />
+
+                <TextView
+                    android:id="@+id/txtErrorApellidosEditar"
+                    style="@style/Campo.Error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llCampoTelefonoEditar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/per_etiqueta_telefonoeditar" />
+
+                <EditText
+                    android:id="@+id/etTelefonoEditar"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/per_pista_telefonoeditar"
+                    android:importantForAutofill="no"
+                    android:inputType="phone"
+                    android:maxLength="9" />
+
+                <TextView
+                    android:id="@+id/txtErrorTelefonoEditar"
+                    style="@style/Campo.Error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llCampoDniBloqueado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/per_etiqueta_dnibloqueado" />
+
+                <EditText
+                    android:id="@+id/etDniBloqueado"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/per_pista_dnibloqueado"
+                    android:importantForAutofill="no"
+                    android:inputType="number" />
+
+                <TextView
+                    android:id="@+id/txtErrorDniBloqueado"
+                    style="@style/Campo.Error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llCampoCorreoBloqueado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/per_etiqueta_correobloqueado" />
+
+                <EditText
+                    android:id="@+id/etCorreoBloqueado"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/per_pista_correobloqueado"
+                    android:importantForAutofill="no"
+                    android:inputType="textEmailAddress" />
+
+                <TextView
+                    android:id="@+id/txtErrorCorreoBloqueado"
+                    style="@style/Campo.Error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnGuardarPerfil"
+                style="@style/Boton.Primario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:enabled="false"
+                android:text="@string/com_guardar_cambios" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

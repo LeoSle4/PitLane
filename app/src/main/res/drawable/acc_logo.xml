@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo: sello índigo con el símbolo de dos trazos que se elevan, como una carretera que sube. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:fillColor="@color/primario"
+        android:pathData="M42,14h36a28,28 0,0 1,28 28v36a28,28 0,0 1,-28 28h-36a28,28 0,0 1,-28 -28v-36a28,28 0,0 1,28 -28z" />
+    <group
+        android:scaleX="0.064"
+        android:scaleY="0.064"
+        android:translateX="19.81"
+        android:translateY="20.51">
+        <path
+            android:fillColor="@color/sobre_primario"
+            android:pathData="M1132,231c-69,36 -162,114 -219,184c-34,44 -58,82 -115,184c-45,82 -70,118 -107,155c-34,34 -77,62 -134,87c-53,24 -91,57 -127,111c-13,18 -39,63 -39,66c0,1 44,1 97,1c109,-0 101,-0 119,-7c78,-35 168,-137 243,-277c22,-40 34,-66 62,-132c40,-91 71,-143 155,-258c81,-111 92,-126 91,-126c-1,-0 -12,6 -26,12z" />
+        <path
+            android:fillColor="@color/sobre_primario"
+            android:pathData="M1058,261c-10,2 -49,16 -70,25c-126,52 -216,127 -358,299c-33,39 -39,47 -54,63c-71,79 -140,119 -234,137c-20,4 -26,6 -38,12c-17,8 -20,11 -101,99c-42,46 -81,88 -86,93c-21,23 -22,25 -18,28c2,2 10,2 104,2l103,-0l8,-14c36,-62 77,-107 130,-143c19,-14 44,-27 81,-44c57,-27 89,-49 125,-85c31,-32 53,-62 105,-143c52,-80 74,-112 107,-152c51,-64 107,-116 179,-164c23,-15 22,-15 17,-13z" />
+    </group>
+</vector>

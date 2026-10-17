@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Luna en cuarto creciente con un halo tenue. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillAlpha="0.14"
+        android:fillColor="@color/texto_sobre_noche"
+        android:pathData="M32,32m-30,0a30,30 0,1 0 60,0a30,30 0,1 0 -60,0z" />
+    <path
+        android:fillColor="@color/texto_sobre_noche"
+        android:pathData="M32.54,16.21A16,16 0,1 0 44.16,39.45A13,13 0,1 1 32.54,16.21Z" />
+</vector>
