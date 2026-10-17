@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Miniatura de una foto dentro de una galería horizontal; al tocarla se abre el visor. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="96dp"
+    android:layout_height="96dp"
+    android:layout_marginEnd="8dp">
+
+    <ImageView
+        android:id="@+id/imgFotoGaleria"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/fondo_miniatura"
+        android:clipToOutline="true"
+        android:contentDescription="@string/cli_descripcion_foto"
+        android:scaleType="centerCrop" />
+</FrameLayout>

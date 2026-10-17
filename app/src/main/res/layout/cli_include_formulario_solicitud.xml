@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Campos comunes de una solicitud: síntomas, descripción de la falla, fecha de llegada y fotos. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/llPasoSintomas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cli_etiqueta_sintomas" />
+
+        <LinearLayout
+            android:id="@+id/llSintomas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <CheckBox
+                android:id="@+id/chkNoArranca"
+                style="@style/Campo.Casilla"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_sintoma_no_arranca" />
+
+            <CheckBox
+                android:id="@+id/chkBateria"
+                style="@style/Campo.Casilla"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_sintoma_bateria" />
+
+            <CheckBox
+                android:id="@+id/chkLuces"
+                style="@style/Campo.Casilla"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_sintoma_luces" />
+
+            <CheckBox
+                android:id="@+id/chkTablero"
+                style="@style/Campo.Casilla"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_sintoma_tablero" />
+
+            <CheckBox
+                android:id="@+id/chkOtro"
+                style="@style/Campo.Casilla"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_sintoma_otro" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/cli_etiqueta_descripcion" />
+
+        <EditText
+            android:id="@+id/etDescripcionFalla"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top|start"
+            android:hint="@string/cli_pista_descripcion"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLength="500"
+            android:minLines="4" />
+
+        <TextView
+            android:id="@+id/txtErrorDescripcion"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llPasoDetalle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/cli_etiqueta_fecha_llegada" />
+
+        <EditText
+            android:id="@+id/etFechaLlegada"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:drawableEnd="@drawable/ic_calendar_blank"
+            android:drawableTint="@color/texto_secundario"
+            android:focusable="false"
+            android:hint="@string/cli_pista_fecha"
+            android:importantForAutofill="no"
+            android:inputType="none" />
+
+        <TextView
+            android:id="@+id/txtErrorFecha"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <include
+            android:id="@+id/incZonaFotos"
+            layout="@layout/include_zona_fotos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+</LinearLayout>
