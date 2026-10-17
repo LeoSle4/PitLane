@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="@dimen/tamano_miniatura"
+    android:layout_height="@dimen/tamano_miniatura"
+    android:layout_marginEnd="8dp">
+
+    <ImageView
+        android:id="@+id/imgMiniatura"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/fondo_miniatura"
+        android:clipToOutline="true"
+        android:contentDescription="Foto adjunta"
+        android:scaleType="centerCrop" />
+
+    <ImageButton
+        android:id="@+id/btnQuitarFoto"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:background="@drawable/fondo_vidrio_circulo"
+        android:contentDescription="Quitar foto"
+        android:padding="7dp"
+        android:src="@drawable/ic_x"
+        app:tint="@color/texto_primario" />
+</FrameLayout>
