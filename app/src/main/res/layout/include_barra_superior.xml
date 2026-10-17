@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/alto_barra_superior"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="4dp"
+    android:paddingEnd="8dp">
+
+    <ImageButton
+        android:id="@+id/btnAtras"
+        android:layout_width="@dimen/area_tactil"
+        android:layout_height="@dimen/area_tactil"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Volver"
+        android:src="@drawable/ic_arrow_left"
+        app:tint="@color/texto_primario"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+    <TextView
+        android:id="@+id/txtTituloBarra"
+        style="@style/Texto.Titulo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingStart="4dp" />
+
+    <ImageButton
+        android:id="@+id/btnAccionBarra"
+        android:layout_width="@dimen/area_tactil"
+        android:layout_height="@dimen/area_tactil"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Acción"
+        android:src="@drawable/ic_plus"
+        android:visibility="gone"
+        app:tint="@color/primario"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+</LinearLayout>
