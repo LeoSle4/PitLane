@@ -1,0 +1,30 @@
+package com.leosle.pitlane.repositorio
+
+import com.leosle.pitlane.fuente.IUsuariosDataSource
+import com.leosle.pitlane.util.Textos
+import com.leosle.pitlane.modelo.DatosRegistroCliente
+import com.leosle.pitlane.modelo.Usuario
+import com.leosle.pitlane.util.Resultado
+import kotlinx.coroutines.flow.StateFlow
+
+/** Sesión y registro de cuentas sobre la fuente de usuarios. */
+class AuthRepository(private val usuarios: IUsuariosDataSource) : IAuthRepository {
+
+    override val usuarioActual: StateFlow<Usuario?> = usuarios.usuarioActual
+
+    override suspend fun iniciarSesion(correo: String, contrasena: String): Resultado<Usuario> =
+        usuarios.iniciarSesion(correo, contrasena)
+
+    override suspend fun registrarCliente(datos: DatosRegistroCliente): Resultado<Usuario> =
+        usuarios.registrarCuentaCliente(
+            datos.copy(nombres = Textos.nombrePropio(datos.nombres), apellidos = Textos.nombrePropio(datos.apellidos))
+        )
+
+    /** Solicita el enlace y responde con éxito siempre, para no revelar qué correos existen. */
+    override suspend fun recuperarContrasena(correo: String): Resultado<Unit> {
+        usuarios.enviarEnlaceDeRestablecimiento(correo)
+        return Resultado.Exito(Unit)
+    }
+
+    override fun cerrarSesion() = usuarios.cerrarSesion()
+}
