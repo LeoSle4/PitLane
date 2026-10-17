@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <!-- Encabezado con título y acceso directo a un ingreso nuevo -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/margen_pantalla"
+        android:paddingTop="@dimen/espacio_16"
+        android:paddingEnd="@dimen/margen_pantalla">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtTituloPanel"
+                style="@style/Texto.Display"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/jo_panel_titulo" />
+
+            <TextView
+                android:id="@+id/txtSubtituloPanel"
+                style="@style/Texto.Secundario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/jo_panel_subtitulo" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnNuevoIngreso"
+            android:layout_width="@dimen/area_tactil"
+            android:layout_height="@dimen/area_tactil"
+            android:background="@drawable/fondo_punto_primario"
+            android:contentDescription="@string/jo_nuevo_ingreso"
+            android:src="@drawable/ic_plus"
+            app:tint="@color/sobre_primario"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+    </LinearLayout>
+
+    <!-- Pestañas segmentadas con el contador de cada estado -->
+    <LinearLayout
+        android:id="@+id/llSegmentos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/margen_pantalla"
+        android:layout_marginTop="@dimen/espacio_16"
+        android:layout_marginEnd="@dimen/margen_pantalla"
+        android:background="@drawable/jo_fondo_segmentos"
+        android:padding="4dp">
+
+        <RadioGroup
+            android:id="@+id/rgEstadosPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbIngresado"
+                style="@style/Jo.Segmento"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="true"
+                android:text="@string/jo_estado_ingresado" />
+
+            <RadioButton
+                android:id="@+id/rbEnReparacion"
+                style="@style/Jo.Segmento"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="@string/jo_estado_reparacion" />
+
+            <RadioButton
+                android:id="@+id/rbListo"
+                style="@style/Jo.Segmento"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="@string/jo_estado_listo" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <!-- Lista de órdenes del estado elegido con su estado vacío -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espacio_8"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lvOrdenes"
+            style="@style/Lista"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="@dimen/espacio_8"
+            android:paddingBottom="@dimen/relleno_lista_con_barra" />
+
+        <include
+            android:id="@+id/incVacio"
+            layout="@layout/include_estado_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+    </FrameLayout>
+</LinearLayout>
