@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/acc_logo_vector">
+    <target
+        android:name="pin"
+        android:animation="@animator/acc_caida_pin" />
+    <target
+        android:name="rayo"
+        android:animation="@animator/acc_aparece_rayo" />
+</animated-vector>

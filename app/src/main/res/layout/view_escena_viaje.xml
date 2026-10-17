@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Escena de acceso: cielo, nubes o estrellas, sol o luna en arco sobre el auto, y la carretera por donde pasa. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <ImageView
+        android:id="@+id/imgFuji"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="22dp"
+        android:contentDescription="@null"
+        android:scaleType="fitXY"
+        android:src="@drawable/acc_fuji_dia" />
+
+    <ImageView
+        android:id="@+id/imgNubeUno"
+        android:alpha="0.85"
+        android:layout_width="64dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="120dp"
+        android:contentDescription="@null"
+        android:src="@drawable/acc_nube" />
+
+    <ImageView
+        android:id="@+id/imgNubeDos"
+        android:alpha="0.7"
+        android:layout_width="46dp"
+        android:layout_height="23dp"
+        android:layout_marginTop="168dp"
+        android:contentDescription="@null"
+        android:src="@drawable/acc_nube" />
+
+    <ImageView
+        android:id="@+id/imgEstrellaUno"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:layout_marginStart="36dp"
+        android:layout_marginTop="118dp"
+        android:contentDescription="@null"
+        android:src="@drawable/acc_estrella"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/imgEstrellaDos"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginStart="150dp"
+        android:layout_marginTop="170dp"
+        android:contentDescription="@null"
+        android:src="@drawable/acc_estrella"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/imgEstrellaTres"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_marginStart="250dp"
+        android:layout_marginTop="100dp"
+        android:contentDescription="@null"
+        android:src="@drawable/acc_estrella"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/flCarro"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="-24dp"
+        android:layout_marginBottom="-83dp"
+        android:clipChildren="false">
+
+        <FrameLayout
+            android:id="@+id/flAstro"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="2dp">
+
+            <ImageView
+                android:id="@+id/imgSolNucleo"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:src="@drawable/acc_sol_nucleo" />
+
+            <ImageView
+                android:id="@+id/imgSolRayos"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:src="@drawable/acc_sol_rayos" />
+
+            <ImageView
+                android:id="@+id/imgLuna"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:src="@drawable/acc_luna"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieAuto"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            app:lottie_clipToCompositionBounds="false"
+            app:lottie_loop="true" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:layout_gravity="bottom"
+        android:background="@color/carretera">
+
+        <View
+            android:id="@+id/viewMarcaCarretera"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/fondo_marca_carretera"
+            android:layerType="software" />
+    </FrameLayout>
+</merge>
