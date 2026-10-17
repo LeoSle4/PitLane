@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="jc_ayuda_busqueda">Escribe al menos 3 caracteres</string>
+    <string name="jc_btn_agregar_vehiculo">Agregar vehículo</string>
+    <string name="jc_btn_btnregistrarcliente">Registrar</string>
+    <string name="jc_btn_btnregistrartecnico">Registrar</string>
+    <string name="jc_btn_btnregistrarvehiculo">Registrar</string>
+    <string name="jc_btn_editar_cliente">Editar cliente</string>
+    <string name="jc_btn_registrar_ingreso">Registrar ingreso</string>
+    <string name="jc_cd_agregar_cliente">Registrar cliente</string>
+    <string name="jc_cd_agregar_tecnico">Registrar técnico</string>
+    <string name="jc_cd_opciones_tecnico">Opciones del técnico</string>
+    <string name="jc_cd_opciones_vehiculo">Opciones del vehículo</string>
+    <string name="jc_cd_ver_contrasena">Mostrar contraseña</string>
+    <string name="jc_etq_anio">Año</string>
+    <string name="jc_etq_apellidos">Apellidos</string>
+    <string name="jc_etq_color">Color</string>
+    <string name="jc_etq_contrasena">Contraseña inicial</string>
+    <string name="jc_etq_correo">Correo electrónico</string>
+    <string name="jc_etq_correo_2">Correo electrónico (opcional)</string>
+    <string name="jc_etq_dni">DNI</string>
+    <string name="jc_etq_marca">Marca</string>
+    <string name="jc_etq_modelo">Modelo</string>
+    <string name="jc_etq_nombres">Nombres</string>
+    <string name="jc_etq_placa">Placa</string>
+    <string name="jc_etq_telefono">Teléfono</string>
+    <string name="jc_hint_anio">Ej. 2018</string>
+    <string name="jc_hint_apellidos">Ej. Torres Vega</string>
+    <string name="jc_hint_buscar">DNI, nombre, apellido o placa</string>
+    <string name="jc_hint_color">Ej. Rojo</string>
+    <string name="jc_hint_contrasena">Mínimo 8 caracteres, con letra y número</string>
+    <string name="jc_hint_correo">tecnico@taller.pe</string>
+    <string name="jc_hint_correo_2">cliente@correo.com</string>
+    <string name="jc_hint_dni">8 dígitos</string>
+    <string name="jc_hint_marca">Ej. Toyota</string>
+    <string name="jc_hint_modelo">Ej. Yaris</string>
+    <string name="jc_hint_nombres">Ej. Luis</string>
+    <string name="jc_hint_placa">ABC-123</string>
+    <string name="jc_hint_telefono">9 dígitos, empieza con 9</string>
+    <string name="jc_insignia_app">Tiene la app</string>
+    <string name="jc_sin_historial">Sin órdenes registradas</string>
+    <string name="jc_subtitulo_clientes">Busca por DNI, nombre o placa</string>
+    <string name="jc_titulo_clientes">Clientes</string>
+    <string name="jc_titulo_tecnicos">Técnicos</string>
+</resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hoja inferior para editar un vehículo: la placa aparece bloqueada y el botón se activa al haber cambios. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/encabezado"
+        layout="@layout/hoja_encabezado" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/svEdicionVehiculo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <include
+                android:id="@+id/campos"
+                layout="@layout/cli_include_campos_vehiculo" />
+
+            <Button
+                android:id="@+id/btnGuardar"
+                style="@style/Boton.Primario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:enabled="false"
+                android:text="@string/com_guardar_cambios" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nube plana para el cielo del día, formada por tres círculos y una base. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="60dp"
+    android:height="30dp"
+    android:viewportWidth="60"
+    android:viewportHeight="30">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18,20m-10,0a10,10 0,1 0 20,0a10,10 0,1 0 -20,0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,14m-13,0a13,13 0,1 0 26,0a13,13 0,1 0 -26,0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,20m-10,0a10,10 0,1 0 20,0a10,10 0,1 0 -20,0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18,20L44,20L44,30L18,30Z" />
+</vector>

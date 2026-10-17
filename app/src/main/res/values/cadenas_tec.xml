@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lista de órdenes asignadas -->
+    <string name="tec_saludo">Hola, %1$s</string>
+    <string name="tec_resumen_ninguna">No tienes órdenes pendientes</string>
+    <string name="tec_resumen_una">Tienes 1 orden por atender</string>
+    <string name="tec_resumen_varias">Tienes %1$d órdenes por atender</string>
+    <string name="tec_lista_vacia_titulo">No tienes órdenes asignadas</string>
+    <string name="tec_lista_vacia_mensaje">Cuando el Jefe de Taller te asigne un vehículo aparecerá aquí.</string>
+    <string name="tec_orden_numero">Orden %1$s</string>
+    <string name="tec_orden_ingreso">Ingreso: %1$s</string>
+
+    <!-- Detalle de la orden -->
+    <string name="tec_titulo_detalle">Detalle de la orden</string>
+    <string name="tec_seccion_detalle">Detalle</string>
+    <string name="tec_seccion_avances">Avances</string>
+    <string name="tec_etiqueta_falla">Falla reportada</string>
+    <string name="tec_etiqueta_fotos_solicitud">Fotos de la solicitud</string>
+    <string name="tec_etiqueta_vehiculo">Vehículo</string>
+    <string name="tec_etiqueta_placa">Placa</string>
+    <string name="tec_etiqueta_color">Color</string>
+    <string name="tec_etiqueta_kilometraje">Kilometraje</string>
+    <string name="tec_etiqueta_combustible">Combustible</string>
+    <string name="tec_etiqueta_observaciones">Observaciones</string>
+    <string name="tec_etiqueta_fotos_exterior">Fotos del estado exterior</string>
+    <string name="tec_etiqueta_previas">Órdenes anteriores del vehículo</string>
+    <string name="tec_sin_observaciones">Sin observaciones</string>
+    <string name="tec_sin_previas">Este vehículo no tiene órdenes anteriores</string>
+    <string name="tec_sin_hallazgos">Sin hallazgos registrados</string>
+    <string name="tec_hallazgos_previa">Hallazgos</string>
+    <string name="tec_kilometraje_valor">%1$s km</string>
+    <string name="tec_boton_iniciar">Iniciar reparación</string>
+    <string name="tec_boton_registrar_avance">Registrar avance</string>
+    <string name="tec_boton_marcar_listo">Marcar como listo</string>
+    <string name="tec_orden_no_disponible">La orden ya no está disponible</string>
+
+    <!-- Avances -->
+    <string name="tec_avances_vacio_titulo">Aún no hay avances registrados</string>
+    <string name="tec_avances_vacio_mensaje">Registra cada hallazgo y trabajo realizado para que el cliente lo vea.</string>
+    <string name="tec_avance_por">Por %1$s</string>
+    <string name="tec_menu_editar">Editar</string>
+    <string name="tec_menu_eliminar">Eliminar</string>
+    <string name="tec_opciones_avance">Opciones del avance</string>
+    <string name="tec_foto_descripcion">Foto</string>
+
+    <!-- Iniciar reparación (diálogo) -->
+    <string name="tec_dialogo_iniciar_titulo">¿Iniciar la reparación?</string>
+    <string name="tec_dialogo_iniciar_mensaje">El cliente será notificado</string>
+    <string name="tec_dialogo_iniciar_accion">Iniciar</string>
+    <string name="tec_mensaje_reparacion_iniciada">Reparación iniciada</string>
+
+    <!-- Formulario de avance -->
+    <string name="tec_titulo_registrar_avance">Registrar avance</string>
+    <string name="tec_titulo_editar_avance">Editar avance</string>
+    <string name="tec_etiqueta_tipo">Tipo de avance</string>
+    <string name="tec_tipo_hallazgo">Hallazgo</string>
+    <string name="tec_tipo_trabajo">Trabajo realizado</string>
+    <string name="tec_etiqueta_descripcion">Descripción</string>
+    <string name="tec_pista_descripcion">Describe qué encontraste o qué trabajo realizaste</string>
+    <string name="tec_error_tipo">Elige el tipo de avance</string>
+    <string name="tec_error_descripcion">La descripción debe tener al menos 10 caracteres</string>
+    <string name="tec_maximo_fotos">Máximo 4 fotos por avance</string>
+    <string name="tec_etiqueta_fotos_avance">Fotos del avance</string>
+    <string name="tec_boton_registrar">Registrar</string>
+    <string name="tec_boton_guardar_cambios">Guardar cambios</string>
+    <string name="tec_mensaje_avance_registrado">Avance registrado</string>
+    <string name="tec_mensaje_avance_actualizado">Avance actualizado</string>
+
+    <!-- Eliminar avance (diálogo) -->
+    <string name="tec_dialogo_eliminar_titulo">¿Eliminar este avance?</string>
+    <string name="tec_dialogo_eliminar_mensaje">El cliente dejará de verlo</string>
+    <string name="tec_dialogo_eliminar_accion">Eliminar</string>
+    <string name="tec_mensaje_avance_eliminado">Avance eliminado</string>
+
+    <!-- Marcar listo (diálogo) -->
+    <string name="tec_dialogo_listo_titulo">¿El vehículo está listo?</string>
+    <string name="tec_dialogo_listo_mensaje">El Jefe de Taller y el cliente serán notificados</string>
+    <string name="tec_dialogo_listo_accion">Confirmar</string>
+    <string name="tec_mensaje_orden_lista">Orden marcada como lista</string>
+</resources>

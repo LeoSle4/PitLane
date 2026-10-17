@@ -2,4 +2,54 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Marca -->
+    <color name="primario">#1E4D78</color>
+    <color name="sobre_primario">#FFFFFF</color>
+    <color name="contenedor_primario">#E6EDF4</color>
+    <color name="sobre_contenedor_primario">#173B5C</color>
+    <color name="acento">#D9899A</color>
+
+    <!-- Superficies y texto -->
+    <color name="fondo">#F6F6F2</color>
+    <color name="superficie">#FFFFFF</color>
+    <color name="superficie_variante">#ECEDE8</color>
+    <color name="contorno">#DCDDD6</color>
+    <color name="velo">#66101418</color>
+    <color name="texto_primario">#1D2024</color>
+    <color name="texto_secundario">#6A6E73</color>
+    <color name="peligro">#C23A3A</color>
+    <color name="sobre_peligro">#FFFFFF</color>
+
+    <!-- Estados semanticos: neutro, proceso, exito y error -->
+    <color name="estado_neutro_fondo">#ECEDE8</color>
+    <color name="estado_neutro_texto">#6A6E73</color>
+    <color name="estado_proceso_fondo">#FFF1CC</color>
+    <color name="estado_proceso_texto">#8A5B00</color>
+    <color name="estado_exito_fondo">#E6F1E4</color>
+    <color name="estado_exito_texto">#3C6E47</color>
+    <color name="estado_error_fondo">#FBE9E7</color>
+    <color name="estado_error_texto">#B3302F</color>
+
+    <!-- Vidrio translucido -->
+    <color name="vidrio_fondo">#F2FFFFFF</color>
+    <color name="vidrio_borde">#DCDDD6</color>
+    <color name="vidrio_sombra">#00000000</color>
+
+    <!-- Linea de tiempo -->
+    <color name="linea_pendiente">#DCDDD6</color>
+    <!-- Franja de las pantallas de acceso -->
+    <color name="franja_acceso">#EAF0F6</color>
+    <!-- Franja de acceso por la noche -->
+    <color name="franja_noche">#0F1E2E</color>
+    <color name="texto_sobre_noche">#F2F4F6</color>
+    <!-- Carretera de la escena de acceso -->
+    <color name="carretera">#2E3946</color>
+    <color name="carretera_marca">#F6F6F2</color>
+    <!-- Sol de la escena de acceso -->
+    <color name="sol">#D93B4A</color>
+    <color name="texto_sobre_dia">#1D2024</color>
+    <color name="sol_dia">#FFC531</color>
+    <color name="sol_dia_rayos">#FFA81F</color>
+    <color name="fuji_dia">#7E9DC2</color>
 </resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Disco del sol con un resplandor suave. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillAlpha="0.25"
+        android:fillColor="@color/sol_dia"
+        android:pathData="M32,32m-30,0a30,30 0,1 0 60,0a30,30 0,1 0 -60,0z" />
+    <path
+        android:fillColor="@color/sol_dia"
+        android:pathData="M32,32m-15,0a15,15 0,1 0 30,0a15,15 0,1 0 -30,0z" />
+</vector>

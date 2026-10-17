@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/contenedor_primario" />
+            <stroke android:width="1.5dp" android:color="@color/primario" />
+            <corners android:radius="@dimen/radio_campo" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="@dimen/radio_campo" />
+        </shape>
+    </item>
+</selector>

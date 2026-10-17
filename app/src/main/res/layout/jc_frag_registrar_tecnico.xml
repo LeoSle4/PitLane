@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/barraSuperior"
+        layout="@layout/include_barra_superior" />
+
+    <ScrollView
+        android:id="@+id/svFormulario"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/llFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:id="@+id/llNombres"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaNombres"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_nombres" />
+
+                <EditText
+                    android:id="@+id/etNombres"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_nombres"
+                    android:importantForAutofill="no"
+                    android:inputType="textPersonName|textCapWords"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorNombres"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llApellidos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaApellidos"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_apellidos" />
+
+                <EditText
+                    android:id="@+id/etApellidos"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_apellidos"
+                    android:importantForAutofill="no"
+                    android:inputType="textPersonName|textCapWords"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorApellidos"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llDni"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaDni"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_dni" />
+
+                <EditText
+                    android:id="@+id/etDni"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_dni"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="8"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorDni"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llTelefono"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaTelefono"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_telefono" />
+
+                <EditText
+                    android:id="@+id/etTelefono"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_telefono"
+                    android:importantForAutofill="no"
+                    android:inputType="phone"
+                    android:maxLength="9"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorTelefono"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llCorreo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaCorreo"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_correo" />
+
+                <EditText
+                    android:id="@+id/etCorreo"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_correo"
+                    android:importantForAutofill="no"
+                    android:inputType="textEmailAddress"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorCorreo"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llContrasena"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaContrasena"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_contrasena" />
+
+                <FrameLayout
+                    android:id="@+id/flContrasena"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <EditText
+                        android:id="@+id/etContrasena"
+                        style="@style/Campo.Texto"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/jc_hint_contrasena"
+                        android:importantForAutofill="no"
+                        android:inputType="textPassword"
+                        android:paddingEnd="56dp" />
+
+                    <ImageButton
+                        android:id="@+id/btnVerContrasena"
+                        android:layout_width="@dimen/area_tactil"
+                        android:layout_height="@dimen/area_tactil"
+                        android:layout_gravity="end|center_vertical"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/jc_cd_ver_contrasena"
+                        android:src="@drawable/ic_eye"
+                        app:tint="@color/texto_secundario" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/txtErrorContrasena"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/llPie"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnRegistrarTecnico"
+            style="@style/Boton.Primario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/jc_btn_btnregistrartecnico" />
+    </LinearLayout>
+</LinearLayout>

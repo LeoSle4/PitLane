@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Servicio Eléctrico Freddy</string>
+    <string name="com_cancelar">Cancelar</string>
+    <string name="com_entendido">Entendido</string>
+    <string name="com_guardar_cambios">Guardar cambios</string>
+    <string name="com_cerrar">Cerrar</string>
+    <string name="com_volver">Volver</string>
+    <string name="com_agregar_foto">Agregar foto</string>
+    <string name="com_tomar_foto">Tomar foto</string>
+    <string name="com_elegir_galeria">Elegir de la galería</string>
+</resources>

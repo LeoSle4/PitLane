@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Estado de la orden en una sola pantalla: encabezado con la marca, foto del taller, estado actual, progreso en tres pasos y accesos. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/barra"
+        layout="@layout/include_barra_superior" />
+
+    <ScrollView
+        android:id="@+id/svEstadoOrden"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:visibility="invisible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/imgMarcaOrdenEstado"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:background="@drawable/fondo_logo_marca"
+                    android:contentDescription="@null"
+                    android:padding="8dp"
+                android:scaleType="fitCenter" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/txtNumeroOrden"
+                        style="@style/Texto.Titulo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/txtVehiculoOrden"
+                        style="@style/Texto.Secundario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/imgHeroVehiculo"
+                android:layout_width="match_parent"
+                android:layout_height="190dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/cli_hero"
+                android:clipToOutline="true"
+                android:contentDescription="@string/cli_descripcion_imagen_vehiculo"
+                android:scaleType="centerCrop"
+                android:src="@drawable/foto_cabecera_taller" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <FrameLayout
+                    android:layout_width="44dp"
+                    android:layout_height="44dp">
+
+                    <ImageView
+                        android:id="@+id/imgIconoEstado"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="@drawable/fondo_circulo_suave"
+                        android:contentDescription="@null"
+                        android:padding="11dp" />
+
+                    <ImageView
+                        android:id="@+id/imgCheckListo"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:contentDescription="@null"
+                        android:visibility="gone" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Texto.Etiqueta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/cli_estado_actual"
+                        android:textColor="@color/texto_secundario" />
+
+                    <TextView
+                        android:id="@+id/txtEstadoGrande"
+                        style="@style/Texto.Titulo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/txtUltimoCambio"
+                style="@style/Texto.Secundario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp" />
+
+            <TextView
+                android:id="@+id/txtTecnicoOrden"
+                style="@style/Texto.Secundario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/txtMotivoAnulacion"
+                style="@style/Texto.Cuerpo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/estado_error_texto"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/progreso"
+                layout="@layout/cli_include_progreso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="14dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/contorno" />
+
+            <Button
+                android:id="@+id/btnLineaTiempo"
+                style="@style/Boton.Fila"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_ver_linea_tiempo"
+                app:icon="@drawable/ic_path" />
+
+            <Button
+                android:id="@+id/btnHallazgos"
+                style="@style/Boton.Fila"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_ver_hallazgos"
+                app:icon="@drawable/ic_wrench" />
+
+            <Button
+                android:id="@+id/btnComprobante"
+                style="@style/Boton.Fila"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_ver_comprobante"
+                app:icon="@drawable/ic_receipt" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

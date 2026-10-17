@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:name="circulo"
+        android:fillColor="#00000000"
+        android:pathData="M60,60m-44,0a44,44 0,1 1,88 0a44,44 0,1 1,-88 0"
+        android:strokeColor="@color/estado_exito_texto"
+        android:strokeLineCap="round"
+        android:strokeWidth="6"
+        android:trimPathEnd="0" />
+    <path
+        android:name="marca"
+        android:fillColor="#00000000"
+        android:pathData="M40,62L55,77L82,46"
+        android:strokeColor="@color/estado_exito_texto"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="7"
+        android:trimPathEnd="0" />
+</vector>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="140dp"
+    android:viewportWidth="140"
+    android:viewportHeight="140">
+    <group
+        android:name="destello_a"
+        android:pivotX="18"
+        android:pivotY="30"
+        android:scaleX="0"
+        android:scaleY="0">
+        <path
+            android:fillColor="@color/estado_proceso_texto"
+            android:pathData="M18,22L20.5,27.5L26,30L20.5,32.5L18,38L15.5,32.5L10,30L15.5,27.5Z" />
+    </group>
+    <group
+        android:name="destello_b"
+        android:pivotX="122"
+        android:pivotY="38"
+        android:scaleX="0"
+        android:scaleY="0">
+        <path
+            android:fillColor="@color/acento"
+            android:pathData="M122,30L124.5,35.5L130,38L124.5,40.5L122,46L119.5,40.5L114,38L119.5,35.5Z" />
+    </group>
+    <group
+        android:name="destello_c"
+        android:pivotX="112"
+        android:pivotY="116"
+        android:scaleX="0"
+        android:scaleY="0">
+        <path
+            android:fillColor="@color/estado_exito_texto"
+            android:pathData="M112,108L114.5,113.5L120,116L114.5,118.5L112,124L109.5,118.5L104,116L109.5,113.5Z" />
+    </group>
+    <group
+        android:name="destello_d"
+        android:pivotX="26"
+        android:pivotY="112"
+        android:scaleX="0"
+        android:scaleY="0">
+        <path
+            android:fillColor="@color/primario"
+            android:pathData="M26,104L28.5,109.5L34,112L28.5,114.5L26,120L23.5,114.5L18,112L23.5,109.5Z" />
+    </group>
+    <group
+        android:translateX="10"
+        android:translateY="10">
+        <path
+            android:name="circulo"
+            android:fillColor="#00000000"
+            android:pathData="M60,60m-44,0a44,44 0,1 1,88 0a44,44 0,1 1,-88 0"
+            android:strokeColor="@color/estado_exito_texto"
+            android:strokeLineCap="round"
+            android:strokeWidth="6"
+            android:trimPathEnd="0" />
+        <path
+            android:name="marca"
+            android:fillColor="#00000000"
+            android:pathData="M40,62L55,77L82,46"
+            android:strokeColor="@color/estado_exito_texto"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeWidth="7"
+            android:trimPathEnd="0" />
+    </group>
+</vector>
