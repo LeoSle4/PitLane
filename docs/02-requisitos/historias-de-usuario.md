@@ -45,7 +45,7 @@ Cada HU representa **una sola acción**. Registrar, listar, ver detalle, editar 
 
 **Solicitud de atención:** `Pendiente` → `Atendida` · o bien `Cancelada`
 
-**Orden de ingreso:** `Ingresado` → `En reparación` → `Listo para recoger` · o bien `Anulada`
+**Orden de ingreso:** `Ingresado` → `En reparación` → `Listo para recoger` → `Entregado` · o bien `Anulada`
 
 ---
 
@@ -557,14 +557,14 @@ Cada HU representa **una sola acción**. Registrar, listar, ver detalle, editar 
 
 **Como** Jefe de Taller, **quiero** editar una orden de ingreso, **para** corregir datos o cambiar al técnico asignado.
 
-- **Requisito funcional:** El sistema debe permitir al Jefe de Taller modificar la falla, el kilometraje, el combustible, las observaciones y el técnico asignado de una orden que no esté anulada ni en estado Listo para recoger.
+- **Requisito funcional:** El sistema debe permitir al Jefe de Taller modificar la falla, el kilometraje, el combustible, las observaciones y el técnico asignado de una orden que no esté anulada, en estado Listo para recoger ni Entregada.
 - **Vista:** V-27 Formulario de edición de orden
 - **Prioridad:** Should · **Estimación:** 3
 
 **Criterios de aceptación**
 1. **Dado** una orden Ingresado o En reparación, **cuando** el Jefe guarda cambios válidos, **entonces** el sistema la actualiza y registra quién hizo el cambio y cuándo.
 2. **Dado** que cambia el técnico asignado, **cuando** guarda, **entonces** la orden deja de aparecer en la lista del técnico anterior y aparece en la del nuevo.
-3. **Dado** una orden Listo para recoger o Anulada, **cuando** la abre, **entonces** la opción "Editar" no está disponible.
+3. **Dado** una orden Listo para recoger, Entregada o Anulada, **cuando** la abre, **entonces** la opción "Editar" no está disponible.
 
 #### HU-28 — Anular orden de ingreso
 
@@ -901,6 +901,27 @@ Cada HU representa **una sola acción**. Registrar, listar, ver detalle, editar 
 3. **Dado** una orden sin avances, **cuando** abre la vista, **entonces** ve "El técnico aún no registra avances".
 4. **Dado** la vista, **cuando** se muestra, **entonces** no tiene opciones de edición ni de eliminación.
 
+### Actividad 2.7 — Entregar el vehículo al cliente (Jefe de Taller)
+
+> **Contexto:** el cliente recibe el aviso y va al taller a recoger su vehículo (actividad manual, sin HU).
+> **Problema actual:** la entrega no queda registrada y la orden nunca se cierra.
+> **Solución:** el Jefe registra la entrega en la app y la orden pasa al historial del cliente.
+
+#### HU-49 — Marcar orden como entregada
+
+**Como** Jefe de Taller, **quiero** marcar una orden como entregada cuando el cliente retira su vehículo, **para** cerrar la orden y dejar constancia de la entrega.
+
+- **Requisito funcional:** El sistema debe permitir al Jefe de Taller cambiar una orden en estado Listo para recoger a Entregado, previa confirmación, y registrar el cambio con fecha, hora y usuario (RN-13).
+- **Vista:** V-49 Diálogo de confirmación de entrega
+- **Prioridad:** Should · **Estimación:** 2
+
+**Criterios de aceptación**
+1. **Dado** una orden Listo para recoger, **cuando** el Jefe pulsa "Marcar como entregado" y confirma, **entonces** la orden pasa a Entregado, queda en el historial de estados y el sistema muestra "Vehículo entregado".
+2. **Dado** una orden en cualquier otro estado, **cuando** se intenta entregar, **entonces** el sistema muestra "Solo se puede entregar una orden lista para recoger".
+3. **Dado** una orden Entregada, **cuando** el cliente abre su vehículo o su cuenta, **entonces** la orden ya no cuenta como "en el taller": el vehículo muestra "Sin orden activa" y puede eliminar su vehículo o su cuenta (HU-04, HU-08).
+4. **Dado** una orden Entregada, **cuando** el Jefe abre el panel de órdenes, **entonces** la orden ya no aparece; sigue visible en el historial del cliente y en su línea de tiempo, que cierra con la etapa "Entregado".
+5. **Dado** la entrega registrada, **cuando** se guarda, **entonces** no se envía aviso al cliente, porque él mismo retiró el vehículo.
+
 ---
 
 ## 6. Catálogo de vistas para el prototipo
@@ -962,6 +983,7 @@ Cada HU representa **una sola acción**. Registrar, listar, ver detalle, editar 
 | V-46 | Estado de la orden | Cliente | HU-46 |
 | V-47 | Línea de tiempo de la orden | Cliente | HU-47 |
 | V-48 | Hallazgos y trabajos | Cliente | HU-48 |
+| V-49 | Diálogo de confirmación de entrega | Jefe | HU-49 |
 
 ---
 
@@ -982,6 +1004,7 @@ Cada HU representa **una sola acción**. Registrar, listar, ver detalle, editar 
 | P2 | 2.4 Llamar al cliente para avisar que está listo | Sistema / Jefe | HU-42, HU-43 |
 | P2 | 2.5 Recibir aviso de vehículo listo | Cliente | HU-44, HU-45 |
 | P2 | 2.6 Llamar al taller para consultar el avance | Cliente | HU-46 a HU-48 |
+| P2 | 2.7 Entregar el vehículo al cliente | Jefe | HU-49 |
 | — | Módulo transversal (no es actividad del BPMN) | Todos | HU-T01 a HU-T07 |
 
 ---
@@ -991,11 +1014,11 @@ Cada HU representa **una sola acción**. Registrar, listar, ver detalle, editar 
 | Prioridad | Cantidad | Puntos |
 |---|---|---|
 | Must | 34 | 90 |
-| Should | 18 | 35 |
+| Should | 19 | 37 |
 | Could | 3 | 5 |
-| **Total** | **55** | **130** |
+| **Total** | **56** | **132** |
 
-**Por rol:** Jefe de Taller 22 · Cliente 21 · Técnico 9 · Todos los roles 3
+**Por rol:** Jefe de Taller 23 · Cliente 21 · Técnico 9 · Todos los roles 3
 
 **MVP sugerido (solo Must):** permite el flujo completo: el cliente se registra y reporta la falla, el Jefe registra el ingreso con fotos, el técnico registra avances y marca "listo", y el cliente ve el estado y recibe el aviso.
 
@@ -1009,6 +1032,5 @@ Estas funciones pertenecen a procesos que no se modelaron:
 |---|---|
 | Elaborar o aprobar cotizaciones | Cotización |
 | Asignar técnicos según la disponibilidad o la cola de espera | Asignación de técnico |
-| Registrar la entrega del vehículo y cerrar la orden | Entrega del vehículo |
 | Pagos en línea | Cobro |
 | Inventario y registro de repuestos | Gestión de repuestos |
