@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <!-- Columna con el punto del estado y la línea que lo une con el siguiente -->
+    <LinearLayout
+        android:layout_width="20dp"
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/viewPuntoHistorial"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/fondo_punto_primario" />
+
+        <View
+            android:id="@+id/viewLineaHistorial"
+            android:layout_width="2dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="4dp"
+            android:layout_weight="1"
+            android:background="@drawable/fondo_linea_tiempo" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="16dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/txtEstadoHistorial"
+            style="@style/Texto.Subtitulo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/txtFechaHistorial"
+            style="@style/Texto.Secundario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/txtUsuarioHistorial"
+            style="@style/Texto.Pie"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/txtMotivoHistorial"
+            style="@style/Texto.Cuerpo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>
