@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/encabezado"
+        layout="@layout/hoja_encabezado" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <Button
+            android:id="@+id/btnTomarFoto"
+            style="@style/Boton.Primario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tomar foto"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            app:icon="@drawable/ic_camera"
+            app:iconGravity="textStart" />
+
+        <Button
+            android:id="@+id/btnElegirGaleria"
+            style="@style/Boton.Secundario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Elegir de la galería"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            app:icon="@drawable/ic_image"
+            app:iconGravity="textStart" />
+
+        <TextView
+            android:id="@+id/txtAvisoFoto"
+            style="@style/Texto.Pie"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="Formato JPG o PNG, máximo 5 MB por foto" />
+    </LinearLayout>
+</LinearLayout>

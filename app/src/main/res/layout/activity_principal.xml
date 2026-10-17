@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/flRaiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo">
+
+    <!-- Contenedor de la pantalla activa de la pestaña -->
+    <FrameLayout
+        android:id="@+id/flContenido"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Barra de navegación inferior con efecto vidrio -->
+    <com.leosle.pitlane.vista.comun.BarraNavegacionVidrio
+        android:id="@+id/barraNavegacion"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/alto_barra_inferior"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="12dp"
+        android:elevation="6dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
+
+    <!-- Campana de avisos del cliente: aparece cuando la barra inferior está oculta, para ver los avisos desde cualquier pantalla -->
+    <FrameLayout
+        android:id="@+id/flCampana"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:alpha="0"
+        android:elevation="6dp"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/btnCampana"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/fondo_vidrio_circulo"
+            android:contentDescription="Ver avisos"
+            android:padding="13dp"
+            android:src="@drawable/ic_bell"
+            app:tint="@color/texto_primario" />
+
+        <TextView
+            android:id="@+id/txtInsigniaCampana"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/fondo_insignia_campana"
+            android:gravity="center"
+            android:textColor="@color/sobre_primario"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Aviso emergente que simula una notificación push -->
+    <include
+        android:id="@+id/avisoPush"
+        layout="@layout/include_aviso_push"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="12dp" />
+</FrameLayout>
