@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mcvTecnico"
+    style="@style/Tarjeta"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="6dp">
+
+    <LinearLayout
+        android:id="@+id/llFilaTecnico"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="14dp">
+
+        <FrameLayout
+            android:id="@+id/flAvatarTecnico"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/jc_fondo_avatar">
+
+            <TextView
+                android:id="@+id/txtInicialesTecnico"
+                style="@style/Texto.Subtitulo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textColor="@color/sobre_contenedor_primario" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtNombreTecnico"
+                style="@style/Texto.Subtitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/txtTelefonoTecnico"
+                style="@style/Texto.Secundario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/txtChipEstadoTecnico"
+                    style="@style/Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/txtOrdenesEnCurso"
+                    style="@style/Texto.Pie"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnMenuTecnico"
+            android:layout_width="@dimen/area_tactil"
+            android:layout_height="@dimen/area_tactil"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/jc_cd_opciones_tecnico"
+            android:focusable="false"
+            android:src="@drawable/ic_dots_three_vertical"
+            app:tint="@color/texto_secundario" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/encabezado"
+        layout="@layout/hoja_encabezado" />
+
+    <ScrollView
+        android:id="@+id/svHoja"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="false">
+
+        <LinearLayout
+            android:id="@+id/llCamposHoja"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="8dp">
+
+            <LinearLayout
+                android:id="@+id/llNombres"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaNombres"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_nombres" />
+
+                <EditText
+                    android:id="@+id/etNombres"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_nombres"
+                    android:importantForAutofill="no"
+                    android:inputType="textPersonName|textCapWords"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorNombres"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llApellidos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaApellidos"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_apellidos" />
+
+                <EditText
+                    android:id="@+id/etApellidos"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_apellidos"
+                    android:importantForAutofill="no"
+                    android:inputType="textPersonName|textCapWords"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorApellidos"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llTelefono"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaTelefono"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_telefono" />
+
+                <EditText
+                    android:id="@+id/etTelefono"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_telefono"
+                    android:importantForAutofill="no"
+                    android:inputType="phone"
+                    android:maxLength="9"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorTelefono"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llDni"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaDni"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_dni" />
+
+                <EditText
+                    android:id="@+id/etDni"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_dni"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="8"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorDni"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llCorreo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaCorreo"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_correo" />
+
+                <EditText
+                    android:id="@+id/etCorreo"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_correo"
+                    android:importantForAutofill="no"
+                    android:inputType="textEmailAddress" />
+
+                <TextView
+                    android:id="@+id/txtErrorCorreo"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/btnGuardar"
+        style="@style/Boton.Primario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:enabled="false"
+        android:text="@string/com_guardar_cambios" />
+</LinearLayout>
