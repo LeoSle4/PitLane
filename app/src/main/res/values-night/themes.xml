@@ -1,7 +1,28 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Tema base oscuro: mismos tokens, la barra de estado usa iconos claros -->
     <style name="Base.Theme.PitLane" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/primario</item>
+        <item name="colorOnPrimary">@color/sobre_primario</item>
+        <item name="colorPrimaryContainer">@color/contenedor_primario</item>
+        <item name="colorOnPrimaryContainer">@color/sobre_contenedor_primario</item>
+        <item name="colorSecondary">@color/acento</item>
+        <item name="colorSurface">@color/superficie</item>
+        <item name="colorOnSurface">@color/texto_primario</item>
+        <item name="colorSurfaceVariant">@color/superficie_variante</item>
+        <item name="colorOnSurfaceVariant">@color/texto_secundario</item>
+        <item name="colorOutline">@color/contorno</item>
+        <item name="colorError">@color/peligro</item>
+        <item name="android:colorBackground">@color/fondo</item>
+        <item name="android:windowBackground">@color/fondo</item>
+        <item name="android:textColorPrimary">@color/texto_primario</item>
+        <item name="android:textColorSecondary">@color/texto_secundario</item>
+        <item name="android:fontFamily">@font/fuente_jakarta</item>
+        <item name="fontFamily">@font/fuente_jakarta</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+        <item name="bottomSheetDialogTheme">@style/Tema.HojaModal</item>
+        <item name="android:windowAnimationStyle">@style/Animacion.Ventana</item>
     </style>
 </resources>

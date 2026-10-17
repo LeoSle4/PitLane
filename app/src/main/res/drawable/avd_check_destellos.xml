@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/vector_check_destellos">
+    <target
+        android:name="circulo"
+        android:animation="@animator/trazo_circulo" />
+    <target
+        android:name="marca"
+        android:animation="@animator/trazo_marca" />
+    <target
+        android:name="destello_a"
+        android:animation="@animator/destello_a" />
+    <target
+        android:name="destello_b"
+        android:animation="@animator/destello_b" />
+    <target
+        android:name="destello_c"
+        android:animation="@animator/destello_c" />
+    <target
+        android:name="destello_d"
+        android:animation="@animator/destello_d" />
+</animated-vector>
