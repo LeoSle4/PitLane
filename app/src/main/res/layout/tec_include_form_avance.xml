@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        style="@style/Campo.Etiqueta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tec_etiqueta_tipo" />
+
+    <RadioGroup
+        android:id="@+id/rgTipoAvance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rbHallazgo"
+            style="@style/Campo.Opcion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_magnifying_glass"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/sel_texto_opcion"
+            android:text="@string/tec_tipo_hallazgo" />
+
+        <RadioButton
+            android:id="@+id/rbTrabajoRealizado"
+            style="@style/Campo.Opcion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="0dp"
+            android:layout_weight="1"
+            android:drawableStart="@drawable/ic_wrench"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/sel_texto_opcion"
+            android:text="@string/tec_tipo_trabajo" />
+    </RadioGroup>
+
+    <TextView
+        android:id="@+id/txtErrorTipoAvance"
+        style="@style/Campo.Error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        style="@style/Campo.Etiqueta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/tec_etiqueta_descripcion" />
+
+    <EditText
+        android:id="@+id/etDescripcionAvance"
+        style="@style/Campo.Texto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="top|start"
+        android:hint="@string/tec_pista_descripcion"
+        android:importantForAutofill="no"
+        android:inputType="textMultiLine|textCapSentences"
+        android:minLines="4" />
+
+    <TextView
+        android:id="@+id/txtErrorDescripcionAvance"
+        style="@style/Campo.Error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <include
+        android:id="@+id/zonaFotos"
+        layout="@layout/include_zona_fotos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp" />
+</LinearLayout>

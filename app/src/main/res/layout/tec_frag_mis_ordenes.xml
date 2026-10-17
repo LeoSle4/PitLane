@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <!-- Encabezado con saludo y resumen de órdenes pendientes -->
+    <LinearLayout
+        android:id="@+id/llEncabezadoTecnico"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margen_pantalla"
+        android:background="@drawable/fondo_encabezado"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/txtSaludoTecnico"
+            style="@style/Texto.Display"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/sobre_primario" />
+
+        <TextView
+            android:id="@+id/txtResumenTecnico"
+            style="@style/Texto.Cuerpo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/sobre_primario" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lvOrdenesAsignadas"
+            style="@style/Lista"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="@dimen/margen_pantalla"
+            android:paddingEnd="@dimen/margen_pantalla"
+            android:paddingBottom="@dimen/relleno_lista_con_barra" />
+
+        <include
+            android:id="@+id/vacioOrdenes"
+            layout="@layout/include_estado_vacio" />
+    </FrameLayout>
+</LinearLayout>
