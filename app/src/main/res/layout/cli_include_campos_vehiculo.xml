@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Campos del vehículo (placa, marca, modelo, año y color), cada uno con su etiqueta de error debajo. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cli_etiqueta_placa" />
+
+        <EditText
+            android:id="@+id/etPlaca"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/cli_pista_placa"
+            android:importantForAutofill="no"
+            android:inputType="textCapCharacters|textNoSuggestions"
+            android:maxLength="7" />
+
+        <TextView
+            android:id="@+id/txtErrorPlaca"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cli_etiqueta_marca" />
+
+        <EditText
+            android:id="@+id/etMarca"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/cli_pista_marca"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLength="30" />
+
+        <TextView
+            android:id="@+id/txtErrorMarca"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cli_etiqueta_modelo" />
+
+        <EditText
+            android:id="@+id/etModelo"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/cli_pista_modelo"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLength="30" />
+
+        <TextView
+            android:id="@+id/txtErrorModelo"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cli_etiqueta_anio" />
+
+        <EditText
+            android:id="@+id/etAnio"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/cli_pista_anio"
+            android:importantForAutofill="no"
+            android:inputType="number"
+            android:maxLength="4" />
+
+        <TextView
+            android:id="@+id/txtErrorAnio"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            style="@style/Campo.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cli_etiqueta_color" />
+
+        <EditText
+            android:id="@+id/etColor"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/cli_pista_color"
+            android:importantForAutofill="no"
+            android:inputType="textCapWords"
+            android:maxLength="20" />
+
+        <TextView
+            android:id="@+id/txtErrorColor"
+            style="@style/Campo.Error"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</LinearLayout>

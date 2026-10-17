@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hallazgos y trabajos de la orden: barra superior y lista de solo lectura con estado vacío. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/barra"
+        layout="@layout/include_barra_superior" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lvHallazgos"
+            style="@style/Lista.Espaciada"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="@dimen/margen_pantalla"
+            android:paddingTop="@dimen/espacio_8"
+            android:paddingEnd="@dimen/margen_pantalla"
+            android:paddingBottom="@dimen/espacio_24" />
+
+        <include
+            android:id="@+id/incVacio"
+            layout="@layout/include_estado_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+    </FrameLayout>
+</LinearLayout>
