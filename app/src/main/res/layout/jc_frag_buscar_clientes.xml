@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/llEncabezadoClientes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtTituloClientes"
+                style="@style/Texto.Display"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/jc_titulo_clientes" />
+
+            <TextView
+                android:id="@+id/txtSubtituloClientes"
+                style="@style/Texto.Secundario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/jc_subtitulo_clientes" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnAgregarCliente"
+            android:layout_width="@dimen/area_tactil"
+            android:layout_height="@dimen/area_tactil"
+            android:background="@drawable/jc_fondo_boton_agregar"
+            android:contentDescription="@string/jc_cd_agregar_cliente"
+            android:src="@drawable/ic_user_plus"
+            app:tint="@color/sobre_primario" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llBusqueda"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <EditText
+            android:id="@+id/etBuscar"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_magnifying_glass"
+            android:drawableTint="@color/texto_secundario"
+            android:hint="@string/jc_hint_buscar"
+            android:importantForAutofill="no"
+            android:imeOptions="actionSearch"
+            android:inputType="text|textNoSuggestions"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/txtAyudaBusqueda"
+            style="@style/Texto.Pie"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/jc_ayuda_busqueda" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/flContenidoClientes"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lvResultados"
+            style="@style/Lista.Espaciada"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="8dp"
+            android:paddingBottom="@dimen/relleno_lista_con_barra" />
+
+        <include
+            android:id="@+id/includeVacio"
+            layout="@layout/include_estado_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </FrameLayout>
+</LinearLayout>
