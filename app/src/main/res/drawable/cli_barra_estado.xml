@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Barra lateral de las tarjetas: su color real se asigna por código según el estado. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/estado_neutro_texto" />
+</shape>

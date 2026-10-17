@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Progreso de la orden en tres pasos unidos por un riel: Ingresado, En reparación y Listo. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="top"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="84dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/imgPasoIngreso"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/fondo_circulo_suave"
+            android:contentDescription="@null"
+            android:padding="11dp"
+            android:src="@drawable/ic_clipboard_text" />
+
+        <TextView
+            android:id="@+id/txtPasoIngreso"
+            style="@style/Texto.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textAlignment="center"
+            android:text="Ingresado" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/viewRielPrimero"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:layout_marginTop="21dp"
+        android:layout_weight="1"
+        android:background="@drawable/fondo_linea_tiempo" />
+
+    <LinearLayout
+        android:layout_width="84dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/imgPasoReparacion"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/fondo_circulo_suave"
+            android:contentDescription="@null"
+            android:padding="11dp"
+            android:src="@drawable/ic_wrench" />
+
+        <TextView
+            android:id="@+id/txtPasoReparacion"
+            style="@style/Texto.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textAlignment="center"
+            android:text="En reparación" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/viewRielSegundo"
+        android:layout_width="0dp"
+        android:layout_height="3dp"
+        android:layout_marginTop="21dp"
+        android:layout_weight="1"
+        android:background="@drawable/fondo_linea_tiempo" />
+
+    <LinearLayout
+        android:layout_width="84dp"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <ImageView
+            android:id="@+id/imgPasoListo"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/fondo_circulo_suave"
+            android:contentDescription="@null"
+            android:padding="11dp"
+            android:src="@drawable/ic_seal_check" />
+
+        <TextView
+            android:id="@+id/txtPasoListo"
+            style="@style/Texto.Etiqueta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textAlignment="center"
+            android:text="Listo" />
+    </LinearLayout>
+</LinearLayout>

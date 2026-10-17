@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Campos del vehículo -->
+    <string name="cli_etiqueta_placa">Placa</string>
+    <string name="cli_pista_placa">ABC-123</string>
+    <string name="cli_etiqueta_marca">Marca</string>
+    <string name="cli_pista_marca">Toyota</string>
+    <string name="cli_etiqueta_modelo">Modelo</string>
+    <string name="cli_pista_modelo">Yaris</string>
+    <string name="cli_etiqueta_anio">Año</string>
+    <string name="cli_pista_anio">2018</string>
+    <string name="cli_etiqueta_color">Color</string>
+    <string name="cli_pista_color">Rojo</string>
+
+    <!-- Vehículos -->
+    <string name="cli_saludo">Hola, %1$s</string>
+    <string name="cli_vehiculos_subtitulo">Tus vehículos y su estado en el taller</string>
+    <string name="cli_vehiculos_vacio_titulo">Registra tu primer vehículo</string>
+    <string name="cli_vehiculos_vacio_mensaje">Agrega tu vehículo para pedir atención y seguir su reparación.</string>
+    <string name="cli_agregar_vehiculo">Agregar vehículo</string>
+    <string name="cli_mas_opciones">Más opciones</string>
+    <string name="cli_vehiculo_sin_orden">Este vehículo no tiene una orden activa</string>
+    <string name="cli_editar">Editar</string>
+    <string name="cli_eliminar">Eliminar</string>
+    <string name="cli_solicitar_atencion">Solicitar atención</string>
+    <string name="cli_eliminar_vehiculo_titulo">¿Eliminar este vehículo?</string>
+    <string name="cli_eliminar_vehiculo_mensaje">El vehículo %1$s dejará de aparecer en tu lista.</string>
+    <string name="cli_vehiculo_eliminado">Vehículo eliminado</string>
+    <string name="cli_no_se_pudo_eliminar">No se pudo eliminar</string>
+    <string name="cli_registrar_vehiculo_titulo">Registrar vehículo</string>
+    <string name="cli_registro_vehiculo_intro">Registra los datos de tu vehículo una sola vez y úsalos en cada solicitud.</string>
+    <string name="cli_registrar">Registrar</string>
+    <string name="cli_vehiculo_registrado">Vehículo registrado</string>
+    <string name="cli_editar_vehiculo_titulo">Editar vehículo</string>
+    <string name="cli_vehiculo_actualizado">Vehículo actualizado</string>
+
+    <!-- Solicitudes -->
+    <string name="cli_solicitudes_titulo">Solicitudes</string>
+    <string name="cli_solicitudes_subtitulo">Tus avisos de falla al taller</string>
+    <string name="cli_solicitudes_vacio_titulo">Aún no tienes solicitudes</string>
+    <string name="cli_solicitudes_vacio_mensaje">Cuéntanos la falla de tu vehículo antes de llevarlo al taller.</string>
+    <string name="cli_nueva_solicitud">Nueva solicitud</string>
+    <string name="cli_vehiculo_desconocido">Vehículo</string>
+    <string name="cli_llegada_estimada">Llegada estimada: %1$s</string>
+    <string name="cli_solicitud_sin_orden">La orden de esta solicitud aún no está disponible</string>
+    <string name="cli_solicitud_ya_cancelada">Esta solicitud fue cancelada</string>
+    <string name="cli_cancelar_solicitud">Cancelar solicitud</string>
+    <string name="cli_cancelar_solicitud_titulo">¿Cancelar esta solicitud?</string>
+    <string name="cli_cancelar_solicitud_mensaje">El taller dejará de verla entre las solicitudes pendientes.</string>
+    <string name="cli_solicitud_cancelada">Solicitud cancelada</string>
+    <string name="cli_no_se_pudo_cancelar">No se pudo cancelar</string>
+    <string name="cli_etiqueta_vehiculo">Vehículo</string>
+    <string name="cli_etiqueta_sintomas">Síntomas frecuentes</string>
+    <string name="cli_sintoma_no_arranca">No arranca</string>
+    <string name="cli_sintoma_bateria">Batería se descarga</string>
+    <string name="cli_sintoma_luces">Luces fallan</string>
+    <string name="cli_sintoma_tablero">Tablero con fallas</string>
+    <string name="cli_sintoma_otro">Otro</string>
+    <string name="cli_etiqueta_descripcion">Descripción de la falla</string>
+    <string name="cli_pista_descripcion">Cuéntanos qué le pasa a tu vehículo (mínimo 10 caracteres)</string>
+    <string name="cli_etiqueta_fecha_llegada">Fecha estimada de llegada</string>
+    <string name="cli_pista_fecha">Elige una fecha</string>
+    <string name="cli_enviar_solicitud">Enviar solicitud</string>
+    <string name="cli_elige_vehiculo">Elige un vehículo</string>
+    <string name="cli_solicitud_enviada">Solicitud enviada</string>
+    <string name="cli_solicitud_sin_vehiculos_titulo">Primero registra un vehículo</string>
+    <string name="cli_solicitud_sin_vehiculos_mensaje">Necesitas al menos un vehículo registrado para enviar una solicitud.</string>
+    <string name="cli_editar_solicitud_titulo">Editar solicitud</string>
+    <string name="cli_solicitud_actualizada">Solicitud actualizada</string>
+
+    <!-- Órdenes -->
+    <string name="cli_ordenes_titulo">Órdenes</string>
+    <string name="cli_ordenes_subtitulo">Atenciones actuales y anteriores</string>
+    <string name="cli_ordenes_vacio_titulo">Aún no tienes órdenes</string>
+    <string name="cli_ordenes_vacio_mensaje">Cuando el taller reciba tu vehículo, su orden aparecerá aquí.</string>
+    <string name="cli_seccion_en_curso">En curso</string>
+    <string name="cli_seccion_anteriores">Anteriores</string>
+    <string name="cli_ingreso_fecha">Ingreso: %1$s</string>
+
+    <!-- Avisos -->
+    <string name="cli_bandeja_titulo">Avisos</string>
+    <string name="cli_bandeja_vacia_titulo">Sin avisos por ahora</string>
+    <string name="cli_bandeja_vacia_mensaje">Aquí verás las novedades de tus vehículos en el taller.</string>
+    <string name="cli_avisos_al_dia">Estás al día</string>
+    <plurals name="cli_avisos_sin_leer">
+        <item quantity="one">%1$d aviso sin leer</item>
+        <item quantity="other">%1$d avisos sin leer</item>
+    </plurals>
+
+    <!-- Estado de la orden -->
+    <string name="cli_estado_orden_titulo">Estado de la orden</string>
+    <string name="cli_descripcion_imagen_vehiculo">Ilustración del vehículo</string>
+    <string name="cli_estado_actual">Estado actual</string>
+    <string name="cli_ultimo_cambio">Último cambio: %1$s</string>
+    <string name="cli_tecnico_asignado">Técnico: %1$s</string>
+    <string name="cli_sin_tecnico">Sin asignar</string>
+    <string name="cli_motivo_anulacion">Motivo: %1$s</string>
+    <string name="cli_orden_no_disponible">Esta orden no está disponible</string>
+    <string name="cli_ver_linea_tiempo">Ver línea de tiempo</string>
+    <string name="cli_ver_hallazgos">Ver hallazgos</string>
+    <string name="cli_ver_comprobante">Ver comprobante</string>
+
+    <!-- Línea de tiempo -->
+    <string name="cli_linea_tiempo_titulo">Línea de tiempo</string>
+    <string name="cli_etapa_pendiente">Pendiente</string>
+
+    <!-- Hallazgos y trabajos -->
+    <string name="cli_hallazgos_titulo">Hallazgos y trabajos</string>
+    <string name="cli_hallazgos_vacio_titulo">El técnico aún no registra avances</string>
+    <string name="cli_hallazgos_vacio_mensaje">Cuando el técnico documente un hallazgo o un trabajo, lo verás aquí.</string>
+    <string name="cli_registrado_por">Registrado por %1$s</string>
+    <string name="cli_descripcion_foto">Foto del registro</string>
+
+    <!-- Comprobante -->
+    <string name="cli_comprobante_titulo">Comprobante de ingreso</string>
+    <string name="cli_comprobante_fotos">Estado exterior al ingresar</string>
+    <string name="cli_dato_fecha_hora">Fecha y hora</string>
+    <string name="cli_dato_vehiculo">Vehículo</string>
+    <string name="cli_dato_falla">Falla reportada</string>
+    <string name="cli_dato_kilometraje">Kilometraje</string>
+    <string name="cli_dato_combustible">Combustible</string>
+    <string name="cli_dato_observaciones">Observaciones</string>
+    <string name="cli_dato_tecnico">Técnico asignado</string>
+    <string name="cli_kilometros">%1$d km</string>
+    <string name="cli_sin_observaciones">Sin observaciones</string>
+</resources>
