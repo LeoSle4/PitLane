@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/barraSuperior"
+        layout="@layout/include_barra_superior" />
+
+    <ScrollView
+        android:id="@+id/svFormulario"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/llFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/txtDuenoVehiculo"
+                style="@style/Texto.Secundario"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:id="@+id/llPlaca"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaPlaca"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_placa" />
+
+                <EditText
+                    android:id="@+id/etPlaca"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_placa"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapCharacters|textNoSuggestions"
+                    android:maxLength="7"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorPlaca"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llMarca"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaMarca"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_marca" />
+
+                <EditText
+                    android:id="@+id/etMarca"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_marca"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapWords"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorMarca"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llModelo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaModelo"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_modelo" />
+
+                <EditText
+                    android:id="@+id/etModelo"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_modelo"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapWords"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorModelo"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llAnio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaAnio"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_anio" />
+
+                <EditText
+                    android:id="@+id/etAnio"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_anio"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="4"
+                    android:imeOptions="actionNext" />
+
+                <TextView
+                    android:id="@+id/txtErrorAnio"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/llColor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txtEtiquetaColor"
+                    style="@style/Campo.Etiqueta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/jc_etq_color" />
+
+                <EditText
+                    android:id="@+id/etColor"
+                    style="@style/Campo.Texto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/jc_hint_color"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapWords"
+                    android:imeOptions="actionDone" />
+
+                <TextView
+                    android:id="@+id/txtErrorColor"
+                    style="@style/Campo.Error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/llPie"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/btnRegistrarVehiculo"
+            style="@style/Boton.Primario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/jc_btn_btnregistrarvehiculo" />
+    </LinearLayout>
+</LinearLayout>
