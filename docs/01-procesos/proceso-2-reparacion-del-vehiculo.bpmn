@@ -20,7 +20,7 @@
       <bpmn:lane id="Lane_Cliente" name="Cliente">
         <bpmn:flowNodeRef>Task_LlamarTaller</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_RecibirAviso</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>End_ClienteNotificado</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RecogerVehiculo</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_Jefe" name="Jefe de Taller">
         <bpmn:flowNodeRef>Task_ConsultarTecnico</bpmn:flowNodeRef>
@@ -30,6 +30,8 @@
         <bpmn:flowNodeRef>Task_LlamarCliente</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>GW_ClienteContesta</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Timer_VolverLlamar</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_EntregarVehiculo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_VehiculoEntregado</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_Tecnico" name="Técnico Electricista">
         <bpmn:flowNodeRef>Start_TrabajoAutorizado</bpmn:flowNodeRef>
@@ -110,8 +112,16 @@
       <bpmn:incoming>F_Si2</bpmn:incoming>
       <bpmn:outgoing>F_10</bpmn:outgoing>
     </bpmn:manualTask>
-    <bpmn:endEvent id="End_ClienteNotificado" name="Cliente notificado: vehículo listo para recoger">
+    <bpmn:manualTask id="Task_RecogerVehiculo" name="Ir al taller a recoger el vehículo">
       <bpmn:incoming>F_10</bpmn:incoming>
+      <bpmn:outgoing>F_11</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:manualTask id="Task_EntregarVehiculo" name="Entregar el vehículo al cliente">
+      <bpmn:incoming>F_11</bpmn:incoming>
+      <bpmn:outgoing>F_12</bpmn:outgoing>
+    </bpmn:manualTask>
+    <bpmn:endEvent id="End_VehiculoEntregado" name="Vehículo entregado al cliente">
+      <bpmn:incoming>F_12</bpmn:incoming>
     </bpmn:endEvent>
 
     <!-- ===== Consulta del cliente durante la reparación (puede ocurrir varias veces) ===== -->
@@ -185,7 +195,9 @@
     <bpmn:sequenceFlow id="F_Si2" name="Sí" sourceRef="GW_ClienteContesta" targetRef="Task_RecibirAviso" />
     <bpmn:sequenceFlow id="F_No2" name="No" sourceRef="GW_ClienteContesta" targetRef="Timer_VolverLlamar" />
     <bpmn:sequenceFlow id="F_T" sourceRef="Timer_VolverLlamar" targetRef="GW_MergeLlamada" />
-    <bpmn:sequenceFlow id="F_10" sourceRef="Task_RecibirAviso" targetRef="End_ClienteNotificado" />
+    <bpmn:sequenceFlow id="F_10" sourceRef="Task_RecibirAviso" targetRef="Task_RecogerVehiculo" />
+    <bpmn:sequenceFlow id="F_11" sourceRef="Task_RecogerVehiculo" targetRef="Task_EntregarVehiculo" />
+    <bpmn:sequenceFlow id="F_12" sourceRef="Task_EntregarVehiculo" targetRef="End_VehiculoEntregado" />
     <bpmn:sequenceFlow id="F_B1" sourceRef="Bnd_Consulta" targetRef="Task_LlamarTaller" />
     <bpmn:sequenceFlow id="F_B2" sourceRef="Task_LlamarTaller" targetRef="Task_ConsultarTecnico" />
     <bpmn:sequenceFlow id="F_B3" sourceRef="Task_ConsultarTecnico" targetRef="Task_InformarAvanceJefe" />
@@ -197,16 +209,16 @@
     <bpmndi:BPMNPlane id="BPMNPlane_Reparacion" bpmnElement="Collaboration_Reparacion">
 
       <bpmndi:BPMNShape id="S_Participant" bpmnElement="Participant_Reparacion" isHorizontal="true">
-        <dc:Bounds x="160" y="40" width="1600" height="790" />
+        <dc:Bounds x="160" y="40" width="1830" height="790" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="S_Lane_Cliente" bpmnElement="Lane_Cliente" isHorizontal="true">
-        <dc:Bounds x="190" y="40" width="1570" height="200" />
+        <dc:Bounds x="190" y="40" width="1800" height="200" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="S_Lane_Jefe" bpmnElement="Lane_Jefe" isHorizontal="true">
-        <dc:Bounds x="190" y="240" width="1570" height="220" />
+        <dc:Bounds x="190" y="240" width="1800" height="220" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="S_Lane_Tecnico" bpmnElement="Lane_Tecnico" isHorizontal="true">
-        <dc:Bounds x="190" y="460" width="1570" height="370" />
+        <dc:Bounds x="190" y="460" width="1800" height="370" />
       </bpmndi:BPMNShape>
 
       <!-- Cliente -->
@@ -216,9 +228,8 @@
       <bpmndi:BPMNShape id="S_Task_RecibirAviso" bpmnElement="Task_RecibirAviso" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
         <dc:Bounds x="1520" y="100" width="120" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="S_End_ClienteNotificado" bpmnElement="End_ClienteNotificado">
-        <dc:Bounds x="1682" y="122" width="36" height="36" />
-        <bpmndi:BPMNLabel><dc:Bounds x="1655" y="165" width="90" height="40" /></bpmndi:BPMNLabel>
+      <bpmndi:BPMNShape id="S_Task_RecogerVehiculo" bpmnElement="Task_RecogerVehiculo">
+        <dc:Bounds x="1700" y="100" width="120" height="80" />
       </bpmndi:BPMNShape>
 
       <!-- Jefe de Taller -->
@@ -241,6 +252,13 @@
       <bpmndi:BPMNShape id="S_GW_ClienteContesta" bpmnElement="GW_ClienteContesta" isMarkerVisible="true">
         <dc:Bounds x="1435" y="345" width="50" height="50" />
         <bpmndi:BPMNLabel><dc:Bounds x="1470" y="400" width="60" height="27" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_Task_EntregarVehiculo" bpmnElement="Task_EntregarVehiculo" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="1700" y="330" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S_End_VehiculoEntregado" bpmnElement="End_VehiculoEntregado">
+        <dc:Bounds x="1880" y="352" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1853" y="395" width="90" height="40" /></bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="S_Timer_VolverLlamar" bpmnElement="Timer_VolverLlamar">
         <dc:Bounds x="1322" y="252" width="36" height="36" />
@@ -335,7 +353,9 @@
       <bpmndi:BPMNEdge id="E_F_Si2" bpmnElement="F_Si2"><di:waypoint x="1485" y="370" /><di:waypoint x="1580" y="370" /><di:waypoint x="1580" y="180" /><bpmndi:BPMNLabel><dc:Bounds x="1510" y="350" width="14" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="E_F_No2" bpmnElement="F_No2"><di:waypoint x="1460" y="345" /><di:waypoint x="1460" y="270" /><di:waypoint x="1358" y="270" /><bpmndi:BPMNLabel><dc:Bounds x="1466" y="300" width="16" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="E_F_T" bpmnElement="F_T"><di:waypoint x="1322" y="270" /><di:waypoint x="1220" y="270" /><di:waypoint x="1220" y="345" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="E_F_10" bpmnElement="F_10"><di:waypoint x="1640" y="140" /><di:waypoint x="1682" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F_10" bpmnElement="F_10"><di:waypoint x="1640" y="140" /><di:waypoint x="1700" y="140" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F_11" bpmnElement="F_11"><di:waypoint x="1760" y="180" /><di:waypoint x="1760" y="330" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_F_12" bpmnElement="F_12"><di:waypoint x="1820" y="370" /><di:waypoint x="1880" y="370" /></bpmndi:BPMNEdge>
 
       <!-- Consulta del cliente -->
       <bpmndi:BPMNEdge id="E_F_B1" bpmnElement="F_B1"><di:waypoint x="590" y="582" /><di:waypoint x="590" y="180" /></bpmndi:BPMNEdge>
