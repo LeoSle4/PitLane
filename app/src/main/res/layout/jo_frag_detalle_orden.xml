@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/incBarra"
+        layout="@layout/include_barra_superior"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/alto_barra_superior" />
+
+    <ScrollView
+        android:id="@+id/svDetalleOrden"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/margen_pantalla">
+
+            <!-- Encabezado con barra lateral del color del estado, número, chip y fecha de ingreso -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvEncabezadoOrden"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/viewBarraEstadoDetalle"
+                        android:layout_width="6dp"
+                        android:layout_height="match_parent" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/txtNumeroDetalle"
+                                style="@style/Texto.Titulo"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/txtEstadoDetalle"
+                                style="@style/Chip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/txtIngresoDetalle"
+                            style="@style/Texto.Secundario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Cliente y vehículo lado a lado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/mcvClienteDetalle"
+                    style="@style/Tarjeta"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            style="@style/Jo.Seccion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/jo_detalle_cliente" />
+
+                        <TextView
+                            android:id="@+id/txtClienteNombre"
+                            style="@style/Jo.Valor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="2dp"
+                            android:textFontWeight="600" />
+
+                        <TextView
+                            android:id="@+id/txtClienteContacto"
+                            style="@style/Texto.Secundario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/mcvVehiculoDetalle"
+                    style="@style/Tarjeta"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            style="@style/Jo.Seccion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/jo_detalle_vehiculo" />
+
+                        <TextView
+                            android:id="@+id/txtVehiculoPlaca"
+                            style="@style/Jo.Valor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="2dp"
+                            android:textFontWeight="600" />
+
+                        <TextView
+                            android:id="@+id/txtVehiculoDatos"
+                            style="@style/Texto.Secundario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Datos del ingreso: falla, tres datos en fila y observaciones -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvTrabajoDetalle"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_detalle_falla" />
+
+                    <TextView
+                        android:id="@+id/txtFallaDetalle"
+                        style="@style/Jo.Valor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/Jo.Seccion"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/jo_detalle_kilometraje" />
+
+                            <TextView
+                                android:id="@+id/txtKilometrajeDetalle"
+                                style="@style/Jo.Valor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.7"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/Jo.Seccion"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/jo_detalle_combustible" />
+
+                            <TextView
+                                android:id="@+id/txtCombustibleDetalle"
+                                style="@style/Jo.Valor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.2"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/Jo.Seccion"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/jo_detalle_tecnico" />
+
+                            <TextView
+                                android:id="@+id/txtTecnicoDetalle"
+                                style="@style/Jo.Valor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_detalle_observaciones" />
+
+                    <TextView
+                        android:id="@+id/txtObservacionesDetalle"
+                        style="@style/Jo.Valor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="0dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvMotivoAnulacion"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_detalle_motivo" />
+
+                    <TextView
+                        android:id="@+id/txtMotivoAnulacion"
+                        style="@style/Jo.Valor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvFotosDetalle"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_detalle_fotos" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/llFotosDetalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" />
+                    </HorizontalScrollView>
+
+                    <TextView
+                        android:id="@+id/txtContadorFotosDetalle"
+                        style="@style/Texto.Pie"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+
+                    <Button
+                        android:id="@+id/btnAgregarFotosDetalle"
+                        style="@style/Boton.Secundario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/com_agregar_foto"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_camera" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvAvisoDetalle"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_detalle_aviso" />
+
+                    <TextView
+                        android:id="@+id/txtUltimoAviso"
+                        style="@style/Jo.Valor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <Button
+                        android:id="@+id/btnReenviarAviso"
+                        style="@style/Boton.Secundario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_reenviar_aviso"
+                        app:icon="@drawable/ic_bell" />
+
+                    <Button
+                        android:id="@+id/btnMarcarEntregada"
+                        style="@style/Boton.Primario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/jo_marcar_entregada"
+                        app:icon="@drawable/ic_check_circle" />
+
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvHistorialDetalle"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/jo_detalle_historial" />
+
+                    <LinearLayout
+                        android:id="@+id/llHistorial"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Zona de fotos sin mostrar: el gestor la usa para elegir fotos nuevas -->
+            <include
+                android:id="@+id/incZonaFotosOculta"
+                layout="@layout/include_zona_fotos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Barra inferior con las acciones disponibles solo en estado Ingresado -->
+    <LinearLayout
+        android:id="@+id/llAccionesDetalle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/fondo"
+        android:orientation="horizontal"
+        android:padding="@dimen/margen_pantalla"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btnAnularOrden"
+            style="@style/Boton.Secundario"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/jo_anular"
+            android:textColor="@color/peligro" />
+
+        <Button
+            android:id="@+id/btnEditarOrden"
+            style="@style/Boton.Primario"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="@string/jo_editar" />
+    </LinearLayout>
+</LinearLayout>

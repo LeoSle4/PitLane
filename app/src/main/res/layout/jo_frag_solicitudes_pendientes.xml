@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <!-- Encabezado con título y resumen de solicitudes por atender -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/margen_pantalla"
+        android:paddingTop="@dimen/espacio_16"
+        android:paddingEnd="@dimen/margen_pantalla">
+
+        <TextView
+            android:id="@+id/txtTituloSolicitudes"
+            style="@style/Texto.Display"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/jo_solicitudes_titulo" />
+
+        <TextView
+            android:id="@+id/txtResumenSolicitudes"
+            style="@style/Texto.Secundario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/jo_solicitudes_subtitulo" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/espacio_8"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lvSolicitudes"
+            style="@style/Lista"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="@dimen/espacio_8"
+            android:paddingBottom="@dimen/relleno_lista_con_barra" />
+
+        <include
+            android:id="@+id/incVacio"
+            layout="@layout/include_estado_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+    </FrameLayout>
+</LinearLayout>

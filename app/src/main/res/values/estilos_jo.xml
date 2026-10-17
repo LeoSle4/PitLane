@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema de la pantalla modal de edición: ocupa toda la ventana y sube desde abajo -->
+    <style name="Tema.JoEdicionOrden" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/fondo</item>
+        <item name="android:windowAnimationStyle">@style/Animacion.JoEdicionOrden</item>
+    </style>
+
+    <style name="Animacion.JoEdicionOrden" parent="">
+        <item name="android:windowEnterAnimation">@anim/jo_subir</item>
+        <item name="android:windowExitAnimation">@anim/jo_bajar</item>
+    </style>
+
+    <!-- Título de sección dentro de una tarjeta de formulario o detalle -->
+    <style name="Jo.Seccion" parent="Texto.Etiqueta">
+        <item name="android:textColor">@color/texto_secundario</item>
+        <item name="android:layout_marginBottom">4dp</item>
+    </style>
+
+    <!-- Valor de un dato del detalle -->
+    <style name="Jo.Valor" parent="Texto.Cuerpo">
+        <item name="android:layout_marginBottom">6dp</item>
+    </style>
+
+    <!-- Pestaña del control segmentado del panel -->
+    <style name="Jo.Segmento" parent="Widget.AppCompat.CompoundButton.RadioButton">
+        <item name="android:button">@null</item>
+        <item name="android:background">@drawable/jo_fondo_segmento</item>
+        <item name="android:textColor">@color/sel_texto_opcion</item>
+        <item name="android:gravity">center</item>
+        <item name="android:minHeight">64dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">@font/fuente_jakarta</item>
+    </style>
+
+    <!-- Opción de combustible del formulario -->
+    <style name="Jo.OpcionCombustible" parent="Campo.Opcion">
+        <item name="android:minWidth">56dp</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">14dp</item>
+    </style>
+</resources>

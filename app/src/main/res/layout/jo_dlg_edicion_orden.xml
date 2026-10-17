@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/llRaizEdicion"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <!-- Barra superior con cierre, título y botón Guardar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/alto_barra_superior"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="8dp">
+
+        <ImageButton
+            android:id="@+id/btnCerrarEdicion"
+            android:layout_width="@dimen/area_tactil"
+            android:layout_height="@dimen/area_tactil"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/com_cerrar"
+            android:src="@drawable/ic_x"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            app:tint="@color/texto_primario" />
+
+        <TextView
+            android:id="@+id/txtTituloEdicion"
+            style="@style/Texto.Titulo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="4dp"
+            android:text="@string/jo_edicion_titulo" />
+
+        <Button
+            android:id="@+id/btnGuardarEdicion"
+            style="@style/Boton.Texto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="@string/jo_guardar" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/svEdicion"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/margen_pantalla">
+
+            <TextView
+                style="@style/Campo.Etiqueta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/jo_edicion_orden" />
+
+            <EditText
+                android:id="@+id/etOrdenBloqueada"
+                style="@style/Campo.Texto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="none" />
+
+            <TextView
+                style="@style/Campo.Etiqueta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/jo_seccion_falla" />
+
+            <EditText
+                android:id="@+id/etFallaEdicion"
+                style="@style/Campo.Texto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top|start"
+                android:hint="@string/jo_hint_falla"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="3" />
+
+            <TextView
+                android:id="@+id/txtErrorFallaEdicion"
+                style="@style/Campo.Error"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                style="@style/Campo.Etiqueta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/jo_etiqueta_kilometraje" />
+
+            <EditText
+                android:id="@+id/etKilometrajeEdicion"
+                style="@style/Campo.Texto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/jo_hint_kilometraje"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:maxLength="7" />
+
+            <TextView
+                android:id="@+id/txtErrorKilometrajeEdicion"
+                style="@style/Campo.Error"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                style="@style/Campo.Etiqueta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/jo_etiqueta_combustible" />
+
+            <include
+                android:id="@+id/incCombustibleEdicion"
+                layout="@layout/jo_include_combustible"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                style="@style/Campo.Etiqueta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/jo_etiqueta_observaciones" />
+
+            <EditText
+                android:id="@+id/etObservacionesEdicion"
+                style="@style/Campo.Texto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top|start"
+                android:hint="@string/jo_hint_observaciones"
+                android:importantForAutofill="no"
+                android:inputType="textCapSentences|textMultiLine"
+                android:minLines="2" />
+
+            <TextView
+                style="@style/Campo.Etiqueta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/jo_seccion_tecnico" />
+
+            <Spinner
+                android:id="@+id/spnTecnicoEdicion"
+                style="@style/Campo.Combo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

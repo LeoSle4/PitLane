@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HorizontalScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:scrollbars="none">
+
+    <!-- Chips de nivel de combustible, en el mismo orden que NivelCombustible -->
+    <RadioGroup
+        android:id="@+id/rgCombustible"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/rbReserva"
+            style="@style/Jo.OpcionCombustible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/jo_combustible_reserva" />
+
+        <RadioButton
+            android:id="@+id/rbCuarto"
+            style="@style/Jo.OpcionCombustible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/jo_combustible_cuarto" />
+
+        <RadioButton
+            android:id="@+id/rbMedio"
+            style="@style/Jo.OpcionCombustible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/jo_combustible_medio" />
+
+        <RadioButton
+            android:id="@+id/rbTresCuartos"
+            style="@style/Jo.OpcionCombustible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/jo_combustible_tres_cuartos" />
+
+        <RadioButton
+            android:id="@+id/rbLleno"
+            style="@style/Jo.OpcionCombustible"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/jo_combustible_lleno" />
+    </RadioGroup>
+</HorizontalScrollView>

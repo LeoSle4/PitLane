@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Panel de órdenes -->
+    <string name="jo_panel_titulo">Panel de órdenes</string>
+    <string name="jo_panel_subtitulo">Vehículos que están hoy en el taller</string>
+    <string name="jo_estado_ingresado">Ingresado</string>
+    <string name="jo_estado_reparacion">En reparación</string>
+    <string name="jo_estado_listo">Listo para recoger</string>
+    <string name="jo_nuevo_ingreso">Nuevo ingreso</string>
+
+    <!-- Solicitudes pendientes -->
+    <string name="jo_solicitudes_titulo">Solicitudes pendientes</string>
+    <string name="jo_solicitudes_subtitulo">Vehículos que van a llegar al taller</string>
+    <string name="jo_registrar_ingreso">Registrar ingreso</string>
+    <string name="jo_hoja_titulo">Solicitud de atención</string>
+    <string name="jo_hoja_descripcion">Descripción de la falla</string>
+    <string name="jo_hoja_sintomas">Síntomas indicados</string>
+    <string name="jo_hoja_fotos">Fotos del cliente</string>
+    <string name="jo_hoja_sin_fotos">El cliente no adjuntó fotos</string>
+
+    <!-- Formulario de orden -->
+    <string name="jo_nueva_titulo">Registrar ingreso</string>
+    <string name="jo_seccion_cliente">Cliente</string>
+    <string name="jo_seccion_vehiculo">Vehículo</string>
+    <string name="jo_seccion_falla">Falla reportada</string>
+    <string name="jo_seccion_estado">Estado del vehículo</string>
+    <string name="jo_seccion_fotos">Fotos del estado exterior</string>
+    <string name="jo_seccion_tecnico">Técnico asignado</string>
+    <string name="jo_buscar_cliente">Buscar por nombre, DNI o placa</string>
+    <string name="jo_hint_falla">Describe la falla que reporta el cliente</string>
+    <string name="jo_etiqueta_kilometraje">Kilometraje</string>
+    <string name="jo_hint_kilometraje">Ej. 85200</string>
+    <string name="jo_etiqueta_combustible">Nivel de combustible</string>
+    <string name="jo_etiqueta_observaciones">Observaciones del estado exterior</string>
+    <string name="jo_hint_observaciones">Rayones, golpes, accesorios…</string>
+    <string name="jo_combustible_reserva">Reserva</string>
+    <string name="jo_combustible_cuarto">1/4</string>
+    <string name="jo_combustible_medio">1/2</string>
+    <string name="jo_combustible_tres_cuartos">3/4</string>
+    <string name="jo_combustible_lleno">Lleno</string>
+
+    <!-- Confirmación de ingreso -->
+    <string name="jo_confirmacion_titulo">Ingreso registrado</string>
+    <string name="jo_confirmacion_orden">Número de orden</string>
+    <string name="jo_confirmacion_vista_previa">Así lo recibe el cliente</string>
+    <string name="jo_ver_orden">Ver orden</string>
+    <string name="jo_ir_panel">Ir al panel</string>
+
+    <!-- Detalle de orden -->
+    <string name="jo_detalle_titulo">Detalle de la orden</string>
+    <string name="jo_detalle_cliente">Cliente</string>
+    <string name="jo_detalle_vehiculo">Vehículo</string>
+    <string name="jo_detalle_trabajo">Datos del ingreso</string>
+    <string name="jo_detalle_falla">Falla reportada</string>
+    <string name="jo_detalle_kilometraje">Kilometraje</string>
+    <string name="jo_detalle_combustible">Combustible</string>
+    <string name="jo_detalle_observaciones">Observaciones</string>
+    <string name="jo_detalle_tecnico">Técnico asignado</string>
+    <string name="jo_detalle_fotos">Fotos del estado exterior</string>
+    <string name="jo_detalle_motivo">Motivo de anulación</string>
+    <string name="jo_detalle_aviso">Aviso al cliente</string>
+    <string name="jo_detalle_historial">Historial de estados</string>
+    <string name="jo_reenviar_aviso">Reenviar aviso</string>
+    <string name="jo_editar">Editar</string>
+    <string name="jo_anular">Anular</string>
+
+    <!-- Edición de orden -->
+    <string name="jo_edicion_titulo">Editar orden</string>
+    <string name="jo_guardar">Guardar</string>
+    <string name="jo_edicion_orden">Orden y vehículo</string>
+    <string name="jo_marcar_entregada">Marcar como entregado</string>
+</resources>
