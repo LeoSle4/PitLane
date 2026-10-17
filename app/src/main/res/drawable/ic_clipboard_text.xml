@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 9 12 h 3.75 M 9 15 h 3.75 M 9 18 h 3.75 m 3 .75 H 18 a 2.25 2.25 0 0 0 2.25 -2.25 V 6.108 c 0 -1.135 -.845 -2.098 -1.976 -2.192 a 48.424 48.424 0 0 0 -1.123 -.08 m -5.801 0 c -.065 .21 -.1 .433 -.1 .664 0 .414 .336 .75 .75 .75 h 4.5 a .75 .75 0 0 0 .75 -.75 2.25 2.25 0 0 0 -.1 -.664 m -5.8 0 A 2.251 2.251 0 0 1 13.5 2.25 H 15 c 1.012 0 1.867 .668 2.15 1.586 m -5.8 0 c -.376 .023 -.75 .05 -1.124 .08 C 9.095 4.01 8.25 4.973 8.25 6.108 V 8.25 m 0 0 H 4.875 c -.621 0 -1.125 .504 -1.125 1.125 v 11.25 c 0 .621 .504 1.125 1.125 1.125 h 9.75 c .621 0 1.125 -.504 1.125 -1.125 V 9.375 c 0 -.621 -.504 -1.125 -1.125 -1.125 H 8.25 Z M 6.75 12 h .008 v .008 H 6.75 V 12 Z m 0 3 h .008 v .008 H 6.75 V 15 Z m 0 3 h .008 v .008 H 6.75 V 18 Z" />
+</vector>
