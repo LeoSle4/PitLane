@@ -64,6 +64,7 @@ El rojo de la marca **no** se usa para estados, así nada parece una alerta. Cad
 | Ingresado | `#F1EEEE` / `#5F5656` | `#252020` / `#C8C0C0` | `clipboard-text` |
 | En reparación | `#FFF4DC` / `#8A5A00` | `#2E2410` / `#F2C46B` | `wrench` |
 | Listo para recoger | `#E3F4EA` / `#1E7A4F` | `#0F2A1E` / `#6FD3A0` | `check-circle` |
+| Entregado | `#F1EEEE` / `#5F5656` | `#252020` / `#C8C0C0` | `check-circle` |
 | Anulada | `#FDECEB` / `#B3342E` | `#3A1716` / `#FFB4AE` | `x-circle` |
 
 ### 2.2 Tipografía
@@ -209,7 +210,7 @@ Cada componente se crea con **variantes** para no dibujar dos veces lo mismo:
 |---|---|
 | Botón | Primario · Secundario · Texto · Peligro × Normal · Presionado · Deshabilitado · Cargando |
 | Campo de texto | Vacío · Con foco · Lleno · Error · Bloqueado |
-| Chip de estado | Ingresado · En reparación · Listo · Anulada · Pendiente · Atendida · Cancelada |
+| Chip de estado | Ingresado · En reparación · Listo · Entregado · Anulada · Pendiente · Atendida · Cancelada |
 | Tarjeta | Vehículo · Orden · Solicitud · Avance · Técnico · Cliente |
 | Barra inferior (vidrio) | Cliente · Jefe · Técnico × pestaña activa |
 | Modal | Hoja · Diálogo · Diálogo de error · Selector · Visor · Pantalla completa |
@@ -242,7 +243,7 @@ Cada componente se crea con **variantes** para no dibujar dos veces lo mismo:
 | 2 · Componentes | Biblioteca con variantes |
 | 3 · Acceso | HU-T01 a HU-T03, HU-01 |
 | 4 · Cliente | HU-02 a HU-13, HU-30, HU-31, HU-44 a HU-48 |
-| 5 · Jefe de Taller | HU-T04 a HU-T07, HU-14 a HU-29, HU-41, HU-43 |
+| 5 · Jefe de Taller | HU-T04 a HU-T07, HU-14 a HU-29, HU-41, HU-43, HU-49 |
 | 6 · Técnico | HU-32 a HU-40 |
 | 7 · Flujos | Recorridos completos con puntos de inicio |
 
@@ -396,6 +397,7 @@ Cada componente se crea con **variantes** para no dibujar dos veces lo mismo:
 | HU-46 Ver estado actual de mi vehículo | V-46 | 🖥️ | Mis órdenes, Mis vehículos o la notificación | Foto del vehículo de fondo con **tarjeta de vidrio** encima: estado grande, ícono, hora del último cambio y técnico; botones "Ver línea de tiempo", "Ver hallazgos" y "Ver comprobante"; **variante "Listo"** con Lottie de check con destellos | — |
 | HU-47 Ver línea de tiempo de la orden | V-47 | 🖥️ | Estado → "Ver línea de tiempo" | Línea vertical: puntos verdes (cumplido, con fecha), rojo con pulso (actual), gris (pendiente); **variante "Anulada"** con el motivo | — |
 | HU-48 Ver hallazgos y trabajos | V-48 | 🖥️ + visor | Estado → "Ver hallazgos" | Tarjetas con ícono por tipo, descripción, galería horizontal y fecha; sin opciones de edición; al tocar una foto se abre el **visor** a pantalla completa; estado vacío "El técnico aún no registra avances" | — |
+| HU-49 Marcar orden como entregada | V-49 | 💬 | Detalle de orden → "Marcar como entregado" | Ícono `check-circle`, mensaje con la placa, botón "Entregar" | Detalle con chip Entregado |
 
 ---
 
@@ -411,7 +413,7 @@ Cada componente se crea con **variantes** para no dibujar dos veces lo mismo:
 
 ## 6. Lista de verificación del prototipo
 
-- [ ] Las 55 HU tienen su frame o modal, con el código V-XX en el nombre.
+- [ ] Las 56 HU tienen su frame o modal, con el código V-XX en el nombre.
 - [ ] Cada **editar** se abre como hoja modal (HU-27 como modal de pantalla completa).
 - [ ] Cada **eliminar, cancelar, anular, desactivar** y cada **cambio de estado** se abre como diálogo modal.
 - [ ] Cada diálogo que puede fallar tiene su **variante de error**.
