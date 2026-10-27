@@ -8,6 +8,17 @@
     <string name="jo_estado_listo">Listo para recoger</string>
     <string name="jo_nuevo_ingreso">Nuevo ingreso</string>
 
+    <!-- Búsqueda de órdenes listas para entregar -->
+    <string name="jo_cd_buscar_listas">Buscar orden lista para entregar</string>
+    <string name="jo_listas_titulo">Entregar vehículo</string>
+    <string name="jo_listas_hint">Placa, cliente, DNI o número de orden</string>
+    <string name="jo_listas_ayuda">Solo aparecen las órdenes listas para recoger.</string>
+    <string name="jo_listas_vacio">No hay órdenes listas con esos datos</string>
+    <string name="jo_listas_vacio_detalle">Revisa la placa, el nombre, el DNI o el número de orden escrito.</string>
+    <string name="jo_listas_sin_ordenes">No hay órdenes listas para entregar</string>
+    <string name="jo_listas_sin_ordenes_detalle">Cuando un técnico deje una orden lista para recoger aparecerá aquí.</string>
+    <string name="jo_listas_fecha">Lista el %1$s</string>
+
     <!-- Solicitudes pendientes -->
     <string name="jo_solicitudes_titulo">Solicitudes pendientes</string>
     <string name="jo_solicitudes_subtitulo">Vehículos que van a llegar al taller</string>
@@ -69,4 +80,39 @@
     <string name="jo_guardar">Guardar</string>
     <string name="jo_edicion_orden">Orden y vehículo</string>
     <string name="jo_marcar_entregada">Marcar como entregado</string>
+
+    <!-- Entrega del vehículo en el detalle de la orden -->
+    <string name="jo_entrega_titulo">Entrega del vehículo</string>
+    <string name="jo_entrega_conformidad_pendiente">Conformidad pendiente</string>
+    <string name="jo_entrega_conformidad_chip">Conformidad registrada</string>
+    <string name="jo_entrega_conformidad_detalle">%1$s · por %2$s</string>
+    <string name="jo_entrega_observaciones">Observaciones del cliente</string>
+    <string name="jo_entrega_acuerdo">Acordado: %1$s</string>
+    <string name="jo_entrega_observacion_autor">%1$s · por %2$s</string>
+    <string name="jo_entrega_ver_resumen">Ver resumen de trabajos</string>
+    <string name="jo_entrega_registrar_observacion">Registrar observación</string>
+    <string name="jo_entrega_registrar_conformidad">Registrar conformidad</string>
+    <string name="jo_conformidad_dialogo_titulo">¿Registrar la conformidad del cliente?</string>
+    <string name="jo_conformidad_dialogo_mensaje">Confirma que el cliente comprobó que la falla quedó resuelta y está conforme. Quedará registrada con tu usuario, la fecha y la hora.</string>
+    <string name="jo_conformidad_dialogo_accion">Registrar</string>
+    <string name="jo_conformidad_registrada">Conformidad registrada</string>
+
+    <!-- Resumen de trabajos para la entrega -->
+    <string name="jo_resumen_titulo">Resumen de trabajos</string>
+    <string name="jo_resumen_falla">Falla reportada</string>
+    <string name="jo_resumen_tecnico">Técnico que la atendió</string>
+    <string name="jo_resumen_seccion">Hallazgos y trabajos realizados</string>
+    <string name="jo_resumen_sin_tecnico">Sin técnico</string>
+    <string name="jo_resumen_vacio_titulo">Aún no hay trabajos registrados</string>
+    <string name="jo_resumen_vacio_mensaje">Los hallazgos y trabajos que registre el técnico aparecerán aquí.</string>
+
+    <!-- Observación del cliente -->
+    <string name="jo_obs_titulo">Observación del cliente</string>
+    <string name="jo_obs_etq_observacion">Observación</string>
+    <string name="jo_obs_hint_observacion">Qué observa el cliente antes de recibir su vehículo</string>
+    <string name="jo_obs_etq_acuerdo">Lo acordado</string>
+    <string name="jo_obs_hint_acuerdo">Qué se acordó para atenderla</string>
+    <string name="jo_obs_guardar">Guardar</string>
+    <string name="jo_obs_error_corta">Describe la observación con al menos 10 caracteres</string>
+    <string name="jo_obs_registrada">Observación registrada</string>
 </resources>

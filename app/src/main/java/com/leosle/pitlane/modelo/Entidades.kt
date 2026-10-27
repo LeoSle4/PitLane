@@ -71,6 +71,20 @@ data class CambioEstado(
     val motivo: String? = null
 )
 
+/** Constancia de que el cliente comprobó que la falla quedó resuelta, con la fecha, la hora y el usuario que la registró. */
+data class Conformidad(
+    val fechaHora: Long,
+    val usuarioId: String
+)
+
+/** Observación que el cliente hace antes de recibir su vehículo y lo acordado para atenderla. */
+data class ObservacionCliente(
+    val texto: String,
+    val acuerdo: String,
+    val fechaHora: Long,
+    val usuarioId: String
+)
+
 /** Orden de ingreso: documento digital que acompaña al vehículo durante toda la reparación. */
 data class Orden(
     val id: String,
@@ -91,7 +105,9 @@ data class Orden(
     val avisosEnviados: Int = 0,
     val ultimoAviso: Long? = null,
     val editadaPor: String? = null,
-    val editadaEn: Long? = null
+    val editadaEn: Long? = null,
+    val conformidad: Conformidad? = null,
+    val observacionesCliente: List<ObservacionCliente> = emptyList()
 ) {
     /** Verdadero mientras el técnico todavía trabaja en la orden (Ingresado o En reparación). */
     val enCurso: Boolean get() = estado == EstadoOrden.INGRESADO || estado == EstadoOrden.EN_REPARACION

@@ -17,7 +17,7 @@
 
         <!-- Pantalla de entrada: presentación, inicio de sesión, registro y recuperación de contraseña -->
         <activity
-            android:name=".vista.acceso.AccesoActivity"
+            android:name=".arquitectura.vista.acceso.AccesoActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
@@ -30,7 +30,7 @@
 
         <!-- Contenedor de las pestañas de cada rol -->
         <activity
-            android:name=".vista.PrincipalActivity"
+            android:name=".arquitectura.vista.PrincipalActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"

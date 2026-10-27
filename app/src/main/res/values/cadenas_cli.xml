@@ -123,4 +123,13 @@
     <string name="cli_dato_tecnico">Técnico asignado</string>
     <string name="cli_kilometros">%1$d km</string>
     <string name="cli_sin_observaciones">Sin observaciones</string>
+
+    <!-- Constancia de entrega -->
+    <string name="cli_ver_constancia">Ver constancia de entrega</string>
+    <string name="cli_constancia_titulo">Constancia de entrega</string>
+    <string name="cli_dato_placa">Placa</string>
+    <string name="cli_dato_entrega">Fecha y hora de la entrega</string>
+    <string name="cli_dato_registrada_por">Registrada por</string>
+    <string name="cli_dato_conformidad">Conformidad del cliente</string>
+    <string name="cli_sin_dato">Sin datos</string>
 </resources>
