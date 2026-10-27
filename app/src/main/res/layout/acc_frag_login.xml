@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/superficie">
 
-    <com.leosle.pitlane.vista.acceso.EscenaViaje
+    <com.leosle.pitlane.arquitectura.vista.acceso.EscenaViaje
         android:id="@+id/escenaLogin"
         android:layout_width="match_parent"
         android:layout_height="292dp" />

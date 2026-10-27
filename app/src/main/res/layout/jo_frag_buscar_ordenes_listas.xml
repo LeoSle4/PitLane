@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fondo"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/incBarra"
+        layout="@layout/include_barra_superior"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/alto_barra_superior" />
+
+    <!-- Campo de búsqueda con su ayuda -->
+    <LinearLayout
+        android:id="@+id/llBusquedaListas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/margen_pantalla"
+        android:paddingTop="8dp"
+        android:paddingEnd="@dimen/margen_pantalla">
+
+        <EditText
+            android:id="@+id/etBuscarListas"
+            style="@style/Campo.Texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_magnifying_glass"
+            android:drawableTint="@color/texto_secundario"
+            android:hint="@string/jo_listas_hint"
+            android:imeOptions="actionSearch"
+            android:importantForAutofill="no"
+            android:inputType="text|textNoSuggestions"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/txtAyudaListas"
+            style="@style/Texto.Pie"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/jo_listas_ayuda" />
+    </LinearLayout>
+
+    <!-- Resultados con su estado vacío -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/lvListas"
+            style="@style/Lista"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp" />
+
+        <include
+            android:id="@+id/incVacio"
+            layout="@layout/include_estado_vacio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+    </FrameLayout>
+</LinearLayout>

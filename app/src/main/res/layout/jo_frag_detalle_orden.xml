@@ -374,18 +374,111 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/jo_reenviar_aviso"
-                        app:icon="@drawable/ic_bell" />
+                        app:icon="@drawable/ic_bell"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp" />
 
-                    <Button
-                        android:id="@+id/btnMarcarEntregada"
-                        style="@style/Boton.Primario"
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Entrega: conformidad, observaciones del cliente y acciones mientras la orden está lista -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvEntregaDetalle"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <TextView
+                        style="@style/Jo.Seccion"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/jo_marcar_entregada"
-                        app:icon="@drawable/ic_check_circle" />
+                        android:text="@string/jo_entrega_titulo" />
 
+                    <TextView
+                        android:id="@+id/chipConformidad"
+                        style="@style/Chip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
 
+                    <TextView
+                        android:id="@+id/txtConformidadDetalle"
+                        style="@style/Texto.Secundario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:id="@+id/txtEtiquetaObservacionesCliente"
+                        style="@style/Jo.Seccion"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/jo_entrega_observaciones" />
+
+                    <LinearLayout
+                        android:id="@+id/llObservacionesCliente"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <LinearLayout
+                        android:id="@+id/llAccionesEntrega"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical">
+
+                        <Button
+                            android:id="@+id/btnVerResumen"
+                            style="@style/Boton.Secundario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/jo_entrega_ver_resumen"
+                            app:icon="@drawable/ic_wrench"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp" />
+
+                        <Button
+                            android:id="@+id/btnRegistrarObservacion"
+                            style="@style/Boton.Secundario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/jo_entrega_registrar_observacion"
+                            app:icon="@drawable/ic_clipboard_text"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp" />
+
+                        <Button
+                            android:id="@+id/btnRegistrarConformidad"
+                            style="@style/Boton.Secundario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/jo_entrega_registrar_conformidad"
+                            app:icon="@drawable/ic_check_circle"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp" />
+
+                        <Button
+                            android:id="@+id/btnMarcarEntregada"
+                            style="@style/Boton.Primario"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/jo_marcar_entregada"
+                            app:icon="@drawable/ic_check_circle"
+                        app:iconGravity="textStart"
+                        app:iconPadding="10dp" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

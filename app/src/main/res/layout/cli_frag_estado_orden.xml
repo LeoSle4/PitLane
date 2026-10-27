@@ -185,6 +185,15 @@
                 android:layout_height="wrap_content"
                 android:text="@string/cli_ver_comprobante"
                 app:icon="@drawable/ic_receipt" />
+
+            <Button
+                android:id="@+id/btnConstancia"
+                style="@style/Boton.Fila"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/cli_ver_constancia"
+                android:visibility="gone"
+                app:icon="@drawable/ic_check_circle" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

@@ -38,6 +38,17 @@
         </LinearLayout>
 
         <ImageButton
+            android:id="@+id/btnBuscarListas"
+            android:layout_width="@dimen/area_tactil"
+            android:layout_height="@dimen/area_tactil"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/fondo_circulo_suave"
+            android:contentDescription="@string/jo_cd_buscar_listas"
+            android:src="@drawable/ic_magnifying_glass"
+            app:tint="@color/primario"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <ImageButton
             android:id="@+id/btnNuevoIngreso"
             android:layout_width="@dimen/area_tactil"
             android:layout_height="@dimen/area_tactil"

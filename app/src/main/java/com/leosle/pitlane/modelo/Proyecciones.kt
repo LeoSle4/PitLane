@@ -43,7 +43,9 @@ data class OrdenDetallada(
     val cliente: Usuario?,
     val vehiculo: Vehiculo?,
     val tecnico: Usuario?,
-    val solicitud: Solicitud?
+    val solicitud: Solicitud?,
+    val conformidadRegistradaPor: Usuario? = null,
+    val entregadaPor: Usuario? = null
 )
 
 /** Avance con el técnico que lo registró. */
