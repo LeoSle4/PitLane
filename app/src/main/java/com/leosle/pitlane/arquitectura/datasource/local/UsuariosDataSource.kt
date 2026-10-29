@@ -15,6 +15,8 @@ class UsuariosDataSource(private val bd: BaseDatosLocal) : IUsuariosDataSource {
 
     override val usuarioActual: StateFlow<Usuario?> = bd.usuarioActual
 
+    override suspend fun restaurarSesion(): Usuario? = bd.usuarioActual.value
+
     override fun observarUsuarios(): Flow<List<Usuario>> = bd.usuarios
 
     override suspend fun listarUsuarios(): List<Usuario> = bd.usuarios.value

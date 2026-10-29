@@ -1,0 +1,157 @@
+rules_version = '2';
+
+// Cada cuenta lleva los reclamos `usuarioId` (id de su documento en `usuarios`) y `rol`; los pone el servidor.
+// Cada documento de usuarios, vehiculos, solicitudes, ordenes y avances lleva `acceso`: los usuarioId que pueden
+// leerlo además del Jefe. La app consulta con `acceso array-contains <usuarioId>`, que es lo que estas reglas exigen.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function sesion() {
+      return request.auth != null && 'usuarioId' in request.auth.token && 'rol' in request.auth.token;
+    }
+    function uid() { return request.auth.token.usuarioId; }
+    function esJefe() { return sesion() && request.auth.token.rol == 'JEFE'; }
+    function esTecnico() { return sesion() && request.auth.token.rol == 'TECNICO'; }
+    function esCliente() { return sesion() && request.auth.token.rol == 'CLIENTE'; }
+    function puedeLeer(datos) { return esJefe() || (sesion() && uid() in datos.acceso); }
+    function cambios() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function orden(id) { return get(/databases/$(database)/documents/ordenes/$(id)).data; }
+
+    // ---- Usuarios: los perfiles de las cuentas los crean las funciones del servidor; el Jefe solo registra
+    // clientes sin cuenta y edita nombres, apellidos y teléfono.
+    match /usuarios/{id} {
+      allow get: if sesion() && (esJefe() || uid() == id || uid() in resource.data.acceso);
+      allow list: if puedeLeer(resource.data);
+
+      allow create: if esJefe()
+        && request.resource.data.keys().hasOnly(
+          ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso'])
+        && request.resource.data.keys().hasAll(
+          ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso'])
+        && request.resource.data.rol == 'CLIENTE'
+        && request.resource.data.tieneCuenta == false
+        && request.resource.data.activo == true
+        && request.resource.data.acceso == [id];
+
+      allow update: if (esJefe() && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'acceso']))
+        || (sesion() && uid() == id && cambios().hasOnly(['nombres', 'apellidos', 'telefono']));
+
+      allow delete: if esJefe() && resource.data.rol == 'CLIENTE' && resource.data.tieneCuenta == false;
+    }
+
+    // ---- Vehículos: el cliente administra los suyos; el Jefe todos; el técnico solo lee los de sus órdenes.
+    match /vehiculos/{id} {
+      allow read: if puedeLeer(resource.data);
+
+      allow create: if (esJefe() || (esCliente() && request.resource.data.clienteId == uid()))
+        && request.resource.data.keys().hasOnly(
+          ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
+        && request.resource.data.keys().hasAll(
+          ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
+        && request.resource.data.activo == true
+        && request.resource.data.acceso == [request.resource.data.clienteId];
+
+      allow update: if request.resource.data.clienteId == resource.data.clienteId
+        && request.resource.data.placa == resource.data.placa
+        && (esJefe()
+          || (esCliente() && resource.data.clienteId == uid()
+              && cambios().hasOnly(['marca', 'modelo', 'anio', 'color', 'activo'])));
+
+      allow delete: if esJefe() || (esCliente() && resource.data.clienteId == uid());
+    }
+
+    // ---- Solicitudes: las crea y edita el cliente mientras están pendientes; el Jefe las marca atendidas.
+    match /solicitudes/{id} {
+      allow read: if puedeLeer(resource.data);
+
+      allow create: if esCliente() && request.resource.data.clienteId == uid()
+        && request.resource.data.keys().hasOnly(
+          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso'])
+        && request.resource.data.estado == 'PENDIENTE'
+        && request.resource.data.ordenId == null
+        && request.resource.data.acceso == [request.resource.data.clienteId];
+
+      allow update: if resource.data.estado == 'PENDIENTE'
+        && (
+          (esCliente() && resource.data.clienteId == uid()
+            && cambios().hasOnly(['descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado'])
+            && request.resource.data.estado in ['PENDIENTE', 'CANCELADA'])
+          || (esJefe()
+            && cambios().hasOnly(['estado', 'ordenId', 'acceso'])
+            && request.resource.data.estado in ['ATENDIDA', 'CANCELADA'])
+        );
+
+      allow delete: if esJefe();
+    }
+
+    // ---- Órdenes: las registra y corrige el Jefe; el técnico asignado solo avanza su estado; nadie las borra.
+    match /ordenes/{id} {
+      allow read: if puedeLeer(resource.data);
+
+      allow create: if esJefe()
+        && request.resource.data.keys().hasOnly(
+          ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
+           'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
+           'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso'])
+        && request.resource.data.estado == 'INGRESADO'
+        && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId];
+
+      allow update: if (esJefe()
+          && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn'])
+          && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId])
+        || (esTecnico() && resource.data.tecnicoId == uid()
+          && cambios().hasOnly(['estado', 'historial', 'avisosEnviados', 'ultimoAviso'])
+          && ((resource.data.estado == 'INGRESADO' && request.resource.data.estado == 'EN_REPARACION')
+            || (resource.data.estado == 'EN_REPARACION' && request.resource.data.estado == 'LISTO')));
+
+      allow delete: if false;
+    }
+
+    // ---- Avances: los escribe el técnico asignado a la orden; el Jefe solo actualiza quién puede verlos.
+    match /avances/{id} {
+      allow read: if puedeLeer(resource.data);
+
+      allow create: if esTecnico() && request.resource.data.tecnicoId == uid()
+        && request.resource.data.keys().hasOnly(
+          ['ordenId', 'tecnicoId', 'tipo', 'descripcion', 'fotos', 'fechaHora', 'acceso'])
+        && orden(request.resource.data.ordenId).tecnicoId == uid()
+        && request.resource.data.acceso == orden(request.resource.data.ordenId).acceso;
+
+      allow update: if (esTecnico() && resource.data.tecnicoId == uid()
+          && orden(resource.data.ordenId).tecnicoId == uid()
+          && cambios().hasOnly(['tipo', 'descripcion', 'fotos']))
+        || (esJefe() && cambios().hasOnly(['acceso']));
+
+      allow delete: if esTecnico() && resource.data.tecnicoId == uid()
+        && orden(resource.data.ordenId).tecnicoId == uid();
+    }
+
+    // ---- Notificaciones: las crea el servidor; cada usuario lee las suyas y solo puede marcarlas como leídas.
+    match /notificaciones/{id} {
+      allow read: if sesion() && resource.data.usuarioId == uid();
+      allow update: if sesion() && resource.data.usuarioId == uid()
+        && cambios().hasOnly(['leida'])
+        && request.resource.data.leida == true;
+      allow create, delete: if false;
+    }
+
+    // ---- Contador de órdenes: solo el Jefe, de uno en uno.
+    match /contadores/{id} {
+      allow read: if esJefe();
+      allow write: if esJefe()
+        && request.resource.data.keys().hasOnly(['ultimo'])
+        && (resource == null
+          ? request.resource.data.ultimo == 1
+          : request.resource.data.ultimo == resource.data.ultimo + 1);
+    }
+
+    // ---- Token del dispositivo: cada usuario guarda solo el suyo; lo lee el servidor.
+    match /tokensDispositivo/{id} {
+      allow read: if false;
+      allow create, update: if sesion() && uid() == id
+        && request.resource.data.keys().hasOnly(['token'])
+        && request.resource.data.token is string;
+      allow delete: if sesion() && uid() == id;
+    }
+  }
+}

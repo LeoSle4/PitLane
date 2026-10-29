@@ -4,10 +4,9 @@ import android.content.Context
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.IFotoStorage
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
-import com.leosle.pitlane.arquitectura.datasource.local.BaseDatosLocal
-import com.leosle.pitlane.arquitectura.datasource.local.DocumentosDataSource
-import com.leosle.pitlane.arquitectura.datasource.local.FotoStorage
-import com.leosle.pitlane.arquitectura.datasource.local.UsuariosDataSource
+import com.leosle.pitlane.arquitectura.datasource.firebase.DocumentosDataSource
+import com.leosle.pitlane.arquitectura.datasource.firebase.FotoStorage
+import com.leosle.pitlane.arquitectura.datasource.firebase.UsuariosDataSource
 import com.leosle.pitlane.arquitectura.repositorio.impl.AuthRepository
 import com.leosle.pitlane.arquitectura.repositorio.impl.AvanceRepository
 import com.leosle.pitlane.arquitectura.repositorio.impl.ClienteRepository
@@ -35,19 +34,18 @@ import java.io.File
  */
 object Dependencias {
 
-    private var carpetaFotos: File? = null
+    private var carpetaDescargas: File? = null
 
-    /** Prepara la carpeta permanente de fotos; se llama una vez al arrancar la aplicación. */
+    /** Prepara la carpeta donde se guardan las fotos descargadas; se llama una vez al arrancar la aplicación. */
     fun inicializar(contexto: Context) {
-        carpetaFotos = File(contexto.filesDir, "fotos")
+        carpetaDescargas = File(contexto.cacheDir, "fotos_descargadas")
     }
 
-    private val baseDatos by lazy { BaseDatosLocal() }
-
-    private val usuarios: IUsuariosDataSource by lazy { UsuariosDataSource(baseDatos) }
-    private val documentos: IDocumentosDataSource by lazy { DocumentosDataSource(baseDatos) }
-    private val fotos: IFotoStorage by lazy {
-        FotoStorage(checkNotNull(carpetaFotos) { "Dependencias.inicializar no se llamó al arrancar" })
+    private val usuarios: IUsuariosDataSource by lazy { UsuariosDataSource() }
+    private val documentos: IDocumentosDataSource by lazy { DocumentosDataSource(usuarios.usuarioActual) }
+    /** Almacén de fotos; también lo usa la pantalla para descargar las fotos que no están en el teléfono. */
+    val almacenFotos: IFotoStorage by lazy {
+        FotoStorage(checkNotNull(carpetaDescargas) { "Dependencias.inicializar no se llamó al arrancar" })
     }
 
     val repositorioAuth: IAuthRepository by lazy { AuthRepository(usuarios) }
@@ -55,8 +53,8 @@ object Dependencias {
     val repositorioCliente: IClienteRepository by lazy { ClienteRepository(usuarios, documentos) }
     val repositorioTecnico: ITecnicoRepository by lazy { TecnicoRepository(usuarios, documentos) }
     val repositorioVehiculo: IVehiculoRepository by lazy { VehiculoRepository(usuarios, documentos) }
-    val repositorioSolicitud: ISolicitudRepository by lazy { SolicitudRepository(usuarios, documentos, fotos, RelojSistema) }
-    val repositorioOrden: IOrdenRepository by lazy { OrdenRepository(usuarios, documentos, fotos, RelojSistema) }
-    val repositorioAvance: IAvanceRepository by lazy { AvanceRepository(usuarios, documentos, fotos, RelojSistema) }
+    val repositorioSolicitud: ISolicitudRepository by lazy { SolicitudRepository(usuarios, documentos, almacenFotos, RelojSistema) }
+    val repositorioOrden: IOrdenRepository by lazy { OrdenRepository(usuarios, documentos, almacenFotos, RelojSistema) }
+    val repositorioAvance: IAvanceRepository by lazy { AvanceRepository(usuarios, documentos, almacenFotos, RelojSistema) }
     val repositorioNotificacion: INotificacionRepository by lazy { NotificacionRepository(usuarios, documentos) }
 }

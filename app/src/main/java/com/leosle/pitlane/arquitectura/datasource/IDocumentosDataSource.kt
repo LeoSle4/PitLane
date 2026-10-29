@@ -29,6 +29,9 @@ interface IColeccion<T> {
     fun nuevoId(): String
 }
 
+/** Vehículo ya registrado con una placa. [clienteId] es nulo cuando quien consulta no puede conocer al dueño. */
+data class PlacaRegistrada(val clienteId: String?)
+
 /** Fuente de datos de las colecciones de la base de documentos. */
 interface IDocumentosDataSource {
     val vehiculos: IColeccion<Vehiculo>
@@ -36,6 +39,9 @@ interface IDocumentosDataSource {
     val ordenes: IColeccion<Orden>
     val avances: IColeccion<Avance>
     val notificaciones: IColeccion<Notificacion>
+
+    /** Busca entre todos los vehículos, sin importar de quién sean, el que tenga esa placa; nulo si no existe. */
+    suspend fun buscarPlaca(placa: String): PlacaRegistrada?
 
     /** Entrega el siguiente número correlativo de orden con el formato ORD-0001 de forma transaccional. */
     suspend fun siguienteNumeroOrden(): String

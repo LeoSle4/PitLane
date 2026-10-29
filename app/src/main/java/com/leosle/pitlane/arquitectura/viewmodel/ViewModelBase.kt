@@ -3,6 +3,7 @@ package com.leosle.pitlane.arquitectura.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.leosle.pitlane.util.Resultado
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,18 @@ abstract class ViewModelBase : ViewModel() {
 
     /** Ejecuta la operación suspendida y entrega su resultado a [alTerminar] en el hilo principal. */
     protected fun <T> ejecutar(operacion: suspend () -> Resultado<T>, alTerminar: (Resultado<T>) -> Unit) {
-        viewModelScope.launch { alTerminar(operacion()) }
+        viewModelScope.launch { alTerminar(protegido(operacion)) }
     }
+}
+
+/** Mensaje que se muestra cuando una operación falla por una causa técnica, como la red o los permisos. */
+internal const val MENSAJE_FALLA_TECNICA = "No se pudo completar la operación. Revisa tu conexión e inténtalo de nuevo"
+
+/** Ejecuta la operación y convierte cualquier falla inesperada en un error con mensaje, sin tragarse la cancelación. */
+internal suspend fun <T> protegido(operacion: suspend () -> Resultado<T>): Resultado<T> = try {
+    operacion()
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    Resultado.Error(MENSAJE_FALLA_TECNICA)
 }

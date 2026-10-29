@@ -15,6 +15,10 @@ class AuthViewModel(
     /** Usuario con la sesión abierta, o nulo si no hay sesión. */
     val usuarioActual: StateFlow<Usuario?> = repositorio.usuarioActual
 
+    /** Espera a que se restablezca la sesión guardada y entrega su usuario, o nulo si no hay ninguna. */
+    fun restaurarSesion(alTerminar: (Usuario?) -> Unit) =
+        ejecutar({ Resultado.Exito(repositorio.restaurarSesion()) }) { alTerminar((it as? Resultado.Exito)?.valor) }
+
     /** Abre la sesión con correo y contraseña. */
     fun iniciarSesion(correo: String, contrasena: String, alTerminar: (Resultado<Usuario>) -> Unit) =
         ejecutar({ repositorio.iniciarSesion(correo, contrasena) }, alTerminar)

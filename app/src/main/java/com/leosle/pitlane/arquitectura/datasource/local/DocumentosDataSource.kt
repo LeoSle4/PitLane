@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.datasource.local
 
 import com.leosle.pitlane.arquitectura.datasource.IColeccion
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
+import com.leosle.pitlane.arquitectura.datasource.PlacaRegistrada
 import com.leosle.pitlane.modelo.Avance
 import com.leosle.pitlane.modelo.Notificacion
 import com.leosle.pitlane.modelo.Orden
@@ -33,6 +34,9 @@ class DocumentosDataSource internal constructor(
 
     override val notificaciones: IColeccion<Notificacion> =
         ColeccionLocal(bd.notificaciones, Notificacion::id, { bd.nuevoId("not") })
+
+    override suspend fun buscarPlaca(placa: String): PlacaRegistrada? =
+        bd.vehiculos.value.firstOrNull { it.placa == placa }?.let { PlacaRegistrada(it.clienteId) }
 
     override suspend fun siguienteNumeroOrden(): String = bd.siguienteNumeroOrden()
 

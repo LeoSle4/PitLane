@@ -49,7 +49,7 @@ class AvanceRepository(
         if (orden.tecnicoId != tecnicoId) return Resultado.Error("Esta orden no está asignada a ti")
         estadoNoPermiteAvances(orden)?.let { return Resultado.Error(it) }
         validar(descripcion, fotos)?.let { return Resultado.Error(it) }
-        val guardadas = when (val subida = this.fotos.subir(fotos)) {
+        val guardadas = when (val subida = this.fotos.subir(orden.clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }
@@ -71,7 +71,7 @@ class AvanceRepository(
         val orden = documentos.ordenes.obtener(avance.ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.estado != EstadoOrden.EN_REPARACION) return Resultado.Error("La orden ya no admite cambios en sus avances")
         validar(descripcion, fotos)?.let { return Resultado.Error(it) }
-        val guardadas = when (val subida = this.fotos.subir(fotos)) {
+        val guardadas = when (val subida = this.fotos.subir(orden.clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }

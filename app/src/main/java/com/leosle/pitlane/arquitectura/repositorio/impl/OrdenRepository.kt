@@ -111,7 +111,7 @@ class OrdenRepository(
         }
         val tecnico = usuarios.obtenerUsuario(datos.tecnicoId)?.takeIf { it.activo && it.rol == Rol.TECNICO }
             ?: return Resultado.Error("Elige un técnico activo")
-        val guardadas = when (val subida = fotos.subir(datos.fotos)) {
+        val guardadas = when (val subida = fotos.subir(datos.clienteId, datos.fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }
@@ -203,7 +203,7 @@ class OrdenRepository(
         val orden = documentos.ordenes.obtener(ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.estado != EstadoOrden.INGRESADO) return Resultado.Error("Ya no se pueden agregar fotos a esta orden")
         if (orden.fotos.size + fotos.size > MAXIMO_FOTOS) return Resultado.Error("Máximo 6 fotos")
-        val guardadas = when (val subida = this.fotos.subir(fotos)) {
+        val guardadas = when (val subida = this.fotos.subir(orden.clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }
