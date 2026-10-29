@@ -49,9 +49,9 @@ class VehiculoRepository(
         registradoPorJefe: Boolean
     ): Resultado<Vehiculo> {
         val placaNormal = Validador.normalizarPlaca(placa)
-        val existente = documentos.vehiculos.listar().firstOrNull { it.placa == placaNormal }
+        val existente = documentos.buscarPlaca(placaNormal)
         if (existente != null) {
-            if (!registradoPorJefe) {
+            if (!registradoPorJefe || existente.clienteId == null) {
                 return Resultado.Error("Esta placa ya está registrada. Si es tuya, comunícate con el taller")
             }
             val dueno = usuarios.obtenerUsuario(existente.clienteId)?.nombreCompleto.orEmpty()

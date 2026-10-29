@@ -15,6 +15,12 @@ interface IUsuariosDataSource {
     /** Usuario con la sesión abierta, o nulo si nadie inició sesión. */
     val usuarioActual: StateFlow<Usuario?>
 
+    /**
+     * Espera a que termine de restablecerse la sesión que quedó abierta al cerrar la aplicación y devuelve
+     * su usuario, o nulo si no había sesión o no se pudo restablecer a tiempo.
+     */
+    suspend fun restaurarSesion(): Usuario?
+
     /** Emite la lista completa de usuarios cada vez que cambia. */
     fun observarUsuarios(): Flow<List<Usuario>>
 

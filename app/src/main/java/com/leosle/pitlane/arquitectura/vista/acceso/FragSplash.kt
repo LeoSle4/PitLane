@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Presentación inicial: reproduce el logo animado y, pasado un instante, abre el inicio de sesión
- * o entra directamente a la aplicación si ya hay una sesión abierta.
+ * o entra directamente a la aplicación si hay una sesión guardada, esperando a que se restablezca.
  */
 class FragSplash : FragmentoVinculado<AccFragSplashBinding>(AccFragSplashBinding::inflate) {
 
@@ -20,10 +20,9 @@ class FragSplash : FragmentoVinculado<AccFragSplashBinding>(AccFragSplashBinding
         (vinculo.imgLogoSplash.drawable as? Animatable)?.start()
         viewLifecycleOwner.lifecycleScope.launch {
             delay(DURACION_PRESENTACION_MS)
-            if (sesionViewModel.usuarioActual.value != null) {
-                navegador.abrirInicio()
-            } else {
-                navegador.irA(FragLogin(), apilar = false)
+            sesionViewModel.restaurarSesion { usuario ->
+                if (view == null) return@restaurarSesion
+                if (usuario != null) navegador.abrirInicio() else navegador.irA(FragLogin(), apilar = false)
             }
         }
     }

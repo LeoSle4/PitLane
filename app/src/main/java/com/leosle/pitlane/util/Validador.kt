@@ -74,6 +74,13 @@ object Validador {
     }
 
     /** Valida que una foto sea JPG o PNG y no supere los 5 MB. */
+    /** Deduce el tipo de imagen a partir de la extensión del archivo; nulo si no es JPG ni PNG. */
+    fun tipoMimeDeImagen(extension: String): String? = when (extension.lowercase()) {
+        "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
+        else -> null
+    }
+
     fun foto(tipoMime: String?, tamanoBytes: Long): String? = when {
         tipoMime != "image/jpeg" && tipoMime != "image/png" -> "La foto debe ser JPG o PNG"
         tamanoBytes > MAXIMO_BYTES_FOTO -> "La foto no debe superar los 5 MB"

@@ -13,6 +13,8 @@ class AuthRepository(private val usuarios: IUsuariosDataSource) : IAuthRepositor
 
     override val usuarioActual: StateFlow<Usuario?> = usuarios.usuarioActual
 
+    override suspend fun restaurarSesion(): Usuario? = usuarios.restaurarSesion()
+
     override suspend fun iniciarSesion(correo: String, contrasena: String): Resultado<Usuario> =
         usuarios.iniciarSesion(correo, contrasena)
 

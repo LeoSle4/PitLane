@@ -62,7 +62,7 @@ class SolicitudRepository(
         val tieneAtencion = documentos.solicitudes.listar().any { it.vehiculoId == vehiculoId && it.estado == EstadoSolicitud.PENDIENTE } ||
             documentos.ordenes.listar().any { it.vehiculoId == vehiculoId && it.enCurso }
         if (tieneAtencion) return Resultado.Error("Este vehículo ya tiene una atención en curso")
-        val guardadas = when (val subida = this.fotos.subir(fotos)) {
+        val guardadas = when (val subida = this.fotos.subir(clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }
@@ -94,7 +94,7 @@ class SolicitudRepository(
             return Resultado.Error("Solo se puede editar una solicitud pendiente")
         }
         validar(descripcion, fechaLlegada, fotos)?.let { return Resultado.Error(it) }
-        val guardadas = when (val subida = this.fotos.subir(fotos)) {
+        val guardadas = when (val subida = this.fotos.subir(solicitud.clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }

@@ -16,7 +16,7 @@ class FotoStorage(private val carpeta: File) : IFotoStorage {
         const val PREFIJO_RECURSO = "recurso:"
     }
 
-    override suspend fun subir(fotos: List<Foto>): Resultado<List<Foto>> {
+    override suspend fun subir(propietarioId: String, fotos: List<Foto>): Resultado<List<Foto>> {
         carpeta.mkdirs()
         val guardadas = mutableListOf<Foto>()
         for (foto in fotos) {
@@ -27,7 +27,7 @@ class FotoStorage(private val carpeta: File) : IFotoStorage {
             val origen = File(foto.ruta)
             if (!origen.exists()) return Resultado.Error("No se encontró una de las fotos")
             val extension = origen.extension.lowercase()
-            val error = Validador.foto(tipoMimeDe(extension), origen.length())
+            val error = Validador.foto(Validador.tipoMimeDeImagen(extension), origen.length())
             if (error != null) return Resultado.Error(error)
             val destino = File(carpeta, "${foto.id}.$extension")
             origen.copyTo(destino, overwrite = true)
@@ -41,10 +41,6 @@ class FotoStorage(private val carpeta: File) : IFotoStorage {
             .forEach { File(it.ruta).delete() }
     }
 
-    /** Deduce el tipo de archivo a partir de su extensión; nulo si no es una imagen admitida. */
-    private fun tipoMimeDe(extension: String): String? = when (extension) {
-        "jpg", "jpeg" -> "image/jpeg"
-        "png" -> "image/png"
-        else -> null
-    }
+    override suspend fun archivo(foto: Foto): File? =
+        if (foto.ruta.startsWith(PREFIJO_RECURSO)) null else File(foto.ruta).takeIf { it.exists() }
 }

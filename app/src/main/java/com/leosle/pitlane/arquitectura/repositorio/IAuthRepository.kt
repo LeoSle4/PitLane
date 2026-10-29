@@ -11,6 +11,9 @@ interface IAuthRepository {
     /** Usuario con la sesión abierta, o nulo si nadie inició sesión. */
     val usuarioActual: StateFlow<Usuario?>
 
+    /** Espera a que se restablezca la sesión guardada y devuelve su usuario, o nulo si no hay ninguna. */
+    suspend fun restaurarSesion(): Usuario?
+
     /** Abre la sesión con el correo y la contraseña indicados. */
     suspend fun iniciarSesion(correo: String, contrasena: String): Resultado<Usuario>
 

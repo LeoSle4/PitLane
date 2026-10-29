@@ -63,7 +63,7 @@ class FuentesLocalesTest {
 
     @Test
     fun fotoStorageCopiaLaFotoValidaALaCarpetaPermanente() = runBlocking {
-        val resultado = fotos.subir(listOf(archivoFoto("a.jpg")))
+        val resultado = fotos.subir("u-cli", listOf(archivoFoto("a.jpg")))
         val guardada = (resultado as Resultado.Exito).valor.single()
         assertEquals(carpetaFotos, File(guardada.ruta).parentFile)
         assertTrue(File(guardada.ruta).exists())
@@ -71,16 +71,16 @@ class FuentesLocalesTest {
 
     @Test
     fun fotoStorageRechazaFormatoYTamanoNoPermitidos() = runBlocking {
-        val gif = fotos.subir(listOf(archivoFoto("a.gif")))
+        val gif = fotos.subir("u-cli", listOf(archivoFoto("a.gif")))
         assertEquals("La foto debe ser JPG o PNG", (gif as Resultado.Error).mensaje)
-        val grande = fotos.subir(listOf(archivoFoto("b.png", bytes = 5 * 1024 * 1024 + 1)))
+        val grande = fotos.subir("u-cli", listOf(archivoFoto("b.png", bytes = 5 * 1024 * 1024 + 1)))
         assertEquals("La foto no debe superar los 5 MB", (grande as Resultado.Error).mensaje)
     }
 
     @Test
     fun fotoStorageDejaIgualLasFotosDeEjemploYElimina_SoloLasPropias() = runBlocking {
         val ejemplo = Foto("e", "recurso:foto_demo_frente", ahora)
-        val guardada = (fotos.subir(listOf(archivoFoto("c.png"), ejemplo)) as Resultado.Exito).valor
+        val guardada = (fotos.subir("u-cli", listOf(archivoFoto("c.png"), ejemplo)) as Resultado.Exito).valor
         assertEquals("recurso:foto_demo_frente", guardada[1].ruta)
         fotos.eliminar(guardada)
         assertFalse(File(guardada[0].ruta).exists())
