@@ -16,5 +16,15 @@ local.properties
 .atl
 .codegraph/
 
+# Firebase config (public repo)
+google-services.json
+
 # Documentation
 /docs/
+
+# Firebase
+firebase/node_modules/
+firebase/**/*-debug.log
+firebase/**/firebase-debug.log
+firebase/.firebase/
+firebase/functions/node_modules/
