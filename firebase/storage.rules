@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Las fotos viven en fotos/{clienteId}/{archivo}. Las ve y las sube el Jefe, el cliente dueño de la carpeta y los
+// técnicos que tienen una orden de ese cliente (su id figura en el `acceso` del perfil del técnico).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function sesion() {
+      return request.auth != null && 'usuarioId' in request.auth.token && 'rol' in request.auth.token;
+    }
+    function uid() { return request.auth.token.usuarioId; }
+    function accesoDelTecnico() {
+      return firestore.get(/databases/(default)/documents/usuarios/$(uid())).data.acceso;
+    }
+    function puede(clienteId) {
+      return sesion() && (
+        request.auth.token.rol == 'JEFE'
+        || uid() == clienteId
+        || (request.auth.token.rol == 'TECNICO' && clienteId in accesoDelTecnico())
+      );
+    }
+    function esImagenValida() {
+      return request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType in ['image/jpeg', 'image/png'];
+    }
+
+    match /fotos/{clienteId}/{archivo} {
+      allow read, delete: if puede(clienteId);
+      allow create, update: if puede(clienteId) && esImagenValida();
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "pitlane-functions",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "test": "firebase emulators:exec --only auth,firestore,functions --project demo-pitlane \"node --test --test-concurrency=1 test/*.test.mjs\""
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0"
+  }
+}

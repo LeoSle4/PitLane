@@ -1,0 +1,13 @@
+{
+  "name": "pitlane-firebase",
+  "private": true,
+  "type": "module",
+  "description": "Reglas de seguridad de Firebase de PitLane y sus pruebas en el emulador",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore,storage --project demo-pitlane \"node --test --test-concurrency=1 test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.1.0"
+  }
+}
