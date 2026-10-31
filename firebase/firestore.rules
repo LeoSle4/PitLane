@@ -17,6 +17,26 @@ service cloud.firestore {
     function cambios() { return request.resource.data.diff(resource.data).affectedKeys(); }
     function orden(id) { return get(/databases/$(database)/documents/ordenes/$(id)).data; }
 
+    // Campos que puede tener una orden; ni al crearla ni al actualizarla se aceptan otros.
+    function clavesDeOrden() {
+      return ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
+        'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
+        'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso'];
+    }
+    // La conformidad, una vez guardada, no se borra ni se cambia (RN-14).
+    function conformidadIntacta() {
+      return resource.data.get('conformidad', null) == null
+        || request.resource.data.get('conformidad', null) == resource.data.conformidad;
+    }
+    // El Jefe solo cambia el estado para anular una orden Ingresado o para entregar una orden Lista cuya conformidad
+    // ya estaba guardada (RN-14); el resto de las transiciones son del técnico.
+    function estadoPermitidoAlJefe() {
+      return request.resource.data.estado == resource.data.estado
+        || (resource.data.estado == 'INGRESADO' && request.resource.data.estado == 'ANULADA')
+        || (resource.data.estado == 'LISTO' && request.resource.data.estado == 'ENTREGADO'
+            && resource.data.get('conformidad', null) != null);
+    }
+
     // ---- Usuarios: los perfiles de las cuentas los crean las funciones del servidor; el Jefe solo registra
     // clientes sin cuenta y edita nombres, apellidos y teléfono.
     match /usuarios/{id} {
@@ -90,14 +110,14 @@ service cloud.firestore {
       allow read: if puedeLeer(resource.data);
 
       allow create: if esJefe()
-        && request.resource.data.keys().hasOnly(
-          ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
-           'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
-           'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso'])
+        && request.resource.data.keys().hasOnly(clavesDeOrden())
         && request.resource.data.estado == 'INGRESADO'
         && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId];
 
       allow update: if (esJefe()
+          && request.resource.data.keys().hasOnly(clavesDeOrden())
+          && estadoPermitidoAlJefe()
+          && conformidadIntacta()
           && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn'])
           && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId])
         || (esTecnico() && resource.data.tecnicoId == uid()

@@ -9,12 +9,13 @@ Reglas de Firestore y de Storage de PitLane y sus pruebas. El diseño completo e
 - Los documentos de `usuarios`, `vehiculos`, `solicitudes`, `ordenes` y `avances` tienen un campo `acceso` con los
   `usuarioId` que pueden leerlos, además del Jefe. La app consulta con `acceso array-contains <usuarioId>`.
 - `notificaciones` se filtran por `usuarioId`.
+- En `ordenes`, el Jefe solo cambia el estado para anular una orden Ingresado o entregar una orden Lista cuya conformidad ya estaba guardada (RN-14); la conformidad no se borra ni se cambia, y la orden solo acepta los campos que define.
 - Las fotos van en `fotos/{clienteId}/{archivo}`; las ve el Jefe, el cliente dueño y los técnicos que tienen una orden de
   ese cliente.
 
 ## Probar las reglas en el emulador
 
-Requiere Node, Java y `firebase-tools`. Las pruebas (53 de reglas) usan un proyecto de demostración y no tocan el proyecto real.
+Requiere Node, Java y `firebase-tools`. Las pruebas (57 de reglas) usan un proyecto de demostración y no tocan el proyecto real.
 
 ```bash
 cd firebase

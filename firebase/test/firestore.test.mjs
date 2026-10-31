@@ -231,6 +231,57 @@ describe('ordenes', () => {
     await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { numero: 'ORD-9999' }));
   });
 
+  it('el Jefe solo anula una orden Ingresado y solo entrega una orden Lista que ya tiene la conformidad', async () => {
+    const conformidad = { fechaHora: 9, usuarioId: 'c1', usuarioNombre: 'Nombre' };
+    // Anular: solo desde Ingresado
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ANULADA', motivoAnulacion: 'Duplicada' }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO', conformidad });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ANULADA', motivoAnulacion: 'Tarde' }));
+    // Entregar: no desde Ingresado ni En reparación, ni sin la conformidad ya guardada, ni inventándola en el mismo cambio
+    await preparar(entorno, 'ordenes/o1', { estado: 'INGRESADO', conformidad: null });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO' }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'EN_REPARACION', conformidad });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO' }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO', conformidad: null });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO' }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO', conformidad }));
+    // Con la conformidad ya registrada sí
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO', conformidad });
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO' }));
+  });
+
+  it('una vez guardada, la conformidad no se borra ni se cambia, tampoco al entregar', async () => {
+    const conformidad = { fechaHora: 9, usuarioId: 'c1', usuarioNombre: 'Nombre' };
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO', conformidad });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO', conformidad: null }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { conformidad: null }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { conformidad: { ...conformidad, usuarioId: 'j1' } }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'ENTREGADO' }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { conformidad: null }));
+  });
+
+  it('el Jefe no inicia la reparación, no marca Listo ni reabre una orden entregada o anulada', async () => {
+    const conformidad = { fechaHora: 9, usuarioId: 'c1', usuarioNombre: 'Nombre' };
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'EN_REPARACION' }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'LISTO' }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'ENTREGADO', conformidad });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'LISTO' }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'ANULADA', motivoAnulacion: 'Duplicada' });
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { estado: 'INGRESADO' }));
+  });
+
+  it('el Jefe no agrega campos que la orden no define, pero sí registra la conformidad y las observaciones', async () => {
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { extra: 'campo inventado' }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { falla: 'Corregida', precio: 100 }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO' });
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), {
+      conformidad: { fechaHora: 9, usuarioId: 'j1', usuarioNombre: 'Jefe' },
+    }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), {
+      observacionesCliente: [{ texto: 'Ruido al frenar', acuerdo: 'Revisar', fechaHora: 9, usuarioId: 'j1' }],
+    }));
+  });
+
   it('el cliente firma su conformidad solo en su orden lista, una vez y con su propio usuario', async () => {
     const conformidad = (usuarioId) => ({ conformidad: { fechaHora: 9, usuarioId, usuarioNombre: 'Nombre' } });
     await assertFails(updateDoc(ref(s.c1, 'ordenes/o1'), conformidad('c1')));
