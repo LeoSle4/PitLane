@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Estado original que guarda un botón mientras muestra una operación en curso (BotonCarga). -->
+    <item name="boton_carga" type="id" />
+</resources>

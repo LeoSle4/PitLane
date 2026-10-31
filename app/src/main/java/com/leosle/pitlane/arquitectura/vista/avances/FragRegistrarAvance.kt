@@ -10,6 +10,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.DialogoModal
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
 import com.leosle.pitlane.arquitectura.vista.comun.GestorFotos
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Formulario para registrar un hallazgo o un trabajo realizado en una orden: tipo, descripción y hasta 4 fotos.
@@ -41,10 +42,10 @@ class FragRegistrarAvance : FragmentoVinculado<TecFragRegistrarAvanceBinding>(Te
         ocultarTeclado()
         if (!formulario.validar()) return
         val tipo = formulario.tipo() ?: return
-        vinculo.btnRegistrarAvance.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrarAvance)
         avanceViewModel.registrarAvance(ordenId, usuarioActual.id, tipo, formulario.descripcion(), gestorFotos.fotos) { resultado ->
             if (!isAdded || view == null) return@registrarAvance
-            vinculo.btnRegistrarAvance.isEnabled = true
+            BotonCarga.terminar(vinculo.btnRegistrarAvance)
             when (resultado) {
                 is Resultado.Exito -> {
                     mostrarMensaje(getString(R.string.tec_mensaje_avance_registrado))

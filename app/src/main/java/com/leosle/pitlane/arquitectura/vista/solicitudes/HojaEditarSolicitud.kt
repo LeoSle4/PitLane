@@ -15,6 +15,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.AyudasVista
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.GestorFotos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja inferior para editar una solicitud pendiente: el vehículo aparece bloqueado, se pueden cambiar síntomas,
@@ -87,7 +88,7 @@ class HojaEditarSolicitud : HojaBase() {
         val formulario = controlador ?: return
         val referencia = original ?: return
         if (!formulario.validar()) return
-        vinculo.btnGuardar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardar)
         solicitudViewModel.editarSolicitud(
             referencia.id,
             formulario.descripcion,
@@ -107,6 +108,7 @@ class HojaEditarSolicitud : HojaBase() {
             }
             is Resultado.Error -> {
                 mostrarMensaje(resultado.mensaje)
+                vinculoInterno?.let { BotonCarga.terminar(it.btnGuardar) }
                 actualizarBoton()
             }
         }

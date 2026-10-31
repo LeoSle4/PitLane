@@ -12,6 +12,7 @@ import com.leosle.pitlane.util.Validador
 import com.leosle.pitlane.arquitectura.viewmodel.TecnicoViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja de edición de un técnico: nombres, apellidos y teléfono son editables; DNI y correo quedan bloqueados.
@@ -67,7 +68,7 @@ class HojaEditarTecnico : HojaBase() {
             Campos.validar(vinculo.etTelefono, vinculo.txtErrorTelefono) { Validador.telefono(it) }
         )
         if (validos.any { !it }) return
-        vinculo.btnGuardar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardar)
         modelo.editarTecnico(
             tecnicoId,
             Campos.texto(vinculo.etNombres),
@@ -80,7 +81,7 @@ class HojaEditarTecnico : HojaBase() {
                     dismiss()
                 }
                 .alError {
-                    vinculo.btnGuardar.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnGuardar)
                     mostrarMensaje(it.mensaje)
                 }
         }

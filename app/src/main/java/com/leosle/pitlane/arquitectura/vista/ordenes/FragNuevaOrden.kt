@@ -32,6 +32,7 @@ import com.leosle.pitlane.arquitectura.vista.vehiculos.FragRegistrarVehiculoJefe
 import com.leosle.pitlane.arquitectura.vista.comun.GestorFotos
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Formulario de ingreso de un vehículo, dividido en tarjetas: cliente, vehículo, falla, estado, fotos y técnico.
@@ -351,10 +352,10 @@ class FragNuevaOrden : FragmentoVinculado<JoFragNuevaOrdenBinding>(JoFragNuevaOr
             fotos = fotos,
             tecnicoId = checkNotNull(tecnico).tecnico.id
         )
-        vinculo.btnRegistrarOrden.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrarOrden)
         ordenModelo.registrarOrden(datos, usuarioActual.id) { resultado ->
             if (view == null) return@registrarOrden
-            vinculo.btnRegistrarOrden.isEnabled = true
+            BotonCarga.terminar(vinculo.btnRegistrarOrden)
             resultado
                 .alExito { navegador.irA(FragConfirmacionIngreso.nuevo(it.orden.id, it.clienteNotificado), apilar = false) }
                 .alError { DialogoModal.error(requireContext(), it.mensaje) }

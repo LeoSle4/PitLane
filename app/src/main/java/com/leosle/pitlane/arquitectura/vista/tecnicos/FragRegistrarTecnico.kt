@@ -12,6 +12,7 @@ import com.leosle.pitlane.arquitectura.viewmodel.TecnicoViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Formulario para crear la cuenta de un técnico: nombres, apellidos, DNI, teléfono, correo y contraseña inicial.
@@ -64,7 +65,7 @@ class FragRegistrarTecnico : FragmentoVinculado<JcFragRegistrarTecnicoBinding>(J
         if (validos.any { !it }) return
 
         ocultarTeclado()
-        vinculo.btnRegistrarTecnico.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrarTecnico)
         modelo.registrarTecnico(
             Campos.texto(vinculo.etNombres),
             Campos.texto(vinculo.etApellidos),
@@ -79,7 +80,7 @@ class FragRegistrarTecnico : FragmentoVinculado<JcFragRegistrarTecnicoBinding>(J
                     navegador.volver()
                 }
                 .alError {
-                    vinculo.btnRegistrarTecnico.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnRegistrarTecnico)
                     if (it.mensaje.contains("correo", ignoreCase = true)) {
                         Campos.mostrarError(vinculo.etCorreo, vinculo.txtErrorCorreo, it.mensaje)
                     } else {
