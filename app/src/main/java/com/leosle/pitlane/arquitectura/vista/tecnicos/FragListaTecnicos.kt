@@ -1,5 +1,6 @@
 package com.leosle.pitlane.arquitectura.vista.tecnicos
 
+import com.leosle.pitlane.util.Textos
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
@@ -55,18 +56,28 @@ class FragListaTecnicos : FragmentoVinculado<JcFragListaTecnicosBinding>(JcFragL
         return if (total == 0) "Sin técnicos" else "$total ${if (total == 1) "técnico" else "técnicos"} · $activos ${if (activos == 1) "activo" else "activos"}"
     }
 
-    /** Llena una fila con avatar, nombre, teléfono, chip de estado, órdenes en curso y menú de opciones. */
+    /**
+     * Llena una fila con avatar y nombre, una línea con el celular y el DNI, cada uno con su ícono, y otra con el estado de la cuenta
+     * y la carga de trabajo, resaltada cuando tiene órdenes en curso; además el menú de opciones.
+     */
     private fun enlazarFila(fila: View, item: TecnicoConCarga) {
         val tarjeta = JcItemTecnicoBinding.bind(fila)
         val tecnico = item.tecnico
         tarjeta.txtInicialesTecnico.text = tecnico.iniciales
         tarjeta.txtNombreTecnico.text = tecnico.nombreCompleto
-        tarjeta.txtTelefonoTecnico.text = tecnico.telefono
+        tarjeta.txtTelefonoTecnico.text = Textos.celular(tecnico.telefono)
+        tarjeta.txtDniTecnico.text = tecnico.dni
+        tarjeta.txtDniTecnico.contentDescription = "DNI ${tecnico.dni}"
         EstadosVisuales.estadoCuenta(tarjeta.txtChipEstadoTecnico, tecnico.activo)
-        tarjeta.txtOrdenesEnCurso.text = when (item.ordenesEnCurso) {
-            0 -> "Sin órdenes en curso"
-            1 -> "1 orden en curso"
-            else -> "${item.ordenesEnCurso} órdenes en curso"
+        val carga = when (item.ordenesEnCurso) {
+            0 -> "Sin órdenes"
+            1 -> "1 orden"
+            else -> "${item.ordenesEnCurso} órdenes"
+        }
+        if (item.ordenesEnCurso > 0) {
+            EstadosVisuales.aplicar(tarjeta.txtOrdenesEnCurso, carga, R.color.estado_proceso_fondo, R.color.estado_proceso_texto, R.drawable.ic_clipboard_text)
+        } else {
+            EstadosVisuales.aplicar(tarjeta.txtOrdenesEnCurso, carga, R.color.estado_neutro_fondo, R.color.estado_neutro_texto, R.drawable.ic_clipboard)
         }
         tarjeta.btnMenuTecnico.setOnClickListener { mostrarMenu(it, item) }
     }

@@ -79,6 +79,17 @@
             android:text="@string/jc_ayuda_busqueda" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/txtTituloLista"
+        style="@style/Texto.Etiqueta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:text="@string/jc_clientes_recientes"
+        android:visibility="gone" />
+
     <FrameLayout
         android:id="@+id/flContenidoClientes"
         android:layout_width="match_parent"
@@ -88,6 +99,8 @@
         <ListView
             android:id="@+id/lvResultados"
             style="@style/Lista.Espaciada"
+            android:paddingStart="@dimen/margen_pantalla"
+            android:paddingEnd="@dimen/margen_pantalla"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingTop="8dp"

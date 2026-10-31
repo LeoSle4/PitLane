@@ -215,6 +215,7 @@ class ReglasDeNegocioTest {
         val porPlaca = clientes.buscarClientes("xyz789").single()
         assertEquals("u-cli-ana", porPlaca.cliente.id)
         assertEquals(listOf("XYZ-789"), porPlaca.placasCoincidentes)
+        assertEquals(listOf("ABC-123", "XYZ-789"), porPlaca.placas)
     }
 
     @Test

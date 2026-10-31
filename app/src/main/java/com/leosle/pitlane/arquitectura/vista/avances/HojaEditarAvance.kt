@@ -15,6 +15,7 @@ import com.leosle.pitlane.arquitectura.viewmodel.AvanceViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.DialogoModal
 import com.leosle.pitlane.arquitectura.vista.comun.GestorFotos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja inferior para editar un avance propio: muestra tipo, descripción y fotos ya cargados y habilita
@@ -85,7 +86,7 @@ class HojaEditarAvance : HojaBase() {
         val base = original?.avance ?: return
         if (!formulario.validar()) return
         val tipo: TipoAvance = formulario.tipo() ?: return
-        checkNotNull(vinculoInterno).btnGuardarAvance.isEnabled = false
+        BotonCarga.iniciar(checkNotNull(vinculoInterno).btnGuardarAvance)
         avanceViewModel.editarAvance(base.id, usuarioId(), tipo, formulario.descripcion(), gestorFotos.fotos) { resultado ->
             if (!isAdded || vinculoInterno == null) return@editarAvance
             when (resultado) {
@@ -94,6 +95,7 @@ class HojaEditarAvance : HojaBase() {
                     dismiss()
                 }
                 is Resultado.Error -> {
+                    vinculoInterno?.let { BotonCarga.terminar(it.btnGuardarAvance) }
                     actualizarBoton()
                     DialogoModal.error(requireContext(), resultado.mensaje)
                 }

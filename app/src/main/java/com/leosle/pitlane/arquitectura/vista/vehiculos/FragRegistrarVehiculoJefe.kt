@@ -10,6 +10,7 @@ import com.leosle.pitlane.arquitectura.viewmodel.VehiculoViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Formulario para registrar un vehículo a nombre de un cliente: placa en mayúsculas, marca, modelo, año y color.
@@ -52,7 +53,7 @@ class FragRegistrarVehiculoJefe : FragmentoVinculado<JcFragRegistrarVehiculoBind
         if (validos.any { !it }) return
 
         ocultarTeclado()
-        vinculo.btnRegistrarVehiculo.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrarVehiculo)
         modelo.registrarVehiculo(
             clienteId,
             Validador.normalizarPlaca(Campos.texto(vinculo.etPlaca)),
@@ -68,7 +69,7 @@ class FragRegistrarVehiculoJefe : FragmentoVinculado<JcFragRegistrarVehiculoBind
                     navegador.volver()
                 }
                 .alError {
-                    vinculo.btnRegistrarVehiculo.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnRegistrarVehiculo)
                     Campos.mostrarError(vinculo.etPlaca, vinculo.txtErrorPlaca, it.mensaje)
                     mostrarMensaje(it.mensaje)
                 }

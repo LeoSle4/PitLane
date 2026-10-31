@@ -12,6 +12,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
 import com.leosle.pitlane.databinding.JoHojaObservacionClienteBinding
 import com.leosle.pitlane.util.Validador
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja para registrar lo que el cliente observa antes de recibir su vehículo y lo acordado para atenderlo.
@@ -39,7 +40,7 @@ class HojaObservacionCliente : HojaBase() {
         if (!Campos.validar(vinculo.etObservacion, vinculo.txtErrorObservacion) { validarObservacion(it) }) return
         val ordenId = requireArguments().getString(CLAVE_ORDEN).orEmpty()
         val usuarioId = requireArguments().getString(CLAVE_USUARIO).orEmpty()
-        vinculo.btnGuardarObservacion.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardarObservacion)
         modelo.registrarObservacionCliente(
             ordenId,
             Campos.texto(vinculo.etObservacion),
@@ -52,7 +53,7 @@ class HojaObservacionCliente : HojaBase() {
                     dismiss()
                 }
                 .alError {
-                    vinculo.btnGuardarObservacion.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnGuardarObservacion)
                     mostrarMensaje(it.mensaje)
                 }
         }

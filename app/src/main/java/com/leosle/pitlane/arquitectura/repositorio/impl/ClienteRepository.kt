@@ -46,6 +46,29 @@ class ClienteRepository(
             FichaCliente(cliente, historiales)
         }
 
+    override fun observarClientesRecientes(limite: Int): Flow<List<ResultadoBusqueda>> =
+        combine(
+            usuarios.observarUsuarios(),
+            documentos.vehiculos.observarTodos(),
+            documentos.ordenes.observarTodos(),
+            documentos.solicitudes.observarTodos(),
+            usuarios.usuarioActual
+        ) { listaUsuarios, listaVehiculos, listaOrdenes, listaSolicitudes, actor ->
+            if (!actor.esJefe()) return@combine emptyList()
+            val ultimaActividad = HashMap<String, Long>()
+            fun registrar(clienteId: String, fecha: Long) {
+                ultimaActividad[clienteId] = maxOf(ultimaActividad[clienteId] ?: Long.MIN_VALUE, fecha)
+            }
+            listaOrdenes.forEach { registrar(it.clienteId, it.fechaUltimoCambio) }
+            listaSolicitudes.forEach { registrar(it.clienteId, it.creadaEn) }
+            listaUsuarios.filter { it.rol == Rol.CLIENTE && it.id in ultimaActividad }
+                .sortedByDescending { ultimaActividad.getValue(it.id) }
+                .take(limite)
+                .map { cliente ->
+                    ResultadoBusqueda(cliente, emptyList(), listaVehiculos.filter { it.clienteId == cliente.id }.map { it.placa })
+                }
+        }
+
     /** Compara el texto con DNI, nombre completo y placas; exige al menos 3 caracteres. */
     override suspend fun buscarClientes(consulta: String): List<ResultadoBusqueda> {
         val texto = consulta.trim().lowercase()
@@ -57,7 +80,8 @@ class ClienteRepository(
                 .filter { it.clienteId == cliente.id && it.placa.replace("-", "").lowercase().contains(textoPlaca) }
                 .map { it.placa }
             val coincidePersona = cliente.dni.contains(texto) || cliente.nombreCompleto.lowercase().contains(texto)
-            if (coincidePersona || placas.isNotEmpty()) ResultadoBusqueda(cliente, placas) else null
+            val todas = vehiculos.filter { it.clienteId == cliente.id }.map { it.placa }
+            if (coincidePersona || placas.isNotEmpty()) ResultadoBusqueda(cliente, placas, todas) else null
         }
     }
 

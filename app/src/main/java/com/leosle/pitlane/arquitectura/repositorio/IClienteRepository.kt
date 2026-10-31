@@ -15,6 +15,12 @@ interface IClienteRepository {
     /** Emite los datos de un cliente, sus vehículos y el historial de órdenes de cada vehículo. */
     fun observarFichaCliente(clienteId: String): Flow<FichaCliente?>
 
+    /**
+     * Emite los [limite] clientes con actividad más reciente (órdenes registradas o con cambios y solicitudes
+     * enviadas), con todas sus placas; solo para el Jefe.
+     */
+    fun observarClientesRecientes(limite: Int = 5): Flow<List<ResultadoBusqueda>>
+
     /** Busca por DNI, nombre, apellido o placa; devuelve vacío si el texto tiene menos de 3 caracteres. */
     suspend fun buscarClientes(consulta: String): List<ResultadoBusqueda>
 

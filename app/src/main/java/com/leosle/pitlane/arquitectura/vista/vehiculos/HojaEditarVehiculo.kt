@@ -13,6 +13,7 @@ import com.leosle.pitlane.arquitectura.viewmodel.VehiculoViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.AyudasVista
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja inferior para editar marca, modelo, año y color de un vehículo. La placa se muestra bloqueada y el botón
@@ -85,7 +86,7 @@ class HojaEditarVehiculo : HojaBase() {
         val referencia = original ?: return
         val campos = vinculo.campos
         if (!AyudasVista.validarCamposVehiculo(campos, conPlaca = false)) return
-        vinculo.btnGuardar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardar)
         vehiculoViewModel.editarVehiculo(
             referencia.id,
             Campos.texto(campos.etMarca),
@@ -105,6 +106,7 @@ class HojaEditarVehiculo : HojaBase() {
             }
             is Resultado.Error -> {
                 mostrarMensaje(resultado.mensaje)
+                vinculoInterno?.let { BotonCarga.terminar(it.btnGuardar) }
                 actualizarBoton()
             }
         }

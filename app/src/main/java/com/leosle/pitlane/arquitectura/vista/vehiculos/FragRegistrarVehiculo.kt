@@ -13,6 +13,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.AyudasVista
 import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Pantalla para registrar un vehículo del cliente. La placa se escribe en mayúsculas, cada campo se valida al salir
@@ -35,7 +36,7 @@ class FragRegistrarVehiculo : FragmentoVinculado<CliFragRegistrarVehiculoBinding
         ocultarTeclado()
         val campos = vinculo.campos
         if (!AyudasVista.validarCamposVehiculo(campos, conPlaca = true)) return
-        vinculo.btnRegistrar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrar)
         vehiculoViewModel.registrarVehiculo(
             usuarioActual.id,
             Validador.normalizarPlaca(Campos.texto(campos.etPlaca)),
@@ -50,7 +51,7 @@ class FragRegistrarVehiculo : FragmentoVinculado<CliFragRegistrarVehiculoBinding
     /** Si el registro salió bien confirma con un mensaje y vuelve; si falló muestra el motivo bajo la placa y en un mensaje. */
     private fun alRegistrar(resultado: Resultado<Vehiculo>) {
         if (view == null) return
-        vinculo.btnRegistrar.isEnabled = true
+        BotonCarga.terminar(vinculo.btnRegistrar)
         when (resultado) {
             is Resultado.Exito -> {
                 mostrarMensaje(getString(R.string.cli_vehiculo_registrado))

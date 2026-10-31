@@ -12,6 +12,7 @@ import com.leosle.pitlane.util.Validador
 import com.leosle.pitlane.arquitectura.viewmodel.ClienteViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja de edición de un cliente: nombres, apellidos y teléfono son editables y el DNI queda bloqueado.
@@ -65,7 +66,7 @@ class HojaEditarCliente : HojaBase() {
             Campos.validar(vinculo.etTelefono, vinculo.txtErrorTelefono) { Validador.telefono(it) }
         )
         if (validos.any { !it }) return
-        vinculo.btnGuardar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardar)
         modelo.editarCliente(
             clienteId,
             Campos.texto(vinculo.etNombres),
@@ -78,7 +79,7 @@ class HojaEditarCliente : HojaBase() {
                     dismiss()
                 }
                 .alError {
-                    vinculo.btnGuardar.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnGuardar)
                     mostrarMensaje(it.mensaje)
                 }
         }

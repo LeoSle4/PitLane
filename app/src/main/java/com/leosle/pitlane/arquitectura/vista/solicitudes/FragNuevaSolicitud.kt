@@ -19,6 +19,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
 import com.leosle.pitlane.arquitectura.vista.comun.GestorFotos
 import com.leosle.pitlane.arquitectura.vista.comun.PasosFormulario
 import com.leosle.pitlane.arquitectura.vista.vehiculos.FragRegistrarVehiculo
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Pantalla para enviar una solicitud de atención en dos pasos (vehículo y falla, fecha y fotos): se elige el vehículo en un combo, se marcan síntomas, se describe
@@ -128,7 +129,7 @@ class FragNuevaSolicitud : FragmentoVinculado<CliFragNuevaSolicitudBinding>(CliF
             return
         }
         val vehiculo = checkNotNull(vehiculos.getOrNull(Combos.posicion(vinculo.spnVehiculo)))
-        vinculo.btnEnviar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnEnviar)
         solicitudViewModel.registrarSolicitud(
             usuarioActual.id,
             vehiculo.id,
@@ -142,7 +143,7 @@ class FragNuevaSolicitud : FragmentoVinculado<CliFragNuevaSolicitudBinding>(CliF
     /** Si se envió confirma con un mensaje y vuelve; si falló muestra el motivo bajo el combo y en un mensaje. */
     private fun alEnviar(resultado: Resultado<Solicitud>) {
         if (view == null) return
-        vinculo.btnEnviar.isEnabled = true
+        BotonCarga.terminar(vinculo.btnEnviar)
         when (resultado) {
             is Resultado.Exito -> {
                 mostrarMensaje(getString(R.string.cli_solicitud_enviada))

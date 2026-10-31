@@ -19,8 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Almacén en memoria de todos los datos de la aplicación. Cada colección es un [MutableStateFlow] para que
- * las pantallas se actualicen solas cuando cambia un dato. Los datos viven mientras el proceso esté abierto.
+ * Base de datos en memoria para las pruebas: reemplaza a Firebase para probar los repositorios sin red. Cada
+ * colección es un [MutableStateFlow], igual que las consultas en vivo de Firestore.
  *
  * @param conSemilla si es verdadero, carga cuentas, vehículos y órdenes de ejemplo.
  * @param reloj proporciona la hora actual; se puede reemplazar en las pruebas.

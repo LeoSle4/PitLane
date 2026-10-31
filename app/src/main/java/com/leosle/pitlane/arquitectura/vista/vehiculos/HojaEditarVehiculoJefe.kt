@@ -12,6 +12,7 @@ import com.leosle.pitlane.util.Validador
 import com.leosle.pitlane.arquitectura.viewmodel.VehiculoViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.HojaBase
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Hoja de edición de un vehículo: marca, modelo, año y color son editables y la placa queda bloqueada.
@@ -69,7 +70,7 @@ class HojaEditarVehiculoJefe : HojaBase() {
             Campos.validar(vinculo.etColor, vinculo.txtErrorColor) { Validador.obligatorio(it, "Ingresa el color") }
         )
         if (validos.any { !it }) return
-        vinculo.btnGuardar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardar)
         modelo.editarVehiculo(
             vehiculoId,
             Campos.texto(vinculo.etMarca),
@@ -83,7 +84,7 @@ class HojaEditarVehiculoJefe : HojaBase() {
                     dismiss()
                 }
                 .alError {
-                    vinculo.btnGuardar.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnGuardar)
                     mostrarMensaje(it.mensaje)
                 }
         }

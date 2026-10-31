@@ -14,29 +14,15 @@ import com.leosle.pitlane.databinding.AccFragLoginBinding
 import com.leosle.pitlane.R
 import com.leosle.pitlane.arquitectura.viewmodel.AuthViewModel
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
-import com.leosle.pitlane.arquitectura.vista.comun.Combos
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Inicio de sesión con correo y contraseña. El botón "Ingresar" se habilita cuando ambos campos tienen texto.
- * Incluye un combo con cuentas de demostración que rellena el formulario.
  */
 class FragLogin : FragmentoVinculado<AccFragLoginBinding>(AccFragLoginBinding::inflate), ContenidoBajoBarras {
 
     private val authViewModel: AuthViewModel by activityViewModels()
-
-
-    /** Cuenta de ejemplo: texto del combo, correo y contraseña. */
-    private data class CuentaDemostracion(val etiqueta: String, val correo: String, val contrasena: String)
-
-    private val cuentas = listOf(
-        CuentaDemostracion("Jefe de Taller · jefe@freddy.pe", "jefe@freddy.pe", "Taller2026"),
-        CuentaDemostracion("Técnico · luis@freddy.pe", "luis@freddy.pe", "Tecnico123"),
-        CuentaDemostracion("Técnico · marco@freddy.pe", "marco@freddy.pe", "Tecnico123"),
-        CuentaDemostracion("Cliente con vehículos · cliente@freddy.pe", "cliente@freddy.pe", "Cliente123"),
-        CuentaDemostracion("Cliente con orden en reparación · carlos@freddy.pe", "carlos@freddy.pe", "Cliente123"),
-        CuentaDemostracion("Cliente nuevo sin vehículos · nuevo@freddy.pe", "nuevo@freddy.pe", "Cliente123")
-    )
 
     override fun onViewCreated(vista: View, estado: Bundle?) {
         super.onViewCreated(vista, estado)
@@ -44,7 +30,6 @@ class FragLogin : FragmentoVinculado<AccFragLoginBinding>(AccFragLoginBinding::i
         aplicarMomentoDelDia()
         ContrasenaVisible.vincular(vinculo.etContrasena, vinculo.btnVerContrasena)
         Campos.alCambiarTexto(vinculo.etCorreo, vinculo.etContrasena) { actualizarBotonIngresar() }
-        Combos.configurar(vinculo.spnCuentaDemostracion, cuentas.map { it.etiqueta })
 
         vinculo.btnIngresar.setOnClickListener { iniciarSesion() }
         vinculo.etContrasena.setOnEditorActionListener { _, accion, _ ->
@@ -54,7 +39,6 @@ class FragLogin : FragmentoVinculado<AccFragLoginBinding>(AccFragLoginBinding::i
         }
         vinculo.btnOlvidoContrasena.setOnClickListener { navegador.irA(FragRecuperar()) }
         vinculo.btnCrearCuenta.setOnClickListener { navegador.irA(FragRegistro()) }
-        vinculo.btnUsarCuentaDemostracion.setOnClickListener { usarCuentaElegida() }
     }
 
     /** Ajusta el color del saludo y de la barra de estado al cielo de la escena, que cambia entre el día y la noche. */
@@ -95,7 +79,7 @@ class FragLogin : FragmentoVinculado<AccFragLoginBinding>(AccFragLoginBinding::i
     /** Envía las credenciales; si son correctas entra a la aplicación y si no muestra el error bajo el formulario. */
     private fun iniciarSesion() {
         ocultarTeclado()
-        vinculo.btnIngresar.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnIngresar)
         authViewModel.iniciarSesion(Campos.texto(vinculo.etCorreo), vinculo.etContrasena.text.toString()) { resultado ->
             resultado
                 .alExito { navegador.abrirInicio() }
@@ -103,17 +87,9 @@ class FragLogin : FragmentoVinculado<AccFragLoginBinding>(AccFragLoginBinding::i
                     if (view == null) return@alError
                     vinculo.txtErrorGeneral.text = error.mensaje
                     vinculo.txtErrorGeneral.visibility = View.VISIBLE
-                    vinculo.btnIngresar.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnIngresar)
                     mostrarMensaje(error.mensaje)
                 }
         }
-    }
-
-    /** Copia el correo y la contraseña de la cuenta elegida en el combo a los campos del formulario. */
-    private fun usarCuentaElegida() {
-        val cuenta = cuentas.getOrNull(Combos.posicion(vinculo.spnCuentaDemostracion)) ?: return
-        vinculo.etCorreo.setText(cuenta.correo)
-        vinculo.etContrasena.setText(cuenta.contrasena)
-        ocultarTeclado()
     }
 }

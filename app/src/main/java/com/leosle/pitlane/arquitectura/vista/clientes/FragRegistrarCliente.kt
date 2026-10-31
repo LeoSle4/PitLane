@@ -11,6 +11,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.DialogoModal
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Formulario para registrar un cliente sin cuenta: nombres, apellidos, DNI, teléfono y correo opcional.
@@ -47,7 +48,7 @@ class FragRegistrarCliente : FragmentoVinculado<JcFragRegistrarClienteBinding>(J
         if (validos.any { !it }) return
 
         ocultarTeclado()
-        vinculo.btnRegistrarCliente.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrarCliente)
         modelo.registrarCliente(
             Campos.texto(vinculo.etNombres),
             Campos.texto(vinculo.etApellidos),
@@ -61,7 +62,7 @@ class FragRegistrarCliente : FragmentoVinculado<JcFragRegistrarClienteBinding>(J
                     abrirDetalle(it.id)
                 }
                 .alError { error ->
-                    vinculo.btnRegistrarCliente.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnRegistrarCliente)
                     val existente = error.referencia
                     if (existente != null) {
                         Campos.mostrarError(vinculo.etDni, vinculo.txtErrorDni, error.mensaje)

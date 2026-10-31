@@ -13,9 +13,6 @@
     <string name="acc_ingresar">Ingresar</string>
     <string name="acc_olvido">¿Olvidaste tu contraseña?</string>
     <string name="acc_crear_cuenta_enlace">Crear cuenta</string>
-    <string name="acc_demo_titulo">Cuentas de demostración</string>
-    <string name="acc_demo_ayuda">Elige una cuenta para completar el formulario con sus datos.</string>
-    <string name="acc_demo_usar">Usar esta cuenta</string>
     <string name="acc_registro_intro">Regístrate una sola vez y registra tus vehículos para no repetir tus datos en cada visita.</string>
     <string name="acc_etiqueta_nombres">Nombres</string>
     <string name="acc_pista_nombres">Ej. Ana María</string>
@@ -42,7 +39,6 @@
     <string name="acc_volver_ingresar">Volver a iniciar sesión</string>
     <string name="acc_hoja_titulo">Iniciar sesión</string>
     <string name="acc_sin_cuenta">¿No tienes cuenta?</string>
-    <string name="acc_o_demo">o prueba con una cuenta de demostración</string>
     <string name="acc_campo_nombres">Nombres</string>
     <string name="acc_campo_apellidos">Apellidos</string>
     <string name="acc_campo_dni">DNI (8 dígitos)</string>

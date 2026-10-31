@@ -18,6 +18,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.Campos
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
 import com.leosle.pitlane.arquitectura.vista.comun.PasosFormulario
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Registro de una cuenta de cliente en dos pasos (datos personales y cuenta): valida cada campo al salir de él,
@@ -135,7 +136,7 @@ class FragRegistro : FragmentoVinculado<AccFragRegistroBinding>(AccFragRegistroB
             correo = Campos.texto(vinculo.etCorreoRegistro),
             contrasena = vinculo.etContrasenaRegistro.text.toString()
         )
-        vinculo.btnRegistrarCuenta.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnRegistrarCuenta)
         authViewModel.registrarCliente(datos) { resultado ->
             resultado
                 .alExito {
@@ -144,7 +145,7 @@ class FragRegistro : FragmentoVinculado<AccFragRegistroBinding>(AccFragRegistroB
                 }
                 .alError { error ->
                     if (view == null) return@alError
-                    vinculo.btnRegistrarCuenta.isEnabled = true
+                    BotonCarga.terminar(vinculo.btnRegistrarCuenta)
                     mostrarErrorDelServidor(error.mensaje)
                 }
         }

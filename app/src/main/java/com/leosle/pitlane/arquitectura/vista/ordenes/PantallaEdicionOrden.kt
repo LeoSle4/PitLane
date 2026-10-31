@@ -29,6 +29,7 @@ import com.leosle.pitlane.arquitectura.vista.comun.Combos
 import com.leosle.pitlane.arquitectura.vista.comun.DialogoModal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Edición de una orden en una pantalla modal completa que sube desde abajo: la X cierra, "Guardar" confirma.
@@ -183,7 +184,7 @@ class PantallaEdicionOrden : DialogFragment() {
 
         val contexto = requireContext()
         val usuarioId = sesionModelo.usuarioActual.value?.id.orEmpty()
-        vinculo.btnGuardarEdicion.isEnabled = false
+        BotonCarga.iniciar(vinculo.btnGuardarEdicion)
         modelo.editarOrden(
             orden.id,
             Campos.texto(vinculo.etFallaEdicion),
@@ -200,6 +201,7 @@ class PantallaEdicionOrden : DialogFragment() {
                 }
                 .alError {
                     if (isAdded) {
+                        BotonCarga.terminar(vinculo.btnGuardarEdicion)
                         actualizarBoton()
                         DialogoModal.error(contexto, it.mensaje)
                     }
