@@ -1,5 +1,6 @@
 package com.leosle.pitlane.arquitectura.vista.comun
 
+import android.content.Context
 import android.graphics.drawable.GradientDrawable
 import android.widget.TextView
 import androidx.annotation.ColorRes
@@ -36,6 +37,15 @@ object EstadosVisuales {
         dibujo?.setBounds(0, 0, lado, lado)
         chip.setCompoundDrawablesRelative(dibujo, null, null, null)
     }
+
+    /** Crea un chip con el estilo de la app, listo para agregarlo a un grupo de chips. */
+    fun nuevoChip(
+        contexto: Context,
+        etiqueta: String,
+        @ColorRes fondo: Int,
+        @ColorRes texto: Int,
+        @DrawableRes icono: Int
+    ): TextView = TextView(contexto, null, 0, R.style.Chip).also { aplicar(it, etiqueta, fondo, texto, icono) }
 
     /** Pinta el chip con el estado de una orden: Ingresado, En reparación, Listo para recoger, Entregado o Anulada. */
     fun estadoOrden(chip: TextView, estado: EstadoOrden) {

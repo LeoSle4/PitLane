@@ -57,6 +57,8 @@
         <ListView
             android:id="@+id/lvTecnicos"
             style="@style/Lista.Espaciada"
+            android:paddingStart="@dimen/margen_pantalla"
+            android:paddingEnd="@dimen/margen_pantalla"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingTop="8dp"

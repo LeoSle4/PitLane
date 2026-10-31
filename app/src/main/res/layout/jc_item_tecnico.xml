@@ -4,11 +4,7 @@
     android:id="@+id/mcvTecnico"
     style="@style/Tarjeta"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginTop="6dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginBottom="6dp">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:id="@+id/llFilaTecnico"
@@ -17,9 +13,9 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingTop="14dp"
+        android:paddingTop="18dp"
         android:paddingEnd="4dp"
-        android:paddingBottom="14dp">
+        android:paddingBottom="18dp">
 
         <FrameLayout
             android:id="@+id/flAvatarTecnico"
@@ -39,7 +35,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -51,17 +47,41 @@
                 android:ellipsize="end"
                 android:maxLines="1" />
 
-            <TextView
-                android:id="@+id/txtTelefonoTecnico"
-                style="@style/Texto.Secundario"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/txtTelefonoTecnico"
+                    style="@style/Texto.Secundario"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    app:drawableStartCompat="@drawable/ic_phone_pequeno"
+                    app:drawableTint="@color/texto_secundario" />
+
+                <TextView
+                    android:id="@+id/txtDniTecnico"
+                    style="@style/Texto.Secundario"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:maxLines="1"
+                    app:drawableStartCompat="@drawable/ic_identification_card_pequeno"
+                    app:drawableTint="@color/texto_secundario" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="14dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -73,10 +93,11 @@
 
                 <TextView
                     android:id="@+id/txtOrdenesEnCurso"
-                    style="@style/Texto.Pie"
+                    style="@style/Chip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp" />
+                    android:maxLines="1"
+                    android:layout_marginStart="8dp" />
             </LinearLayout>
         </LinearLayout>
 

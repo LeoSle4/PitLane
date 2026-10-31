@@ -14,10 +14,12 @@ import com.leosle.pitlane.arquitectura.vista.comun.AdaptadorLista
 import com.leosle.pitlane.arquitectura.vista.comun.EstadoVacio
 import com.leosle.pitlane.arquitectura.vista.comun.EstadosVisuales
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
+import com.leosle.pitlane.util.Textos
 
 /**
- * Pestaña de clientes: busca por DNI, nombre, apellido o placa mientras se escribe (desde 3 caracteres),
- * muestra las placas que coincidieron y abre el detalle del cliente elegido. Sin coincidencias ofrece registrarlo.
+ * Pestaña de clientes: antes de escribir muestra los clientes atendidos recientemente; busca por DNI, nombre,
+ * apellido o placa mientras se escribe (desde 3 caracteres), resalta las placas que coincidieron y abre el detalle
+ * del cliente elegido. Sin coincidencias ofrece registrarlo.
  */
 class FragBuscarClientes : FragmentoVinculado<JcFragBuscarClientesBinding>(JcFragBuscarClientesBinding::inflate) {
 
@@ -41,7 +43,17 @@ class FragBuscarClientes : FragmentoVinculado<JcFragBuscarClientesBinding>(JcFra
             accion == EditorInfo.IME_ACTION_SEARCH
         }
         vinculo.btnAgregarCliente.setOnClickListener { abrirRegistro() }
+        mostrarRecientes(modelo.recientes.value)
+        recolectar(modelo.recientes) { recientes -> if (consultaCorta()) mostrarRecientes(recientes) }
+    }
+
+    private fun consultaCorta(): Boolean = vinculo.etBuscar.text.toString().trim().length < MINIMO_CARACTERES
+
+    /** Muestra los clientes atendidos recientemente con su título; sin ninguno, la ayuda para buscar. */
+    private fun mostrarRecientes(recientes: List<ResultadoBusqueda>) {
         mostrarEstadoInicial()
+        vinculo.txtTituloLista.visibility = if (recientes.isEmpty()) View.GONE else View.VISIBLE
+        adaptador.actualizar(recientes)
     }
 
     /** Repite la búsqueda vigente al volver a la pestaña para reflejar altas, cambios o bajas de clientes. */
@@ -50,18 +62,18 @@ class FragBuscarClientes : FragmentoVinculado<JcFragBuscarClientesBinding>(JcFra
         if (view != null) buscar(vinculo.etBuscar.text.toString())
     }
 
-    /** Busca con el texto indicado; con menos de 3 caracteres limpia la lista y muestra la ayuda inicial. */
+    /** Busca con el texto indicado; con menos de 3 caracteres vuelve a mostrar los clientes recientes. */
     private fun buscar(texto: String) {
         val consulta = texto.trim()
         val numero = ++secuenciaBusqueda
         if (consulta.length < MINIMO_CARACTERES) {
-            mostrarEstadoInicial()
-            adaptador.actualizar(emptyList())
+            mostrarRecientes(modelo.recientes.value)
             return
         }
         modelo.buscar(consulta) { resultados ->
             if (numero != secuenciaBusqueda || view == null) return@buscar
             mostrarEstadoSinResultados()
+            vinculo.txtTituloLista.visibility = View.GONE
             adaptador.actualizar(resultados)
         }
     }
@@ -85,25 +97,49 @@ class FragBuscarClientes : FragmentoVinculado<JcFragBuscarClientesBinding>(JcFra
         ) { abrirRegistro() }
     }
 
-    /** Llena una fila con avatar, nombre, DNI, teléfono y las placas que coincidieron con la búsqueda. */
+    /**
+     * Llena una fila con avatar, nombre, celular y DNI (cada uno con su ícono), y una fila de chips: las placas del cliente (resaltadas
+     * las que coincidieron con la búsqueda, hasta [MAXIMO_PLACAS] y un contador del resto) y si tiene cuenta en la app.
+     */
     private fun enlazarFila(fila: View, item: ResultadoBusqueda) {
         val tarjeta = JcItemResultadoClienteBinding.bind(fila)
         val cliente = item.cliente
+        val contexto = fila.context
         tarjeta.txtInicialesCliente.text = cliente.iniciales
         tarjeta.txtNombreCliente.text = cliente.nombreCompleto
-        tarjeta.txtDatosCliente.text = "DNI ${cliente.dni} · ${cliente.telefono}"
-        if (item.placasCoincidentes.isEmpty()) {
-            tarjeta.txtPlacasCoincidentes.visibility = View.GONE
-        } else {
-            tarjeta.txtPlacasCoincidentes.visibility = View.VISIBLE
-            EstadosVisuales.aplicar(
-                tarjeta.txtPlacasCoincidentes,
-                item.placasCoincidentes.joinToString(", "),
-                R.color.estado_neutro_fondo,
-                R.color.estado_neutro_texto,
-                R.drawable.ic_car_profile
+        tarjeta.txtTelefonoCliente.text = Textos.celular(cliente.telefono)
+        tarjeta.txtDniCliente.text = cliente.dni
+        tarjeta.txtDniCliente.contentDescription = "DNI ${cliente.dni}"
+
+        val grupo = tarjeta.cgEtiquetasCliente
+        grupo.removeAllViews()
+        val placas = item.placas.ifEmpty { item.placasCoincidentes }
+        placas.sortedByDescending { it in item.placasCoincidentes }.take(MAXIMO_PLACAS).forEach { placa ->
+            val coincide = placa in item.placasCoincidentes
+            grupo.addView(
+                EstadosVisuales.nuevoChip(
+                    contexto,
+                    placa,
+                    if (coincide) R.color.estado_proceso_fondo else R.color.estado_neutro_fondo,
+                    if (coincide) R.color.estado_proceso_texto else R.color.estado_neutro_texto,
+                    R.drawable.ic_car_profile
+                )
             )
         }
+        if (placas.size > MAXIMO_PLACAS) {
+            grupo.addView(
+                EstadosVisuales.nuevoChip(
+                    contexto, "+${placas.size - MAXIMO_PLACAS}", R.color.estado_neutro_fondo, R.color.estado_neutro_texto, R.drawable.ic_car_profile
+                ).apply { setCompoundDrawablesRelative(null, null, null, null) }
+            )
+        }
+        grupo.addView(
+            if (cliente.tieneCuenta) {
+                EstadosVisuales.nuevoChip(contexto, "Con cuenta", R.color.estado_exito_fondo, R.color.estado_exito_texto, R.drawable.ic_user_circle)
+            } else {
+                EstadosVisuales.nuevoChip(contexto, "Sin cuenta", R.color.estado_neutro_fondo, R.color.estado_neutro_texto, R.drawable.ic_user)
+            }
+        )
     }
 
     /** Abre el detalle del cliente del resultado tocado. */
@@ -122,5 +158,8 @@ class FragBuscarClientes : FragmentoVinculado<JcFragBuscarClientesBinding>(JcFra
     private companion object {
         /** Cantidad mínima de caracteres para iniciar la búsqueda. */
         const val MINIMO_CARACTERES = 3
+
+        /** Placas que se muestran como chips antes de resumir el resto con un contador. */
+        const val MAXIMO_PLACAS = 3
     }
 }

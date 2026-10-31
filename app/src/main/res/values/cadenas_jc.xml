@@ -42,4 +42,5 @@
     <string name="jc_subtitulo_clientes">Busca por DNI, nombre o placa</string>
     <string name="jc_titulo_clientes">Clientes</string>
     <string name="jc_titulo_tecnicos">Técnicos</string>
+    <string name="jc_clientes_recientes">Atendidos recientemente</string>
 </resources>
