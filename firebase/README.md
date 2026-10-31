@@ -162,6 +162,18 @@ opcionales (`terminos` hasta 120 elementos, `terminosPlaca` hasta 12), también 
 gana el campo al guardarse. La búsqueda pasa de "contiene" a "prefijo de palabra" para nombres; el DNI y la placa
 siguen admitiendo "contiene".
 
+La app (`ClienteRepository.buscarClientes`) ya no recorre todos los usuarios y vehículos: consulta
+`usuarios` con `terminos array-contains <palabra más larga>` y `vehiculos` con `terminosPlaca array-contains <placa>`,
+cada una con `limit(30)`, y luego carga solo las placas de los clientes encontrados (`vehiculos` por `clienteId`). Así
+el costo depende de las coincidencias y no de cuántos clientes hay. Cada consulta usa un único `array-contains` sobre un
+campo, que cubre el índice automático de un solo campo: no hace falta ningún índice compuesto ni cambiar
+`firestore.indexes.json`. Las reglas no cambian (el Jefe lee todo; al cliente y al técnico se les deniega, y las pruebas
+de reglas lo comprueban). Los resultados salen ordenados por nombre completo.
+
+Cambio de comportamiento: los nombres coinciden por el COMIENZO de cada palabra ("mend" encuentra a Mendoza, "ndoza" ya
+no); el DNI y la placa se siguen encontrando en cualquier posición. Los clientes y vehículos que todavía no tienen
+`terminos`/`terminosPlaca` NO aparecen en la búsqueda hasta que se ejecute el relleno de abajo.
+
 DESPLIEGUE: ejecuta el relleno ANTES de publicar la app que use la búsqueda por términos, porque esa búsqueda solo
 encuentra los documentos que ya llevan los términos. Es seco por defecto, nunca sobrescribe un campo existente y no toca
 a técnicos ni al Jefe.

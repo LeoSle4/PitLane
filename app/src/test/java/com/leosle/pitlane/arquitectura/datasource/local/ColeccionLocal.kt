@@ -11,12 +11,14 @@ import kotlinx.coroutines.flow.update
  *
  * @param idDe obtiene el identificador de un documento.
  * @param generarId crea un identificador nuevo.
+ * @param terminos términos de búsqueda de un documento (el modelo no tiene el campo); lo usa [buscarPorTermino].
  * @param alGuardar se ejecuta después de cada escritura con el documento anterior (nulo si es nuevo) y el nuevo.
  */
 internal class ColeccionLocal<T>(
     private val flujo: MutableStateFlow<List<T>>,
     private val idDe: (T) -> String,
     private val generarId: () -> String,
+    private val terminos: (T) -> List<String> = { emptyList() },
     private val alGuardar: (anterior: T?, nuevo: T) -> Unit = { _, _ -> }
 ) : IColeccion<T> {
 
@@ -34,6 +36,12 @@ internal class ColeccionLocal<T>(
     override fun observarEnLista(campo: String, valores: List<String>): Flow<List<T>> {
         require(valores.size in 1..30) { "Firestore admite de 1 a 30 valores en una consulta in" }
         return flujo.map { lista -> lista.filter { coincide(it, campo) { v -> v in valores } } }
+    }
+
+    /** Igual que Firestore: límite de 1 a 100; la memoria no filtra por usuario, igual que [listar]. */
+    override suspend fun buscarPorTermino(campo: String, termino: String, limite: Int): List<T> {
+        require(limite in 1..100) { "El límite debe estar entre 1 y 100" }
+        return flujo.value.filter { termino in terminos(it) }.take(limite)
     }
 
     private fun coincide(item: T, campo: String, prueba: (String) -> Boolean): Boolean {

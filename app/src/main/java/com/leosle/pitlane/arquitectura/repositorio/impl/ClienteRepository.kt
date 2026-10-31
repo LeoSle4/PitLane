@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.repositorio.impl
 
 import com.leosle.pitlane.arquitectura.repositorio.IClienteRepository
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
+import com.leosle.pitlane.util.Busqueda
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
 import com.leosle.pitlane.modelo.FichaCliente
@@ -69,20 +70,50 @@ class ClienteRepository(
                 }
         }
 
-    /** Compara el texto con DNI, nombre completo y placas; exige al menos 3 caracteres. */
+    /**
+     * Busca por los términos indexados en vez de recorrer a todos los clientes y vehículos: el costo depende de las
+     * coincidencias (hasta [MAXIMO_COINCIDENCIAS] por rama), no de cuántos clientes hay. Exige al menos 3 caracteres
+     * y que quien consulta sea el Jefe.
+     *
+     * - Nombre y DNI: se consulta por la palabra más larga (de 3 o más caracteres) y luego se exige que cada palabra
+     *   de la consulta aparezca en el nombre completo o en el DNI. Los nombres coinciden por el COMIENZO de cada
+     *   palabra ("mend" encuentra a Mendoza, "ndoza" no); el DNI coincide en cualquier posición.
+     * - Placa: la consulta sin espacios ni guion se busca en cualquier posición de la placa.
+     *
+     * Los documentos anteriores al relleno de términos (`rellenarBusqueda.mjs`) no se encuentran. El resultado va
+     * ordenado por nombre completo (antes salía en el orden, sin especificar, de la lista de usuarios);
+     * `placasCoincidentes` son las placas que contienen la consulta y `placas` todas las del cliente.
+     */
     override suspend fun buscarClientes(consulta: String): List<ResultadoBusqueda> {
-        val texto = consulta.trim().lowercase()
-        if (texto.length < 3 || !usuarios.usuarioActual.value.esJefe()) return emptyList()
-        val textoPlaca = texto.replace("-", "")
-        val vehiculos = documentos.vehiculos.listar()
-        return usuarios.listarUsuarios().filter { it.rol == Rol.CLIENTE }.mapNotNull { cliente ->
-            val placas = vehiculos
-                .filter { it.clienteId == cliente.id && it.placa.replace("-", "").lowercase().contains(textoPlaca) }
-                .map { it.placa }
-            val coincidePersona = cliente.dni.contains(texto) || cliente.nombreCompleto.lowercase().contains(texto)
-            val todas = vehiculos.filter { it.clienteId == cliente.id }.map { it.placa }
-            if (coincidePersona || placas.isNotEmpty()) ResultadoBusqueda(cliente, placas, todas) else null
+        val texto = Busqueda.normalizar(consulta)
+        val placaBuscada = texto.replace(" ", "")
+        if (placaBuscada.length < LARGO_MINIMO_BUSQUEDA || !usuarios.usuarioActual.value.esJefe()) return emptyList()
+
+        val encontrados = LinkedHashMap<String, Usuario>()
+        val palabras = texto.split(' ')
+        palabras.filter { it.length >= LARGO_MINIMO_BUSQUEDA }.maxByOrNull { it.length }?.let { palabra ->
+            usuarios.buscarClientesPorTermino(palabra.take(LARGO_MAXIMO_TERMINO), MAXIMO_COINCIDENCIAS)
+                .filter { it.rol == Rol.CLIENTE && it.contieneTodas(palabras) }
+                .forEach { encontrados[it.id] = it }
         }
+        // Los términos los escribe quien registra el vehículo; se comprueba contra la placa real, como se hace con el nombre
+        documentos.vehiculos.buscarPorTermino("terminosPlaca", placaBuscada, MAXIMO_COINCIDENCIAS)
+            .filter { Busqueda.normalizar(it.placa).replace(" ", "").contains(placaBuscada) }
+            .map { it.clienteId }.distinct().filter { it !in encontrados }
+            .mapNotNull { usuarios.obtenerUsuario(it) }.filter { it.rol == Rol.CLIENTE }
+            .forEach { encontrados[it.id] = it }
+
+        return encontrados.values.sortedBy { Busqueda.normalizar(it.nombreCompleto) }.map { cliente ->
+            val todas = documentos.vehiculos.listarDonde("clienteId", cliente.id).map { it.placa }
+            val coincidentes = todas.filter { Busqueda.normalizar(it).replace(" ", "").contains(placaBuscada) }
+            ResultadoBusqueda(cliente, coincidentes, todas)
+        }
+    }
+
+    private fun Usuario.contieneTodas(palabras: List<String>): Boolean {
+        val nombre = Busqueda.normalizar(nombreCompleto)
+        val documento = Busqueda.normalizar(dni)
+        return palabras.all { nombre.contains(it) || documento.contains(it) }
     }
 
     /** Crea un cliente sin cuenta; rechaza DNI o correo repetidos. */
@@ -143,3 +174,7 @@ class ClienteRepository(
         return Resultado.Exito(Unit)
     }
 }
+
+private const val LARGO_MINIMO_BUSQUEDA = 3
+private const val LARGO_MAXIMO_TERMINO = 20
+private const val MAXIMO_COINCIDENCIAS = 30

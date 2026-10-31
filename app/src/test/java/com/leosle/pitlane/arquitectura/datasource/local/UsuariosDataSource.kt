@@ -1,6 +1,7 @@
 package com.leosle.pitlane.arquitectura.datasource.local
 
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
+import com.leosle.pitlane.util.Busqueda
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.modelo.DatosRegistroCliente
 import com.leosle.pitlane.modelo.Rol
@@ -20,6 +21,14 @@ class UsuariosDataSource(private val bd: BaseDatosLocal) : IUsuariosDataSource {
     override fun observarUsuarios(): Flow<List<Usuario>> = bd.usuarios
 
     override suspend fun listarUsuarios(): List<Usuario> = bd.usuarios.value
+
+    /** Como en la nube, solo clientes y por los términos de `Busqueda`; sin filtro de usuario, igual que [listarUsuarios]. */
+    override suspend fun buscarClientesPorTermino(termino: String, limite: Int): List<Usuario> {
+        require(limite in 1..100) { "El límite debe estar entre 1 y 100" }
+        return bd.usuarios.value.filter {
+            it.rol == Rol.CLIENTE && termino in Busqueda.terminosDePersona(it.nombres, it.apellidos, it.dni)
+        }.take(limite)
+    }
 
     override suspend fun obtenerUsuario(id: String): Usuario? = bd.usuarios.value.firstOrNull { it.id == id }
 

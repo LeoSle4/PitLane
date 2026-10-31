@@ -1,6 +1,7 @@
 package com.leosle.pitlane.arquitectura.datasource.local
 
 import com.leosle.pitlane.arquitectura.datasource.IColeccion
+import com.leosle.pitlane.util.Busqueda
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.PlacaRegistrada
 import com.leosle.pitlane.modelo.Avance
@@ -19,7 +20,7 @@ class DocumentosDataSource internal constructor(
     constructor(bd: BaseDatosLocal) : this(bd, FuncionesLocales(bd))
 
     override val vehiculos: IColeccion<Vehiculo> =
-        ColeccionLocal(bd.vehiculos, Vehiculo::id, { bd.nuevoId("v") })
+        ColeccionLocal(bd.vehiculos, Vehiculo::id, { bd.nuevoId("v") }, { Busqueda.terminosDePlaca(it.placa) })
 
     override val solicitudes: IColeccion<Solicitud> =
         ColeccionLocal(bd.solicitudes, Solicitud::id, { bd.nuevoId("s") })

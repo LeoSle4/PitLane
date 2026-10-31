@@ -27,6 +27,9 @@ private const val ETIQUETA = "ColeccionFirestore"
 /** Máximo de valores que Firestore admite en una consulta `in`. */
 private const val MAXIMO_VALORES_EN_LISTA = 30
 
+/** Máximo de documentos que devuelve una búsqueda por término. */
+private const val MAXIMO_LIMITE_BUSQUEDA = 100
+
 /**
  * Lote de escrituras activo en la corrutina actual. Mientras exista, las colecciones acumulan sus
  * escrituras aquí en lugar de enviarlas una a una, y se aplican todas juntas o ninguna al cerrar el lote.
@@ -120,6 +123,20 @@ internal class ColeccionFirestore<T>(
 
     override suspend fun listarDonde(campo: String, valor: String): List<T> {
         val consulta = consultaDe(alcanceDe(actor.value, campoPropio))?.whereEqualTo(campo, valor) ?: return emptyList()
+        return consulta.get().esperar().documents.mapNotNull { convertir(it.id, it.data) }
+    }
+
+    /**
+     * Suma `array-contains` al alcance del usuario. Firestore admite un solo `array-contains` por consulta y el
+     * alcance por [CAMPO_ACCESO] ya usa uno, así que esta búsqueda solo la hace quien lee la colección completa
+     * (el Jefe); para los demás devuelve una lista vacía. Usa el índice automático de un solo campo.
+     */
+    override suspend fun buscarPorTermino(campo: String, termino: String, limite: Int): List<T> {
+        require(limite in 1..MAXIMO_LIMITE_BUSQUEDA) { "El límite debe estar entre 1 y $MAXIMO_LIMITE_BUSQUEDA" }
+        val consulta = when (val alcance = alcanceDe(actor.value, campoPropio)) {
+            Alcance.Todo, is Alcance.Igual -> consultaDe(alcance)
+            Alcance.Nada, is Alcance.Contiene -> null
+        }?.whereArrayContains(campo, termino)?.limit(limite.toLong()) ?: return emptyList()
         return consulta.get().esperar().documents.mapNotNull { convertir(it.id, it.data) }
     }
 

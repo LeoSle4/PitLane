@@ -29,6 +29,13 @@ interface IColeccion<T> {
     fun observarDonde(campo: String, valor: String): Flow<List<T>>
 
     /**
+     * Devuelve como máximo [limite] (de 1 a 100) documentos que el usuario puede leer y cuyo campo de lista [campo]
+     * contiene [termino] (`array-contains`); la base solo entrega los que coinciden, así que el costo depende de las
+     * coincidencias y no del tamaño de la colección.
+     */
+    suspend fun buscarPorTermino(campo: String, termino: String, limite: Int): List<T>
+
+    /**
      * Emite los documentos que el usuario puede leer y cuyo campo [campo] vale alguno de [valores] (`in`); Firestore
      * admite como máximo 30 valores, y la lista no puede estar vacía.
      */

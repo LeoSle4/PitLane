@@ -10,6 +10,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.functions.FirebaseFunctions
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
 import com.leosle.pitlane.modelo.DatosRegistroCliente
+import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.util.Resultado
 import kotlinx.coroutines.CancellationException
@@ -97,6 +98,10 @@ class UsuariosDataSource(
     override fun observarUsuarios(): Flow<List<Usuario>> = perfiles.observarTodos()
 
     override suspend fun listarUsuarios(): List<Usuario> = perfiles.listar()
+
+    /** Los términos solo los llevan los clientes; aun así se descarta cualquier otro rol por seguridad. */
+    override suspend fun buscarClientesPorTermino(termino: String, limite: Int): List<Usuario> =
+        perfiles.buscarPorTermino("terminos", termino, limite).filter { it.rol == Rol.CLIENTE }
 
     override suspend fun obtenerUsuario(id: String): Usuario? = perfiles.obtener(id)
 

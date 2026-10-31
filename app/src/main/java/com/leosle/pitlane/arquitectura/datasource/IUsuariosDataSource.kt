@@ -27,6 +27,12 @@ interface IUsuariosDataSource {
     /** Devuelve la lista actual de usuarios. */
     suspend fun listarUsuarios(): List<Usuario>
 
+    /**
+     * Devuelve como máximo [limite] clientes cuyos términos de búsqueda (nombre y DNI, ver `Busqueda`) incluyen
+     * [termino]. Solo el Jefe obtiene resultados; los clientes anteriores al relleno de términos no aparecen.
+     */
+    suspend fun buscarClientesPorTermino(termino: String, limite: Int): List<Usuario>
+
     /** Devuelve el usuario con ese identificador, o nulo si no existe. */
     suspend fun obtenerUsuario(id: String): Usuario?
 

@@ -1,6 +1,6 @@
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
-  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, Timestamp, updateDoc, where, writeBatch,
+  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction, setDoc, Timestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import {
@@ -819,6 +819,17 @@ describe('consultas dirigidas de la app', () => {
   it('el Jefe consulta vehículos, órdenes y solicitudes por clienteId sin filtro de acceso', async () => {
     for (const coleccion of ['vehiculos', 'ordenes', 'solicitudes']) {
       await assertSucceeds(lista(s.jefe, coleccion, where('clienteId', '==', 'c1')));
+    }
+  });
+
+  it('la búsqueda de clientes del Jefe (terminos y terminosPlaca con array-contains y límite) se acepta; al cliente y al técnico se les deniega', async () => {
+    const porNombre = [where('terminos', 'array-contains', 'mar'), limit(30)];
+    const porPlaca = [where('terminosPlaca', 'array-contains', 'abc'), limit(30)];
+    await assertSucceeds(lista(s.jefe, 'usuarios', ...porNombre));
+    await assertSucceeds(lista(s.jefe, 'vehiculos', ...porPlaca));
+    for (const quien of [s.c1, s.t1]) {
+      await assertFails(lista(quien, 'usuarios', ...porNombre));
+      await assertFails(lista(quien, 'vehiculos', ...porPlaca));
     }
   });
 });
