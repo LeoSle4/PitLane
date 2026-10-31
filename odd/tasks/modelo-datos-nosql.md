@@ -17,6 +17,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - S8 Búsqueda de clientes sin recorrer colecciones: "Reemplazar la búsqueda por campos indexados: DNI exacto, nombre en minúsculas con prefijo y placa por prefijo". Campos `terminos` (array de prefijos en minúsculas y sin tildes, mínimo 3 caracteres, de cada palabra del nombre completo y del DNI) en los clientes y `terminosPlaca` en los vehículos, consultados con `array-contains`. Decisión: la búsqueda pasa de "contiene" a "prefijo de palabra"; se documenta. Relleno para documentos existentes (seco por defecto, no se ejecuta).
 - S9 Ciclo de vida: "Poner TTL a las notificaciones, pasando esa fecha a `Timestamp`". `notificaciones` y `codigosRestablecimiento` llevan `expiraEn` (Timestamp) puesto por el servidor; el TTL lo activa el usuario.
 - S10 Versión de esquema: "Añadir un campo de versión de esquema a los documentos". `esquema: 2` en `ordenes` y `solicitudes` (los que cambiaron de forma con la instantánea); un documento sin el campo es de la versión 1.
+- S11 Clientes recientes sin leer colecciones completas: "la solución NoSQL correcta es guardar `ultimaActividad` en el cliente y consultar los N primeros". El servidor mantiene `usuarios/{clienteId}.ultimaActividad` (milisegundos, nunca baja) con disparadores sobre `ordenes` y `solicitudes`; `observarClientesRecientes` consulta `orderBy ultimaActividad desc limit N`. Relleno para los clientes existentes (seco por defecto, no se ejecuta).
 - S5 Tras cada tarea, una evaluación como ingeniero de bases de datos NoSQL (lecturas y costo, consistencia y atomicidad, seguridad, migración y reversión, riesgos que quedan), registrada en el Log. Al final se actualizan `docs/04-arquitectura/modelo-de-datos-firestore.md` y el diagrama.
 
 ## Tasks
@@ -33,6 +34,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T9 S9 TTL de notificaciones y códigos. route: inline (cambio pequeño del servidor). RED: 2 pruebas de funciones; GREEN: 47 de funciones, 111 de reglas, Gradle verde
 - [x] T10 S10 versión de esquema `esquema: 2` en órdenes y solicitudes. route: delegada (contexto). RED: reglas del commit anterior fallan las pruebas nuevas; GREEN: 116 de reglas, 47 de funciones, Gradle verde; verificador independiente sin bloqueos
 - [x] T11 documentación y diagramas finales de la segunda ronda. route: inline. Diagramas lógico y físico regenerados con términos, versión, vencimientos e índices
+- [ ] T12 S11 `ultimaActividad` del cliente para los recientes. route: delegada (contexto)
 
 ## Log
 
@@ -113,3 +115,5 @@ L17 (T10, evaluación como ingeniero NoSQL):
 - Despliegue: la creación exige la versión 2, así que una app anterior no puede crear órdenes ni solicitudes una vez desplegadas las reglas; es el mismo orden que ya rige (app nueva primero, reglas al final).
 
 L18 (revisión final, evaluación como ingeniero NoSQL): al contar de nuevo las escuchas de colección completa aparecieron dos que se me habían escapado. `observarVehiculo(id)` escuchaba TODOS los vehículos para encontrar uno, y `observarAvances(ordenId)` escuchaba TODOS los avances y TODOS los usuarios para mostrar los de una orden (con el Jefe, cada apertura de un detalle leía cada avance de la historia). Ahora el vehículo se observa por su documento y los avances por `ordenId` (índice `acceso`+`ordenId` ya declarado en T4), con los técnicos resueltos por `get` solo para los que aparecen. Las pruebas comprueban 0 escuchas completas y la consulta exacta. Escuchas de colección completa que quedan en los repositorios: `notificaciones` (ya acotada por el alcance `usuarioId`, no lee las de otros), el cruce de respaldo y la lista de solicitudes del Jefe (`Consultas.kt`) y `observarClientesRecientes` (pendiente de `ultimaActividad`).
+
+L19 (2026-10-31, usuario): respondió "Si" a la propuesta de seguir con `ultimaActividad` del cliente (la otra opción, decidir cómo paginar el historial, queda pendiente de su decisión).
