@@ -3,7 +3,10 @@ import {
   arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc, where,
 } from 'firebase/firestore';
 import { after, before, beforeEach, describe, it } from 'node:test';
-import { avance, crearEntorno, orden, perfil, preparar, sembrar, sesiones, solicitud, vehiculo } from './entorno.mjs';
+import {
+  avance, crearEntorno, orden, perfil, preparar, resumenCliente, resumenTecnico, resumenVehiculo, sembrar, sesiones,
+  sinInstantaneas, solicitud, vehiculo,
+} from './entorno.mjs';
 
 let entorno;
 let s;
@@ -150,11 +153,42 @@ describe('solicitudes', () => {
     await assertFails(getDoc(ref(s.t1, 'solicitudes/s1')));
   });
 
+  it('la instantánea de la solicitud debe coincidir con el perfil del cliente y con su vehículo', async () => {
+    const con = (extra) => solicitud('c1', 'v1', extra);
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s8'), con({ vehiculo: { ...resumenVehiculo(), placa: 'ZZZ999' } })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s8'), con({ vehiculo: { ...resumenVehiculo(), marca: 'Ferrari' } })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s8'), con({ cliente: { ...resumenCliente('c1'), dni: '00000000' } })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s8'), con({ cliente: { ...resumenCliente('c1'), nombres: 'Otro' } })));
+    await assertSucceeds(setDoc(ref(s.c1, 'solicitudes/s8'), con({})));
+  });
+
   it('el cliente crea solicitudes pendientes propias', async () => {
     await assertSucceeds(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1')));
     await assertFails(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1', { estado: 'ATENDIDA' })));
     await assertFails(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c2', 'v2')));
     await assertFails(setDoc(ref(s.t1, 'solicitudes/s9'), solicitud('c1', 'v1')));
+  });
+
+  it('la solicitud nueva exige la instantánea del cliente y del vehículo, con sus claves exactas', async () => {
+    await assertSucceeds(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1')));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s8'), sinInstantaneas(solicitud('c1', 'v1'))));
+    const sinVehiculo = sinInstantaneas(solicitud('c1', 'v1'));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s7'), { ...sinVehiculo, cliente: resumenCliente('c1') }));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s6'), { ...sinVehiculo, vehiculo: resumenVehiculo() }));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s5'),
+      solicitud('c1', 'v1', { cliente: { ...resumenCliente('c1'), correo: 'x@y.com' } })));
+    const { telefono, ...sinTelefono } = resumenCliente('c1');
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s4'), solicitud('c1', 'v1', { cliente: sinTelefono })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s3'), solicitud('c1', 'v1', { vehiculo: { ...resumenVehiculo(), anio: '2018' } })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s2'), solicitud('c1', 'v1', { tecnico: resumenTecnico('t1') })));
+  });
+
+  it('el cliente no cambia la instantánea de su solicitud al editarla, pero la solicitud anterior al relleno se edita', async () => {
+    await assertSucceeds(updateDoc(ref(s.c1, 'solicitudes/s1'), { descripcion: 'Ahora también hace ruido' }));
+    await assertFails(updateDoc(ref(s.c1, 'solicitudes/s1'), { cliente: { ...resumenCliente('c1'), telefono: '1' } }));
+    await assertFails(updateDoc(ref(s.c1, 'solicitudes/s1'), { vehiculo: { ...resumenVehiculo(), placa: 'ZZZ999' } }));
+    await preparar(entorno, 'solicitudes/s5', sinInstantaneas(solicitud('c1', 'v1')));
+    await assertSucceeds(updateDoc(ref(s.c1, 'solicitudes/s5'), { descripcion: 'Editada sin instantánea' }));
   });
 
   it('el cliente edita y cancela su solicitud pendiente, sin atenderla él mismo', async () => {
@@ -207,6 +241,45 @@ describe('ordenes', () => {
     await assertFails(setDoc(ref(s.t1, 'ordenes/o5'), orden('0005', 'c1', 't1', 'v1')));
   });
 
+  it('la orden nueva exige las tres instantáneas con sus claves exactas', async () => {
+    const { cliente, vehiculo: veh, tecnico, ...base } = orden('0009', 'c1', 't1', 'v1');
+    await assertSucceeds(setDoc(ref(s.jefe, 'ordenes/o9'), orden('0009', 'c1', 't1', 'v1')));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o8'), { ...base, vehiculo: veh, tecnico }));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o7'), { ...base, cliente, tecnico }));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o6'), { ...base, cliente, vehiculo: veh }));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o5'), orden('0005', 'c1', 't1', 'v1', { tecnico: { ...resumenTecnico('t1'), dni: '1' } })));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o4'), orden('0004', 'c1', 't1', 'v1', { tecnico: { nombres: 'Solo nombre' } })));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o3'), orden('0003', 'c1', 't1', 'v1', { vehiculo: { ...resumenVehiculo(), anio: '2018' } })));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o2x'), orden('0002', 'c1', 't1', 'v1', { cliente: 'Juan' })));
+  });
+
+  it('el Jefe no cambia la instantánea del cliente ni del vehículo, y la del técnico solo al reasignar', async () => {
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { cliente: { ...resumenCliente('c1'), telefono: '1' } }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { vehiculo: { ...resumenVehiculo(), color: 'Azul' } }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { tecnico: resumenTecnico('t2') }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { tecnicoId: 't2', acceso: ['c1', 't2'], tecnico: { nombres: 'X' } }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { falla: 'Corregida' }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { tecnicoId: 't2', acceso: ['c1', 't2'], tecnico: resumenTecnico('t2') }));
+  });
+
+  it('la orden anterior al relleno se sigue editando y reasignando, y el Jefe puede completarle la instantánea del técnico', async () => {
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o2'), { falla: 'Corregida' }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o2'), { tecnicoId: 't1', acceso: ['c2', 't1'] }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o2'), { tecnicoId: 't2', acceso: ['c2', 't2'], tecnico: resumenTecnico('t2') }));
+    await assertSucceeds(updateDoc(ref(s.t2, 'ordenes/o2'), {
+      estado: 'EN_REPARACION', historial: [{ estado: 'EN_REPARACION', fechaHora: 2, usuarioId: 't2', motivo: null }],
+    }));
+  });
+
+  it('el técnico y el cliente no tocan las instantáneas', async () => {
+    await assertFails(updateDoc(ref(s.t1, 'ordenes/o1'), { tecnico: resumenTecnico('t2') }));
+    await assertFails(updateDoc(ref(s.t1, 'ordenes/o1'), { estado: 'EN_REPARACION', cliente: resumenCliente('c2') }));
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO' });
+    await assertFails(updateDoc(ref(s.c1, 'ordenes/o1'), {
+      conformidad: { fechaHora: 9, usuarioId: 'c1', usuarioNombre: 'N' }, cliente: resumenCliente('c2'),
+    }));
+  });
+
   it('el técnico asignado inicia la reparación y marca la orden como lista, en ese orden', async () => {
     const historial = (estado) => [{ estado, fechaHora: 2, usuarioId: 't1', motivo: null }];
     await assertFails(updateDoc(ref(s.t1, 'ordenes/o1'), { estado: 'LISTO', historial: historial('LISTO') }));
@@ -229,6 +302,15 @@ describe('ordenes', () => {
     await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { tecnicoId: 't1' }));
     await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { clienteId: 'c1', acceso: ['c1', 't2'] }));
     await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { numero: 'ORD-9999' }));
+  });
+
+  it('la instantánea del técnico solo se agrega o cambia al reasignar, no al editar otros datos', async () => {
+    // o2 es una orden anterior al relleno (sin instantáneas) y t2 es su técnico: editarla no puede agregar `tecnico`
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { falla: 'Corregida', tecnico: resumenTecnico('t2') }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o2'), { falla: 'Corregida' }));
+    // o1 ya tiene la suya: reescribirla sin cambios al editar otros datos sí pasa; cambiarla sin reasignar no
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { falla: 'Corregida', tecnico: resumenTecnico('t1') }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { falla: 'Corregida', tecnico: { nombres: 'Renombrado', apellidos: 'Apellido' } }));
   });
 
   it('el Jefe solo anula una orden Ingresado y solo entrega una orden Lista que ya tiene la conformidad', async () => {

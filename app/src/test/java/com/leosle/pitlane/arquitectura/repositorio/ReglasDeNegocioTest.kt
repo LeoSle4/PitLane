@@ -15,6 +15,9 @@ import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
 import com.leosle.pitlane.modelo.NivelCombustible
+import com.leosle.pitlane.modelo.ResumenCliente
+import com.leosle.pitlane.modelo.ResumenTecnico
+import com.leosle.pitlane.modelo.ResumenVehiculo
 import com.leosle.pitlane.modelo.TipoAvance
 import com.leosle.pitlane.arquitectura.datasource.local.BaseDatosLocal
 import com.leosle.pitlane.arquitectura.datasource.local.DocumentosDataSource
@@ -27,6 +30,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -266,6 +270,73 @@ class ReglasDeNegocioTest {
         val atendida = bd.solicitudes.value.first { it.id == "s-3" }
         assertEquals(com.leosle.pitlane.modelo.EstadoSolicitud.ATENDIDA, atendida.estado)
         assertEquals(orden.id, atendida.ordenId)
+    }
+
+    @Test
+    fun registrarOrdenGuardaLasInstantaneasDeClienteVehiculoYTecnico() = runBlocking {
+        val orden = (ordenes.registrarOrden(datosOrden("v-versa", "u-cli-carlos", "s-3", listOf(foto())), "u-jefe") as Resultado.Exito).valor.orden
+        val guardada = bd.ordenes.value.first { it.id == orden.id }
+        val esperadaCliente = ResumenCliente("Carlos", "Mendoza Díaz", "72345678", "923456789")
+        val esperadoVehiculo = ResumenVehiculo("JKL-654", "Nissan", "Versa", 2016, "Gris")
+        val esperadoTecnico = ResumenTecnico("Marco", "Ccori Torres")
+        assertEquals(esperadaCliente, orden.cliente)
+        assertEquals(esperadoVehiculo, orden.vehiculo)
+        assertEquals(esperadoTecnico, orden.tecnico)
+        assertEquals(esperadaCliente, guardada.cliente)
+        assertEquals(esperadoVehiculo, guardada.vehiculo)
+        assertEquals(esperadoTecnico, guardada.tecnico)
+    }
+
+    @Test
+    fun editarOrdenRefrescaElTecnicoYConservaClienteYVehiculo() = runBlocking {
+        val creada = (ordenes.registrarOrden(datosOrden("v-versa", "u-cli-carlos", null, listOf(foto())), "u-jefe") as Resultado.Exito).valor.orden
+        val editada = (ordenes.editarOrden(creada.id, "Falla corregida", 20, NivelCombustible.LLENO, "", "u-tec-luis", "u-jefe") as Resultado.Exito).valor
+        val guardada = bd.ordenes.value.first { it.id == creada.id }
+        assertEquals("Falla corregida", guardada.falla)
+        assertEquals("u-tec-luis", guardada.tecnicoId)
+        assertEquals(ResumenTecnico("Luis", "Ramos Huanca"), editada.tecnico)
+        assertEquals(ResumenTecnico("Luis", "Ramos Huanca"), guardada.tecnico)
+        assertEquals(creada.cliente, guardada.cliente)
+        assertEquals(creada.vehiculo, guardada.vehiculo)
+    }
+
+    @Test
+    fun editarUnaOrdenAnteriorAlRellenoNoInventaInstantaneasSiNoSeReasigna() = runBlocking {
+        val editada = (ordenes.editarOrden("o-3", "Falla nueva", 10, NivelCombustible.MEDIO, "", "u-tec-luis", "u-jefe") as Resultado.Exito).valor
+        assertEquals("Falla nueva", editada.falla)
+        assertEquals("u-tec-luis", editada.tecnicoId)
+        // Las reglas solo aceptan cambiar `tecnico` junto con `tecnicoId`, así que sin reasignar no se agrega
+        assertNull(editada.tecnico)
+        assertNull(editada.cliente)
+        assertNull(editada.vehiculo)
+    }
+
+    @Test
+    fun editarOrdenSinReasignarConservaLaInstantaneaAunqueElTecnicoCambieSuNombre() = runBlocking {
+        val creada = (ordenes.registrarOrden(datosOrden("v-versa", "u-cli-carlos", null, listOf(foto())), "u-jefe") as Resultado.Exito).valor.orden
+        bd.usuarios.value = bd.usuarios.value.map { if (it.id == "u-tec-marco") it.copy(nombres = "Marcos") else it }
+        val editada = (ordenes.editarOrden(creada.id, "Falla corregida", 20, NivelCombustible.LLENO, "", "u-tec-marco", "u-jefe") as Resultado.Exito).valor
+        assertEquals(ResumenTecnico("Marco", "Ccori Torres"), editada.tecnico)
+        assertEquals(ResumenTecnico("Marco", "Ccori Torres"), bd.ordenes.value.first { it.id == creada.id }.tecnico)
+    }
+
+    @Test
+    fun registrarSolicitudDeUnVehiculoInexistenteDevuelveUnMensajeClaro() = runBlocking {
+        assertEquals("No se encontró el vehículo", mensajeDe(solicitudes.registrarSolicitud(
+            "u-cli-ana", "v-no-existe", "El auto no arranca por las mañanas", emptyList(), ahora, emptyList()
+        )))
+    }
+
+    @Test
+    fun registrarSolicitudGuardaLasInstantaneasDeClienteYVehiculo() = runBlocking {
+        val solicitud = (solicitudes.registrarSolicitud(
+            "u-cli-ana", "v-yaris", "El auto no arranca por las mañanas", emptyList(), ahora, emptyList()
+        ) as Resultado.Exito).valor
+        val guardada = bd.solicitudes.value.first { it.id == solicitud.id }
+        val cliente = bd.usuarios.value.first { it.id == "u-cli-ana" }
+        assertEquals(ResumenCliente(cliente.nombres, cliente.apellidos, cliente.dni, cliente.telefono), guardada.cliente)
+        assertEquals(ResumenVehiculo("ABC-123", "Toyota", "Yaris", 2018, "Plata"), guardada.vehiculo)
+        assertEquals("El auto no arranca por las mañanas", guardada.descripcion)
     }
 
     @Test

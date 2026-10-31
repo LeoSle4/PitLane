@@ -9,6 +9,8 @@ import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
 import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.SolicitudDetallada
+import com.leosle.pitlane.modelo.comoResumen
+import com.leosle.pitlane.modelo.comoResumenCliente
 import com.leosle.pitlane.util.Fechas
 import com.leosle.pitlane.util.Reloj
 import com.leosle.pitlane.util.Resultado
@@ -62,6 +64,8 @@ class SolicitudRepository(
         val tieneAtencion = documentos.solicitudes.listar().any { it.vehiculoId == vehiculoId && it.estado == EstadoSolicitud.PENDIENTE } ||
             documentos.ordenes.listar().any { it.vehiculoId == vehiculoId && it.enCurso }
         if (tieneAtencion) return Resultado.Error("Este vehículo ya tiene una atención en curso")
+        val cliente = usuarios.obtenerUsuario(clienteId) ?: return Resultado.Error("No se encontró el cliente")
+        val vehiculo = documentos.vehiculos.obtener(vehiculoId) ?: return Resultado.Error("No se encontró el vehículo")
         val guardadas = when (val subida = this.fotos.subir(clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
@@ -75,7 +79,9 @@ class SolicitudRepository(
             fechaLlegada = fechaLlegada,
             fotos = guardadas,
             estado = EstadoSolicitud.PENDIENTE,
-            creadaEn = reloj.ahora()
+            creadaEn = reloj.ahora(),
+            cliente = cliente.comoResumenCliente(),
+            vehiculo = vehiculo.comoResumen()
         )
         documentos.solicitudes.guardar(solicitud.id, solicitud)
         return Resultado.Exito(solicitud)

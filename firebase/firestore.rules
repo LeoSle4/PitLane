@@ -15,13 +15,47 @@ service cloud.firestore {
     function esCliente() { return sesion() && request.auth.token.rol == 'CLIENTE'; }
     function puedeLeer(datos) { return esJefe() || (sesion() && uid() in datos.acceso); }
     function cambios() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    // La instantánea que escribe el cliente en su solicitud debe ser copia fiel de su perfil y de su vehículo; si no,
+    // podría mostrarle al Jefe una placa o un DNI falsos.
+    function coincideConElPerfil(r) {
+      let perfil = get(/databases/$(database)/documents/usuarios/$(uid())).data;
+      return r.nombres == perfil.nombres && r.apellidos == perfil.apellidos && r.dni == perfil.dni
+        && r.telefono == perfil.telefono;
+    }
+    function coincideConElVehiculo(r, vehiculoId) {
+      let v = get(/databases/$(database)/documents/vehiculos/$(vehiculoId)).data;
+      return r.placa == v.placa && r.marca == v.marca && r.modelo == v.modelo && r.anio == v.anio && r.color == v.color;
+    }
     function orden(id) { return get(/databases/$(database)/documents/ordenes/$(id)).data; }
+
+    // Instantáneas del ingreso (cliente, vehículo y técnico): mapas con exactamente estas claves. Son una foto de
+    // lo cierto ese día; un cambio posterior del perfil o del vehículo no se propaga.
+    function esResumenCliente(m) {
+      return m is map && m.keys().hasOnly(['nombres', 'apellidos', 'dni', 'telefono'])
+        && m.keys().hasAll(['nombres', 'apellidos', 'dni', 'telefono'])
+        && m.nombres is string && m.apellidos is string && m.dni is string && m.telefono is string;
+    }
+    function esResumenVehiculo(m) {
+      return m is map && m.keys().hasOnly(['placa', 'marca', 'modelo', 'anio', 'color'])
+        && m.keys().hasAll(['placa', 'marca', 'modelo', 'anio', 'color'])
+        && m.placa is string && m.marca is string && m.modelo is string && m.anio is int && m.color is string;
+    }
+    function esResumenTecnico(m) {
+      return m is map && m.keys().hasOnly(['nombres', 'apellidos'])
+        && m.keys().hasAll(['nombres', 'apellidos'])
+        && m.nombres is string && m.apellidos is string;
+    }
+    // La instantánea del técnico solo cambia junto con `tecnicoId` (reasignación) y con su forma exacta.
+    function tecnicoCoherente() {
+      return !cambios().hasAny(['tecnico'])
+        || (cambios().hasAny(['tecnicoId']) && esResumenTecnico(request.resource.data.get('tecnico', null)));
+    }
 
     // Campos que puede tener una orden; ni al crearla ni al actualizarla se aceptan otros.
     function clavesDeOrden() {
       return ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
         'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
-        'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso'];
+        'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso', 'cliente', 'vehiculo', 'tecnico'];
     }
     // La conformidad, una vez guardada, no se borra ni se cambia (RN-14).
     function conformidadIntacta() {
@@ -86,7 +120,12 @@ service cloud.firestore {
 
       allow create: if esCliente() && request.resource.data.clienteId == uid()
         && request.resource.data.keys().hasOnly(
-          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso'])
+          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso', 'cliente', 'vehiculo'])
+        && request.resource.data.keys().hasAll(['cliente', 'vehiculo'])
+        && esResumenCliente(request.resource.data.cliente)
+        && esResumenVehiculo(request.resource.data.vehiculo)
+        && coincideConElPerfil(request.resource.data.cliente)
+        && coincideConElVehiculo(request.resource.data.vehiculo, request.resource.data.vehiculoId)
         && request.resource.data.estado == 'PENDIENTE'
         && request.resource.data.ordenId == null
         && request.resource.data.acceso == [request.resource.data.clienteId];
@@ -111,6 +150,10 @@ service cloud.firestore {
 
       allow create: if esJefe()
         && request.resource.data.keys().hasOnly(clavesDeOrden())
+        && request.resource.data.keys().hasAll(['cliente', 'vehiculo', 'tecnico'])
+        && esResumenCliente(request.resource.data.cliente)
+        && esResumenVehiculo(request.resource.data.vehiculo)
+        && esResumenTecnico(request.resource.data.tecnico)
         && request.resource.data.estado == 'INGRESADO'
         && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId];
 
@@ -118,7 +161,8 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(clavesDeOrden())
           && estadoPermitidoAlJefe()
           && conformidadIntacta()
-          && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn'])
+          && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn', 'cliente', 'vehiculo'])
+          && tecnicoCoherente()
           && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId])
         || (esTecnico() && resource.data.tecnicoId == uid()
           && cambios().hasOnly(['estado', 'historial', 'avisosEnviados', 'ultimoAviso'])

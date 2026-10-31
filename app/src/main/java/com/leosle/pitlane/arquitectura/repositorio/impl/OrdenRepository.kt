@@ -20,6 +20,9 @@ import com.leosle.pitlane.modelo.OrdenDetallada
 import com.leosle.pitlane.modelo.ResultadoIngreso
 import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.TipoAvance
+import com.leosle.pitlane.modelo.comoResumen
+import com.leosle.pitlane.modelo.comoResumenCliente
+import com.leosle.pitlane.modelo.comoResumenTecnico
 import com.leosle.pitlane.util.Reloj
 import com.leosle.pitlane.util.Resultado
 import kotlinx.coroutines.flow.Flow
@@ -134,7 +137,10 @@ class OrdenRepository(
             tecnicoId = tecnico.id,
             estado = EstadoOrden.INGRESADO,
             historial = listOf(CambioEstado(EstadoOrden.INGRESADO, ahora, jefeId, usuarioNombre = nombreDe(jefeId))),
-            creadaEn = ahora
+            creadaEn = ahora,
+            cliente = cliente.comoResumenCliente(),
+            vehiculo = vehiculo.comoResumen(),
+            tecnico = tecnico.comoResumenTecnico()
         )
         // Con solicitud de origen se atiende esa; sin ella, las pendientes del mismo vehículo (HU-23)
         val solicitudesAtendidas = datos.solicitudId?.let { listOf(it) }
@@ -178,6 +184,8 @@ class OrdenRepository(
             combustible = combustible,
             observaciones = observaciones.trim(),
             tecnicoId = tecnico.id,
+            // La instantánea solo cambia al reasignar: las reglas exigen que `tecnico` y `tecnicoId` cambien juntos
+            tecnico = if (tecnico.id != orden.tecnicoId) tecnico.comoResumenTecnico() else orden.tecnico,
             editadaPor = usuarioId,
             editadaEn = reloj.ahora()
         )

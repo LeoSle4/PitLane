@@ -78,6 +78,23 @@ read -s JEFE_CONTRASENA && export JEFE_CONTRASENA
 JEFE_CORREO=... JEFE_NOMBRES=... JEFE_APELLIDOS=... JEFE_DNI=... JEFE_TELEFONO=... node scripts/sembrarJefe.mjs
 ```
 
+### Rellenar las instantáneas de los documentos existentes
+
+Las órdenes y solicitudes guardan una instantánea del cliente, del vehículo y (solo las órdenes) del técnico, tomada el
+día del ingreso. No se propaga: si después cambia el teléfono de un cliente o los datos de un vehículo, la orden
+conserva lo que era cierto ese día. Los documentos creados antes de esta mejora no la tienen; el script la completa leyendo
+`usuarios` y `vehiculos`, sin sobrescribir las que ya existen. Por defecto solo muestra lo que cambiaría:
+
+```bash
+cd firebase/functions
+export GOOGLE_APPLICATION_CREDENTIALS=/ruta/fuera/del/repo/clave-de-servicio.json
+node scripts/rellenarInstantaneas.mjs             # simulacro: no escribe
+node scripts/rellenarInstantaneas.mjs --aplicar   # escribe en el proyecto
+```
+
+Despliega las reglas nuevas después del relleno o antes, da igual: las reglas no exigen las instantáneas al actualizar,
+solo al crear.
+
 ## Desplegar las reglas
 
 Solo después de que las pruebas pasen. Con `firebase login` hecho:

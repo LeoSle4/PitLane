@@ -37,11 +37,20 @@ export const perfil = (id, rol, acceso, extra = {}) => ({
   rol, activo: true, tieneCuenta: true, acceso, ...extra,
 });
 
+/** Instantáneas que el ingreso guarda en la orden y la solicitud; coinciden con los perfiles y vehículos sembrados. */
+export const resumenCliente = (id) => ({ nombres: `Nombre ${id}`, apellidos: 'Apellido', dni: `1${id}`, telefono: '999111222' });
+export const resumenVehiculo = (placa = 'ABC123') => ({ placa, marca: 'Toyota', modelo: 'Yaris', anio: 2018, color: 'Rojo' });
+export const resumenTecnico = (id) => ({ nombres: `Nombre ${id}`, apellidos: 'Apellido' });
+
+/** Quita las instantáneas: así eran los documentos anteriores al relleno (`rellenarInstantaneas.mjs`). */
+export const sinInstantaneas = ({ cliente, vehiculo, tecnico, ...resto }) => resto;
+
 export const orden = (id, clienteId, tecnicoId, vehiculoId, extra = {}) => ({
   numero: `ORD-${id}`, clienteId, vehiculoId, solicitudId: null, falla: 'Batería descargada', kilometraje: 100,
   combustible: 'MEDIO', observaciones: '', fotos: [], tecnicoId, estado: 'INGRESADO', historial: [], creadaEn: 1,
   motivoAnulacion: null, avisosEnviados: 0, ultimoAviso: null, editadaPor: null, editadaEn: null, conformidad: null,
-  observacionesCliente: [], acceso: [clienteId, tecnicoId], ...extra,
+  observacionesCliente: [], acceso: [clienteId, tecnicoId],
+  cliente: resumenCliente(clienteId), vehiculo: resumenVehiculo(), tecnico: resumenTecnico(tecnicoId), ...extra,
 });
 
 export const vehiculo = (clienteId, placa, acceso, extra = {}) => ({
@@ -50,7 +59,8 @@ export const vehiculo = (clienteId, placa, acceso, extra = {}) => ({
 
 export const solicitud = (clienteId, vehiculoId, extra = {}) => ({
   clienteId, vehiculoId, descripcion: 'No arranca el motor', sintomas: [], fechaLlegada: 1, fotos: [],
-  estado: 'PENDIENTE', creadaEn: 1, ordenId: null, acceso: [clienteId], ...extra,
+  estado: 'PENDIENTE', creadaEn: 1, ordenId: null, acceso: [clienteId],
+  cliente: resumenCliente(clienteId), vehiculo: resumenVehiculo(), ...extra,
 });
 
 export const avance = (ordenId, tecnicoId, acceso, extra = {}) => ({
@@ -73,7 +83,8 @@ export async function sembrar(entorno) {
     'vehiculos/v2': vehiculo('c2', 'DEF456', ['c2', 't2']),
     'solicitudes/s1': solicitud('c1', 'v1'),
     'ordenes/o1': orden('0001', 'c1', 't1', 'v1'),
-    'ordenes/o2': orden('0002', 'c2', 't2', 'v2'),
+    // o2 es anterior al relleno: no tiene instantáneas y las actualizaciones deben seguir funcionando
+    'ordenes/o2': sinInstantaneas(orden('0002', 'c2', 't2', 'v2')),
     'avances/a1': avance('o1', 't1', ['c1', 't1']),
     'notificaciones/n1': { usuarioId: 'c1', titulo: 'Vehículo ingresado', mensaje: 'm', fechaHora: 1, leida: false, ordenId: 'o1', esIngreso: true },
     'notificaciones/n2': { usuarioId: 'c2', titulo: 'Vehículo ingresado', mensaje: 'm', fechaHora: 1, leida: false, ordenId: 'o2', esIngreso: true },

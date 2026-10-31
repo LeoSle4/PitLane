@@ -17,7 +17,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 ## Tasks
 
 - [x] T0 S0 reglas del Jefe. inline. commit 7826db2
-- [ ] T1 S1a instantánea: datos, escritura, reglas, relleno. route: delegada (contexto)
+- [x] T1 S1a instantánea: datos, escritura, reglas, relleno. route: delegada (contexto). commit ver git log (feat(modelo): instantánea...). RED: 6 pruebas Android y 10 de reglas; GREEN: 65 de reglas y Gradle verde
 - [ ] T2 S1b listas desde la instantánea; detalle por get. route: delegada (contexto)
 - [ ] T3 S2 tokens por dispositivo. route: delegada (contexto)
 - [ ] T4 S3 consultas dirigidas. route: delegada (contexto)
@@ -29,3 +29,12 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 L1 (2026-10-31, usuario): "Desarrolla todos los punto, pero cada que termines evaluao como ingeneiro de base dedatos no relacional, correctamente"
 L2 (2026-10-31, usuario, observaciones pegadas sobre el diagrama): normalización excesiva con lecturas en cadena, falta de desnormalización, subcolecciones para `tokensDispositivo` y `avances`, y contador de órdenes "peligroso". Evaluado: se acepta la instantánea y los tokens por dispositivo; los avances se resuelven con consulta dirigida; el contador distribuido se descarta (solo el Jefe crea órdenes y una transacción basta).
 L3 (2026-10-31, orquestador): la ruta delegada se elige por el respaldo de contexto de la sesión (la sesión supera con creces los ~150k tokens); las tareas comparten archivos, así que se ejecutan una tras otra.
+
+L4 (T1, verificación independiente): 1 bloqueo reproducido y corregido: `editarOrden` reescribía `tecnico` y las reglas lo rechazaban si `tecnicoId` no cambiaba (órdenes anteriores al relleno o técnico renombrado). Ahora la instantánea solo cambia al reasignar. Se agregaron pruebas en las dos capas y un mensaje claro en `registrarSolicitud` cuando el cliente o el vehículo no existen.
+L5 (T1, evaluación como ingeniero NoSQL):
+- Lecturas y costo: la instantánea añade unos 300 bytes por documento y no cuesta lecturas extra al escribir (el repositorio ya leía cliente, vehículo y técnico). El ahorro de lecturas NO existe todavía: llega con T2, cuando las listas dejen de escuchar `usuarios`, `vehiculos` y `solicitudes` completos.
+- Consistencia: es una instantánea del ingreso, por diseño no se propaga (la ficha conserva lo cierto ese día). `cliente` y `vehiculo` son inmutables por regla; `tecnico` cambia solo junto con `tecnicoId`. Riesgo asumido: un cambio de teléfono o nombre no se refleja en órdenes ya creadas.
+- Seguridad: hallazgo propio, la instantánea de la solicitud la escribe el cliente y la regla solo validaba su forma, así que podía falsear placa o DNI ante el Jefe. Corregido: al crear, debe coincidir con `usuarios/{uid}` y con el vehículo (`get` en la regla, 2 lecturas por solicitud nueva, volumen bajo). En `ordenes` no se compara porque solo escribe el Jefe.
+- Atomicidad: sin cambio; el número de orden y la orden siguen sin transacción conjunta (punto 8 de la evaluación).
+- Migración y reversión: los lectores toleran documentos sin instantánea (null). El relleno es seco por defecto y nunca pisa una instantánea existente. Reversión: ignorar los campos. ORDEN DE DESPLIEGUE: primero publicar la app nueva, luego ejecutar el relleno, y al final desplegar las reglas; si las reglas van antes, la app antigua no podrá crear órdenes ni solicitudes porque ahora exigen la instantánea.
+- Riesgos que quedan: las reglas de `ordenes` comprueban la forma de la instantánea pero no su coincidencia con los perfiles; el relleno usa `''` o `0` si falta un dato del perfil; una solicitud puede apuntar al vehículo de otro cliente (la regla no comprueba la propiedad del vehículo).
