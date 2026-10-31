@@ -11,6 +11,7 @@ import com.leosle.pitlane.modelo.ObservacionCliente
 import com.leosle.pitlane.util.Validador
 import kotlinx.coroutines.flow.first
 import com.leosle.pitlane.modelo.DatosOrden
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
@@ -156,7 +157,8 @@ class OrdenRepository(
             creadaEn = ahora,
             cliente = cliente.comoResumenCliente(),
             vehiculo = vehiculo.comoResumen(),
-            tecnico = tecnico.comoResumenTecnico()
+            tecnico = tecnico.comoResumenTecnico(),
+            esquema = ESQUEMA_ACTUAL
         )
         // Con solicitud de origen se atiende esa; sin ella, las pendientes del mismo vehículo (HU-23)
         val solicitudesAtendidas = datos.solicitudId?.let { listOf(it) }

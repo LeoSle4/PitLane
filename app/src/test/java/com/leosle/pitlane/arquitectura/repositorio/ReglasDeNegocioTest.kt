@@ -11,6 +11,7 @@ import com.leosle.pitlane.arquitectura.repositorio.impl.AuthRepository
 import com.leosle.pitlane.modelo.Conformidad
 import com.leosle.pitlane.modelo.DatosOrden
 import com.leosle.pitlane.modelo.DatosRegistroCliente
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
@@ -298,6 +299,28 @@ class ReglasDeNegocioTest {
         assertEquals(ResumenTecnico("Luis", "Ramos Huanca"), guardada.tecnico)
         assertEquals(creada.cliente, guardada.cliente)
         assertEquals(creada.vehiculo, guardada.vehiculo)
+    }
+
+    @Test
+    fun registrarOrdenYSolicitudCreanDocumentosDeLaVersion2() = runBlocking {
+        val orden = (ordenes.registrarOrden(datosOrden("v-versa", "u-cli-carlos", null, listOf(foto())), "u-jefe") as Resultado.Exito).valor.orden
+        assertEquals(ESQUEMA_ACTUAL, orden.esquema)
+        assertEquals(ESQUEMA_ACTUAL, bd.ordenes.value.first { it.id == orden.id }.esquema)
+        val solicitud = (solicitudes.registrarSolicitud(
+            "u-cli-ana", "v-yaris", "El auto no arranca por las mañanas", emptyList(), ahora, emptyList()
+        ) as Resultado.Exito).valor
+        assertEquals(ESQUEMA_ACTUAL, solicitud.esquema)
+        assertEquals(ESQUEMA_ACTUAL, bd.solicitudes.value.first { it.id == solicitud.id }.esquema)
+    }
+
+    @Test
+    fun editarOrdenDeLaVersion1NoLaPromueveALaVersion2NiCambiaElTecnicoSinReasignar() = runBlocking {
+        val antes = bd.ordenes.value.first { it.id == "o-3" }
+        assertEquals(1, antes.esquema)
+        val editada = (ordenes.editarOrden("o-3", "Falla nueva", 10, NivelCombustible.MEDIO, "", antes.tecnicoId, "u-jefe") as Resultado.Exito).valor
+        assertEquals(1, editada.esquema)
+        assertEquals(1, bd.ordenes.value.first { it.id == "o-3" }.esquema)
+        assertEquals(antes.tecnico, editada.tecnico)
     }
 
     @Test

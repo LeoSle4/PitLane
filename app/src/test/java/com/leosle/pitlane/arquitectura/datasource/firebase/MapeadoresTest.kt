@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.datasource.firebase
 
 import com.leosle.pitlane.modelo.Avance
 import com.leosle.pitlane.modelo.CambioEstado
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.Conformidad
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.EstadoSolicitud
@@ -155,6 +156,49 @@ class MapeadoresTest {
         assertNull(legada.vehiculo)
         assertNull(legada.tecnico)
         assertEquals("Batería", legada.falla)
+    }
+
+    @Test
+    fun laOrdenYLaSolicitudDeLaVersion2EscribenElEsquemaYLoLeen() {
+        val orden = Orden(
+            id = "o1", numero = "ORD-0001", clienteId = "u1", vehiculoId = "v1", solicitudId = null, falla = "Batería",
+            kilometraje = 10, combustible = NivelCombustible.MEDIO, observaciones = "", fotos = emptyList(),
+            tecnicoId = "u9", estado = EstadoOrden.INGRESADO, historial = emptyList(), creadaEn = 1L,
+            cliente = resumenCliente, vehiculo = resumenVehiculo, tecnico = resumenTecnico, esquema = ESQUEMA_ACTUAL
+        )
+        val solicitud = Solicitud(
+            id = "s1", clienteId = "u1", vehiculoId = "v1", descripcion = "No arranca", sintomas = emptyList(),
+            fechaLlegada = 10L, fotos = emptyList(), estado = EstadoSolicitud.PENDIENTE, creadaEn = 5L,
+            cliente = resumenCliente, vehiculo = resumenVehiculo, esquema = ESQUEMA_ACTUAL
+        )
+
+        assertEquals(2, orden.aDocumento()["esquema"])
+        assertEquals(2, solicitud.aDocumento()["esquema"])
+        assertEquals(orden, orden.aDocumento().aOrden("o1"))
+        assertEquals(solicitud, solicitud.aDocumento().aSolicitud("s1"))
+    }
+
+    @Test
+    fun elDocumentoSinEsquemaEsDeLaVersion1YSeEscribeDeNuevoSinEl() {
+        val ordenLegada = mapOf<String, Any?>(
+            "numero" to "ORD-0001", "clienteId" to "u1", "vehiculoId" to "v1", "falla" to "Batería",
+            "combustible" to "MEDIO", "tecnicoId" to "u9", "estado" to "INGRESADO", "creadaEn" to 1L,
+            "cliente" to mapOf("nombres" to "Ana", "apellidos" to "Ruiz", "dni" to "12345678", "telefono" to "999111222"),
+            "vehiculo" to mapOf("placa" to "ABC-123", "marca" to "Toyota", "modelo" to "Yaris", "anio" to 2018, "color" to "Rojo")
+        )
+        val solicitudLegada = mapOf<String, Any?>(
+            "clienteId" to "u1", "vehiculoId" to "v1", "descripcion" to "No arranca", "estado" to "PENDIENTE", "creadaEn" to 5L
+        )
+
+        val orden = ordenLegada.aOrden("o1")
+        val solicitud = solicitudLegada.aSolicitud("s1")
+
+        assertEquals(1, orden.esquema)
+        assertEquals(1, solicitud.esquema)
+        assertFalse(orden.aDocumento().containsKey("esquema"))
+        assertFalse(solicitud.aDocumento().containsKey("esquema"))
+        assertEquals(1, (ordenLegada + ("esquema" to 1)).aOrden("o1").esquema)
+        assertFalse((ordenLegada + ("esquema" to 1)).aOrden("o1").aDocumento().containsKey("esquema"))
     }
 
     @Test

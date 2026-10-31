@@ -2,6 +2,9 @@
 //   ordenes:     cliente {nombres, apellidos, dni, telefono}, vehiculo {placa, marca, modelo, anio, color}, tecnico {nombres, apellidos}
 //   solicitudes: cliente y vehiculo
 // Solo completa lo que falta; nunca sobrescribe una instantánea existente. Es una foto de los datos de hoy.
+// Cuando el documento termina con todas las instantáneas que le corresponden, escribe también `esquema: 2` en la misma
+// actualización (nunca sobrescribe un `esquema` existente). Un documento que sigue incompleto (porque el cliente, el
+// vehículo o el técnico referenciado ya no existe) queda sin `esquema`, es decir, de la versión 1.
 //
 // Por defecto NO escribe: imprime lo que cambiaría. Para aplicar los cambios añade --aplicar.
 //
@@ -37,6 +40,10 @@ function faltantes(id, doc, conTecnico) {
   pendiente('cliente', usuarios.get(doc.clienteId), 'cliente', resumenCliente);
   pendiente('vehiculo', vehiculos.get(doc.vehiculoId), 'vehículo', resumenVehiculo);
   if (conTecnico) pendiente('tecnico', usuarios.get(doc.tecnicoId), 'técnico', resumenTecnico);
+  // La versión nunca miente: solo se escribe si, con estos cambios, el documento tiene todas las instantáneas.
+  const requeridas = conTecnico ? ['cliente', 'vehiculo', 'tecnico'] : ['cliente', 'vehiculo'];
+  const completo = requeridas.every((campo) => doc[campo] !== undefined || cambios[campo] !== undefined);
+  if (completo && doc.esquema === undefined) cambios.esquema = 2;
   return cambios;
 }
 

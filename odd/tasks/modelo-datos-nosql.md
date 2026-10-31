@@ -31,8 +31,8 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T7 S6+S7 lecturas en vivo acotadas por estado y por cliente. route: delegada (contexto) e inline para órdenes de cliente y de vehículo. RED: 5 de 7 pruebas nuevas y 2 más; GREEN: 100 de reglas, Gradle verde
 - [x] T8 S8 búsqueda de clientes con términos indexados (datos y lectura). route: delegada (contexto) en dos entregas. RED: 7 de 12 pruebas de reglas y 11 pruebas de lectura; GREEN: 111 de reglas, 46 de funciones, Gradle verde; verificador independiente sin bloqueos
 - [x] T9 S9 TTL de notificaciones y códigos. route: inline (cambio pequeño del servidor). RED: 2 pruebas de funciones; GREEN: 47 de funciones, 111 de reglas, Gradle verde
-- [ ] T10 S10 versión de esquema. route: delegada (contexto)
-- [ ] T11 documentación y diagramas finales de la segunda ronda. route: inline
+- [x] T10 S10 versión de esquema `esquema: 2` en órdenes y solicitudes. route: delegada (contexto). RED: reglas del commit anterior fallan las pruebas nuevas; GREEN: 116 de reglas, 47 de funciones, Gradle verde; verificador independiente sin bloqueos
+- [x] T11 documentación y diagramas finales de la segunda ronda. route: inline. Diagramas lógico y físico regenerados con términos, versión, vencimientos e índices
 
 ## Log
 
@@ -103,3 +103,11 @@ L15 (T9, evaluación como ingeniero NoSQL):
 - Pendiente del usuario: activar las tres políticas TTL con `gcloud` (comandos en el README); ningún script lo hace. Para las notificaciones ya existentes, `rellenarExpiracion.mjs` (simulacro por defecto, no ejecutado) les pone `expiraEn = fechaHora + 90 días`; sin él esas no vencerían nunca.
 - Compatibilidad: el campo nuevo lo escribe solo el servidor, la app no lo lee y las reglas de actualización de la notificación (solo `leida`) no cambian, así que no hace falta orden especial de despliegue.
 - No hecho, con motivo: `fechaHora` y las demás fechas de negocio siguen siendo números. Pasarlas a `Timestamp` exige migrar todos los documentos y cambiar las ordenaciones y los mapeadores, y no aporta nada que el TTL (que usa solo `expiraEn`) necesite.
+
+L16 (T10, verificación independiente): sin bloqueos. Matriz de 14 operaciones (edición, reasignación, anulación, fotos, observación, entrega, reenvío, transiciones del técnico, conformidad del cliente, edición y cancelación de solicitudes) sobre documentos sin instantáneas, con instantáneas sin versión y de versión 2, enviando la carga exacta que escribe el mapeador: para los documentos anteriores el resultado es idéntico al de antes (sin regresiones). La creación solo acepta el entero 2. La versión no miente: solo se escribe en documentos con la forma nueva, y solo `registrarOrden` y `registrarSolicitud` construyen documentos desde cero. Avisos: el 2.0 no se puede distinguir de 2 desde el SDK de JavaScript, y desde la app solo se promueve una orden que ya tiene las tres instantáneas (la promoción real la hace el relleno con el Admin SDK).
+L17 (T10, evaluación como ingeniero NoSQL):
+- Patrón: es el patrón de "versionado de esquema" de las bases documentales: documentos de formas distintas conviven en la misma colección y un campo dice cuál es cuál, sin parada ni migración masiva obligatoria. Antes la forma se adivinaba por la presencia de campos (`tieneInstantanea`); ahora hay una marca explícita para lectores, scripts de migración y diagnóstico.
+- Costo: un número pequeño por documento; ninguna lectura extra.
+- Límite importante: "ausente significa versión 1" no se puede consultar. Firestore no tiene consulta de "campo inexistente", así que un script que quiera migrar los antiguos tiene que recorrerlos y filtrar, o habría que haber escrito `esquema: 1` de forma explícita en los documentos originales. Es una decisión de diseño aceptada: el relleno usa el recorrido porque se ejecuta una vez.
+- Alcance honesto: la app todavía no decide nada con la versión; sigue usando la presencia de instantáneas para elegir entre la lista rápida y el cruce de respaldo. La versión es un andamio para la próxima migración, no un cambio de comportamiento.
+- Despliegue: la creación exige la versión 2, así que una app anterior no puede crear órdenes ni solicitudes una vez desplegadas las reglas; es el mismo orden que ya rige (app nueva primero, reglas al final).

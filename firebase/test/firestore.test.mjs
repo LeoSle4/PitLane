@@ -1,11 +1,11 @@
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
-  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, limit, query, runTransaction, setDoc, Timestamp, updateDoc, where, writeBatch,
+  arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs, limit, query, runTransaction, setDoc, Timestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import {
   avance, crearEntorno, orden, perfil, preparar, resumenCliente, resumenTecnico, resumenVehiculo, sembrar, sesiones,
-  sinInstantaneas, solicitud, vehiculo,
+  sinEsquema, sinInstantaneas, solicitud, vehiculo,
 } from './entorno.mjs';
 
 let entorno;
@@ -389,6 +389,22 @@ describe('solicitudes', () => {
     await assertSucceeds(updateDoc(ref(s.c1, 'solicitudes/s5'), { descripcion: 'Editada sin instantánea' }));
   });
 
+  it('la solicitud nueva exige esquema 2 y la solicitud anterior sigue editándose sin él', async () => {
+    const { esquema, ...v1 } = solicitud('c1', 'v1');
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s9'), v1));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1', { esquema: 1 })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1', { esquema: '2' })));
+    await assertFails(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1', { esquema: 3 })));
+    await assertSucceeds(setDoc(ref(s.c1, 'solicitudes/s9'), solicitud('c1', 'v1')));
+    await preparar(entorno, 'solicitudes/s5', sinEsquema(solicitud('c1', 'v1')));
+    await assertSucceeds(updateDoc(ref(s.c1, 'solicitudes/s5'), { descripcion: 'Editada sin esquema' }));
+    await assertFails(updateDoc(ref(s.c1, 'solicitudes/s5'), { esquema: 2 }));
+    await assertFails(updateDoc(ref(s.c1, 'solicitudes/s1'), { esquema: 3 }));
+    await assertFails(updateDoc(ref(s.jefe, 'solicitudes/s1'), { estado: 'ATENDIDA', ordenId: 'o1', esquema: 3 }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'solicitudes/s5'), { estado: 'ATENDIDA', ordenId: 'o1' }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'solicitudes/s1'), { estado: 'ATENDIDA', ordenId: 'o1' }));
+  });
+
   it('el cliente edita y cancela su solicitud pendiente, sin atenderla él mismo', async () => {
     await assertSucceeds(updateDoc(ref(s.c1, 'solicitudes/s1'), { descripcion: 'Ahora también hace ruido' }));
     await assertFails(updateDoc(ref(s.c1, 'solicitudes/s1'), { estado: 'ATENDIDA' }));
@@ -467,6 +483,44 @@ describe('ordenes', () => {
     await assertSucceeds(updateDoc(ref(s.t2, 'ordenes/o2'), {
       estado: 'EN_REPARACION', historial: [{ estado: 'EN_REPARACION', fechaHora: 2, usuarioId: 't2', motivo: null }],
     }));
+  });
+
+  it('la orden nueva exige esquema 2', async () => {
+    const { esquema, ...v1 } = orden('0009', 'c1', 't1', 'v1');
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o9'), v1));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o9'), orden('0009', 'c1', 't1', 'v1', { esquema: 1 })));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o9'), orden('0009', 'c1', 't1', 'v1', { esquema: '2' })));
+    await assertFails(setDoc(ref(s.jefe, 'ordenes/o9'), orden('0009', 'c1', 't1', 'v1', { esquema: 3 })));
+    await assertSucceeds(setDoc(ref(s.jefe, 'ordenes/o9'), orden('0009', 'c1', 't1', 'v1')));
+  });
+
+  it('el Jefe no cambia ni quita el esquema de una orden', async () => {
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { esquema: 1 }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { esquema: 3 }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o1'), { esquema: deleteField() }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o1'), { falla: 'Corregida' }));
+  });
+
+  it('una orden de la versión 1 recibe esquema 2 solo con las tres instantáneas, y sin él sigue funcionando', async () => {
+    await preparar(entorno, 'ordenes/o3', sinEsquema(orden('0003', 'c1', 't1', 'v1')));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o3'), { falla: 'Corregida' }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o3'), { esquema: 3 }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o3'), { esquema: '2' }));
+    await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { esquema: 2 }));
+    await assertSucceeds(updateDoc(ref(s.jefe, 'ordenes/o3'), { esquema: 2 }));
+    await assertSucceeds(updateDoc(ref(s.t1, 'ordenes/o3'), { estado: 'EN_REPARACION' }));
+  });
+
+  it('el técnico y el cliente avanzan órdenes de la versión 1 y de la 2, y no tocan el esquema', async () => {
+    await preparar(entorno, 'ordenes/o3', sinEsquema(orden('0003', 'c1', 't1', 'v1', { estado: 'LISTO' })));
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO' });
+    const firma = { fechaHora: 9, usuarioId: 'c1', usuarioNombre: 'N' };
+    await assertSucceeds(updateDoc(ref(s.c1, 'ordenes/o3'), { conformidad: firma }));
+    await assertSucceeds(updateDoc(ref(s.c1, 'ordenes/o1'), { conformidad: firma }));
+    await assertFails(updateDoc(ref(s.t1, 'ordenes/o3'), { esquema: 2 }));
+    await preparar(entorno, 'ordenes/o4', sinEsquema(orden('0004', 'c1', 't1', 'v1')));
+    await assertFails(updateDoc(ref(s.t1, 'ordenes/o4'), { estado: 'EN_REPARACION', esquema: 2 }));
+    await assertSucceeds(updateDoc(ref(s.t1, 'ordenes/o4'), { estado: 'EN_REPARACION' }));
   });
 
   it('el técnico y el cliente no tocan las instantáneas', async () => {

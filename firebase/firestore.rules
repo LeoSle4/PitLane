@@ -62,7 +62,17 @@ service cloud.firestore {
     function clavesDeOrden() {
       return ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
         'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
-        'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso', 'cliente', 'vehiculo', 'tecnico'];
+        'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso', 'cliente', 'vehiculo', 'tecnico', 'esquema'];
+    }
+    // Versión de esquema: 2 = con instantáneas. Un documento sin el campo es de la versión 1 y solo lo recibe junto con
+    // las instantáneas (relleno); una vez presente no cambia ni se quita.
+    function esquemaCoherente() {
+      return !cambios().hasAny(['esquema'])
+        || (!('esquema' in resource.data)
+          && request.resource.data.esquema is int && request.resource.data.esquema == 2
+          && request.resource.data.get('cliente', null) is map
+          && request.resource.data.get('vehiculo', null) is map
+          && request.resource.data.get('tecnico', null) is map);
     }
     // La conformidad, una vez guardada, no se borra ni se cambia (RN-14).
     function conformidadIntacta() {
@@ -163,8 +173,9 @@ service cloud.firestore {
 
       allow create: if esCliente() && request.resource.data.clienteId == uid()
         && request.resource.data.keys().hasOnly(
-          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso', 'cliente', 'vehiculo'])
-        && request.resource.data.keys().hasAll(['cliente', 'vehiculo'])
+          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso', 'cliente', 'vehiculo', 'esquema'])
+        && request.resource.data.keys().hasAll(['cliente', 'vehiculo', 'esquema'])
+        && request.resource.data.esquema is int && request.resource.data.esquema == 2
         && esResumenCliente(request.resource.data.cliente)
         && esResumenVehiculo(request.resource.data.vehiculo)
         && coincideConElPerfil(request.resource.data.cliente)
@@ -193,7 +204,8 @@ service cloud.firestore {
 
       allow create: if esJefe()
         && request.resource.data.keys().hasOnly(clavesDeOrden())
-        && request.resource.data.keys().hasAll(['cliente', 'vehiculo', 'tecnico'])
+        && request.resource.data.keys().hasAll(['cliente', 'vehiculo', 'tecnico', 'esquema'])
+        && request.resource.data.esquema is int && request.resource.data.esquema == 2
         && esResumenCliente(request.resource.data.cliente)
         && esResumenVehiculo(request.resource.data.vehiculo)
         && esResumenTecnico(request.resource.data.tecnico)
@@ -206,6 +218,7 @@ service cloud.firestore {
           && conformidadIntacta()
           && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn', 'cliente', 'vehiculo'])
           && tecnicoCoherente()
+          && esquemaCoherente()
           && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId])
         || (esTecnico() && resource.data.tecnicoId == uid()
           && cambios().hasOnly(['estado', 'historial', 'avisosEnviados', 'ultimoAviso'])

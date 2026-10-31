@@ -36,6 +36,9 @@ private fun Documento.largoONulo(campo: String): Long? = (this[campo] as? Number
 
 private fun Documento.entero(campo: String): Int = (this[campo] as? Number)?.toInt() ?: 0
 
+/** La versión de esquema; un documento sin el campo es de la versión 1. */
+private fun Documento.esquema(): Int = (this["esquema"] as? Number)?.toInt() ?: 1
+
 private fun Documento.booleano(campo: String, porDefecto: Boolean): Boolean = this[campo] as? Boolean ?: porDefecto
 
 @Suppress("UNCHECKED_CAST")
@@ -118,9 +121,16 @@ private fun ResumenTecnico.aDocumento(): Documento = mapOf("nombres" to nombres,
 
 private fun Documento.aResumenTecnico(): ResumenTecnico = ResumenTecnico(texto("nombres"), texto("apellidos"))
 
-/** Agrega al documento las instantáneas que existan; las ausentes (documentos anteriores al relleno) no se escriben. */
-private fun Documento.conInstantaneas(cliente: ResumenCliente?, vehiculo: ResumenVehiculo?, tecnico: ResumenTecnico? = null): Documento =
+/**
+ * Agrega al documento las instantáneas que existan; las ausentes (documentos anteriores al relleno) no se escriben.
+ * El `esquema` solo se escribe desde la versión 2: un documento de la versión 1 sigue sin el campo hasta que el relleno
+ * le da las instantáneas y la versión juntas.
+ */
+private fun Documento.conInstantaneas(
+    esquema: Int, cliente: ResumenCliente?, vehiculo: ResumenVehiculo?, tecnico: ResumenTecnico? = null
+): Documento =
     this + listOfNotNull(
+        if (esquema >= 2) "esquema" to esquema else null,
         cliente?.let { "cliente" to it.aDocumento() },
         vehiculo?.let { "vehiculo" to it.aDocumento() },
         tecnico?.let { "tecnico" to it.aDocumento() }
@@ -136,7 +146,7 @@ internal fun Solicitud.aDocumento(): Documento = mapOf(
     "estado" to estado.name,
     "creadaEn" to creadaEn,
     "ordenId" to ordenId
-).conInstantaneas(cliente, vehiculo)
+).conInstantaneas(esquema, cliente, vehiculo)
 
 internal fun Documento.aSolicitud(id: String): Solicitud = Solicitud(
     id = id,
@@ -150,7 +160,8 @@ internal fun Documento.aSolicitud(id: String): Solicitud = Solicitud(
     creadaEn = largo("creadaEn"),
     ordenId = textoONulo("ordenId"),
     cliente = subdocumento("cliente")?.aResumenCliente(),
-    vehiculo = subdocumento("vehiculo")?.aResumenVehiculo()
+    vehiculo = subdocumento("vehiculo")?.aResumenVehiculo(),
+    esquema = esquema()
 )
 
 private fun CambioEstado.aDocumento(): Documento = mapOf(
@@ -202,7 +213,7 @@ internal fun Orden.aDocumento(): Documento = mapOf(
     "editadaEn" to editadaEn,
     "conformidad" to conformidad?.aDocumento(),
     "observacionesCliente" to observacionesCliente.map { it.aDocumento() }
-).conInstantaneas(cliente, vehiculo, tecnico)
+).conInstantaneas(esquema, cliente, vehiculo, tecnico)
 
 internal fun Documento.aOrden(id: String): Orden = Orden(
     id = id,
@@ -228,7 +239,8 @@ internal fun Documento.aOrden(id: String): Orden = Orden(
     observacionesCliente = documentos("observacionesCliente").map { it.aObservacionCliente() },
     cliente = subdocumento("cliente")?.aResumenCliente(),
     vehiculo = subdocumento("vehiculo")?.aResumenVehiculo(),
-    tecnico = subdocumento("tecnico")?.aResumenTecnico()
+    tecnico = subdocumento("tecnico")?.aResumenTecnico(),
+    esquema = esquema()
 )
 
 internal fun Avance.aDocumento(): Documento = mapOf(

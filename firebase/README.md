@@ -95,6 +95,16 @@ node scripts/rellenarInstantaneas.mjs --aplicar   # escribe en el proyecto
 Despliega las reglas nuevas después del relleno o antes, da igual: las reglas no exigen las instantáneas al actualizar,
 solo al crear.
 
+#### Versión de esquema
+
+`ordenes` y `solicitudes` (los dos que cambiaron de forma con las instantáneas) llevan `esquema: 2`. Un documento SIN el
+campo es de la versión 1 (anterior a las instantáneas). La versión nunca miente: la app y las reglas solo la escriben en
+documentos con la forma de la versión 2, así que editar un documento de la versión 1 no lo promueve; el relleno le da las
+instantáneas y `esquema: 2` en la misma actualización, y solo si queda con todas (si falta el cliente, el vehículo o el
+técnico referenciado, sigue en la versión 1). Las reglas exigen `esquema == 2` al crear, y el Jefe no puede cambiar ni quitar
+el `esquema` de una orden ni ponérselo a una sin las tres instantáneas. La app no se apoya en la versión para leer (sigue
+comprobando si hay instantánea); sirve a los scripts de migración y al diagnóstico.
+
 ### Tokens de dispositivo
 
 El token de notificaciones vive en `usuarios/{usuarioId}/tokensDispositivo/{token}`, con `{token, expiraEn}`: un

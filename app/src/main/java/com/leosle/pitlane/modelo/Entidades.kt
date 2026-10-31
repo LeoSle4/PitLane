@@ -61,6 +61,9 @@ data class Foto(
     val fechaHora: Long
 )
 
+/** Versión de esquema de `ordenes` y `solicitudes` con instantáneas; un documento sin el campo es la versión 1. */
+const val ESQUEMA_ACTUAL = 2
+
 /** Aviso de falla enviado por el cliente antes de llevar su vehículo al taller. */
 data class Solicitud(
     val id: String,
@@ -76,7 +79,9 @@ data class Solicitud(
     /** Instantánea del cliente; nula en las solicitudes anteriores al relleno. */
     val cliente: ResumenCliente? = null,
     /** Instantánea del vehículo; nula en las solicitudes anteriores al relleno. */
-    val vehiculo: ResumenVehiculo? = null
+    val vehiculo: ResumenVehiculo? = null,
+    /** Versión de esquema: 2 si tiene la instantánea; 1 (sin el campo en el documento) si es anterior. */
+    val esquema: Int = 1
 )
 
 /**
@@ -135,7 +140,9 @@ data class Orden(
     /** Instantáneas del ingreso; nulas en las órdenes anteriores al relleno. */
     val cliente: ResumenCliente? = null,
     val vehiculo: ResumenVehiculo? = null,
-    val tecnico: ResumenTecnico? = null
+    val tecnico: ResumenTecnico? = null,
+    /** Versión de esquema: 2 si tiene las instantáneas; 1 (sin el campo en el documento) si es anterior. */
+    val esquema: Int = 1
 ) {
     /** Verdadero mientras el técnico todavía trabaja en la orden (Ingresado o En reparación). */
     val enCurso: Boolean get() = estado == EstadoOrden.INGRESADO || estado == EstadoOrden.EN_REPARACION

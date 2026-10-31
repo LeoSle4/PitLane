@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.combine
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.IFotoStorage
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
 import com.leosle.pitlane.modelo.Solicitud
@@ -81,7 +82,8 @@ class SolicitudRepository(
             estado = EstadoSolicitud.PENDIENTE,
             creadaEn = reloj.ahora(),
             cliente = cliente.comoResumenCliente(),
-            vehiculo = vehiculo.comoResumen()
+            vehiculo = vehiculo.comoResumen(),
+            esquema = ESQUEMA_ACTUAL
         )
         documentos.solicitudes.guardar(solicitud.id, solicitud)
         return Resultado.Exito(solicitud)

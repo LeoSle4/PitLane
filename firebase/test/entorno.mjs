@@ -43,14 +43,17 @@ export const resumenVehiculo = (placa = 'ABC123') => ({ placa, marca: 'Toyota', 
 export const resumenTecnico = (id) => ({ nombres: `Nombre ${id}`, apellidos: 'Apellido' });
 
 /** Quita las instantáneas: así eran los documentos anteriores al relleno (`rellenarInstantaneas.mjs`). */
-export const sinInstantaneas = ({ cliente, vehiculo, tecnico, ...resto }) => resto;
+export const sinInstantaneas = ({ cliente, vehiculo, tecnico, esquema, ...resto }) => resto;
+
+/** Quita solo la versión de esquema: un documento con instantáneas pero anterior a `esquema` (versión 1). */
+export const sinEsquema = ({ esquema, ...resto }) => resto;
 
 export const orden = (id, clienteId, tecnicoId, vehiculoId, extra = {}) => ({
   numero: `ORD-${id}`, clienteId, vehiculoId, solicitudId: null, falla: 'Batería descargada', kilometraje: 100,
   combustible: 'MEDIO', observaciones: '', fotos: [], tecnicoId, estado: 'INGRESADO', historial: [], creadaEn: 1,
   motivoAnulacion: null, avisosEnviados: 0, ultimoAviso: null, editadaPor: null, editadaEn: null, conformidad: null,
   observacionesCliente: [], acceso: [clienteId, tecnicoId],
-  cliente: resumenCliente(clienteId), vehiculo: resumenVehiculo(), tecnico: resumenTecnico(tecnicoId), ...extra,
+  cliente: resumenCliente(clienteId), vehiculo: resumenVehiculo(), tecnico: resumenTecnico(tecnicoId), esquema: 2, ...extra,
 });
 
 export const vehiculo = (clienteId, placa, acceso, extra = {}) => ({
@@ -60,7 +63,7 @@ export const vehiculo = (clienteId, placa, acceso, extra = {}) => ({
 export const solicitud = (clienteId, vehiculoId, extra = {}) => ({
   clienteId, vehiculoId, descripcion: 'No arranca el motor', sintomas: [], fechaLlegada: 1, fotos: [],
   estado: 'PENDIENTE', creadaEn: 1, ordenId: null, acceso: [clienteId],
-  cliente: resumenCliente(clienteId), vehiculo: resumenVehiculo(), ...extra,
+  cliente: resumenCliente(clienteId), vehiculo: resumenVehiculo(), esquema: 2, ...extra,
 });
 
 export const avance = (ordenId, tecnicoId, acceso, extra = {}) => ({
