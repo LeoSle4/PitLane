@@ -22,6 +22,18 @@ interface IColeccion<T> {
      */
     suspend fun listarDonde(campo: String, valor: String): List<T>
 
+    /**
+     * Emite los documentos que el usuario puede leer y cuyo campo [campo] vale [valor], cada vez que cambian; es la
+     * versión en vivo de [listarDonde] y la base solo entrega los que coinciden.
+     */
+    fun observarDonde(campo: String, valor: String): Flow<List<T>>
+
+    /**
+     * Emite los documentos que el usuario puede leer y cuyo campo [campo] vale alguno de [valores] (`in`); Firestore
+     * admite como máximo 30 valores, y la lista no puede estar vacía.
+     */
+    fun observarEnLista(campo: String, valores: List<String>): Flow<List<T>>
+
     /** Emite el documento con ese identificador cada vez que cambia; nulo si no existe o el usuario no puede leerlo. */
     fun observar(id: String): Flow<T?>
 

@@ -26,7 +26,11 @@ class VehiculoRepository(
 
     /** Emite los vehículos visibles del cliente junto con su orden más reciente que no esté anulada ni entregada. */
     override fun observarVehiculosDeCliente(clienteId: String): Flow<List<VehiculoConEstado>> =
-        combine(documentos.vehiculos.observarTodos(), documentos.ordenes.observarTodos(), usuarios.usuarioActual) { listaVehiculos, listaOrdenes, actor ->
+        combine(
+            documentos.vehiculos.observarDonde("clienteId", clienteId),
+            documentos.ordenes.observarDonde("clienteId", clienteId),
+            usuarios.usuarioActual
+        ) { listaVehiculos, listaOrdenes, actor ->
             listaVehiculos.filter { it.clienteId == clienteId && it.activo && actor.esJefeOPropio(clienteId) }.map { vehiculo ->
                 val activa = listaOrdenes
                     .filter { it.vehiculoId == vehiculo.id && it.estado != EstadoOrden.ANULADA && it.estado != EstadoOrden.ENTREGADO }

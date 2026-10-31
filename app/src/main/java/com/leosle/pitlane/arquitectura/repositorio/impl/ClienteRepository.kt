@@ -31,8 +31,8 @@ class ClienteRepository(
     override fun observarFichaCliente(clienteId: String): Flow<FichaCliente?> =
         combine(
             usuarios.observarUsuarios(),
-            documentos.vehiculos.observarTodos(),
-            documentos.ordenes.observarTodos(),
+            documentos.vehiculos.observarDonde("clienteId", clienteId),
+            documentos.ordenes.observarDonde("clienteId", clienteId),
             usuarios.usuarioActual
         ) { listaUsuarios, listaVehiculos, listaOrdenes, actor ->
             if (!actor.esJefe()) return@combine null

@@ -33,6 +33,10 @@ import kotlinx.coroutines.flow.map
  * Órdenes de ingreso y sus cambios de estado. Los avisos al cliente no se crean aquí: los genera la fuente
  * de documentos al escribirse la orden.
  */
+/** Estados que el servidor entrega al panel del Jefe (los de [Orden.enTaller]) y al del técnico (los de [Orden.enCurso]). */
+private val ESTADOS_EN_CURSO = listOf(EstadoOrden.INGRESADO, EstadoOrden.EN_REPARACION).map { it.name }
+private val ESTADOS_EN_TALLER = ESTADOS_EN_CURSO + EstadoOrden.LISTO.name
+
 class OrdenRepository(
     private val usuarios: IUsuariosDataSource,
     private val documentos: IDocumentosDataSource,
@@ -72,21 +76,30 @@ class OrdenRepository(
 
     /** Emite las órdenes del cliente de la más reciente a la más antigua. */
     override fun observarOrdenesDeCliente(clienteId: String): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarDonde("clienteId", clienteId), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             if (!actor.esJefeOPropio(clienteId)) emptyList()
             else lista.filter { it.orden.clienteId == clienteId }.sortedByDescending { it.orden.creadaEn }
         }
 
     /** Emite las órdenes que siguen vivas en el taller, de la más reciente a la más antigua. */
     override fun observarOrdenesActivas(): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarEnLista("estado", ESTADOS_EN_TALLER), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             if (!actor.esJefe()) emptyList()
             else lista.filter { it.orden.enTaller }.sortedByDescending { it.orden.creadaEn }
         }
 
     /** Emite las órdenes en curso del técnico: primero En reparación, luego Ingresado, de la más antigua a la más reciente. */
     override fun observarOrdenesDeTecnico(tecnicoId: String): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarEnLista("estado", ESTADOS_EN_CURSO), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             if (!actor.esJefeOPropio(tecnicoId)) emptyList()
             else lista.filter { it.orden.tecnicoId == tecnicoId && it.orden.enCurso }
                 .sortedWith(
@@ -97,7 +110,10 @@ class OrdenRepository(
 
     /** Emite las órdenes del vehículo de la más reciente a la más antigua; el cliente solo recibe las suyas y el técnico las usa para ver el historial. */
     override fun observarOrdenesDeVehiculo(vehiculoId: String): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarDonde("vehiculoId", vehiculoId), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             lista.filter { it.orden.vehiculoId == vehiculoId && (actor.esJefe() || actor?.rol == Rol.TECNICO || (actor != null && it.orden.clienteId == actor.id)) }
                 .sortedByDescending { it.orden.creadaEn }
         }
@@ -271,7 +287,7 @@ class OrdenRepository(
         if (!usuarios.usuarioActual.value.esJefe()) return emptyList()
         val texto = consulta.trim().lowercase()
         val textoPlaca = texto.replace("-", "")
-        return ordenesDetalladas(usuarios, documentos).first()
+        return ordenesDetalladasDe(documentos.ordenes.observarDonde("estado", EstadoOrden.LISTO.name), usuarios, documentos).first()
             .filter { it.orden.estado == EstadoOrden.LISTO }
             .filter { detalle ->
                 val placa = detalle.vehiculo?.placa.orEmpty().replace("-", "").lowercase()

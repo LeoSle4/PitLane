@@ -64,7 +64,16 @@ private fun solicitudDesdeInstantanea(solicitud: Solicitud): SolicitudDetallada 
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun ordenesDetalladas(usuarios: IUsuariosDataSource, documentos: IDocumentosDataSource): Flow<List<OrdenDetallada>> =
-    documentos.ordenes.observarTodos().flatMapLatest { lista ->
+    ordenesDetalladasDe(documentos.ordenes.observarTodos(), usuarios, documentos)
+
+/** Igual que [ordenesDetalladas], pero sobre las órdenes que emite [fuente] (por ejemplo, una consulta acotada por estado). */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun ordenesDetalladasDe(
+    fuente: Flow<List<Orden>>,
+    usuarios: IUsuariosDataSource,
+    documentos: IDocumentosDataSource
+): Flow<List<OrdenDetallada>> =
+    fuente.flatMapLatest { lista ->
         if (lista.all { it.tieneInstantanea() }) flowOf(lista.map(::ordenDesdeInstantanea))
         else ordenesCruzandoColecciones(lista, usuarios, documentos)
     }

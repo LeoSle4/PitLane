@@ -25,9 +25,20 @@ internal class ColeccionLocal<T>(
     override suspend fun listar(): List<T> = flujo.value
 
     /** Compara el campo [campo] (leído por reflexión) con [valor]; la memoria no filtra por usuario, igual que [listar]. */
-    override suspend fun listarDonde(campo: String, valor: String): List<T> = flujo.value.filter { item ->
+    override suspend fun listarDonde(campo: String, valor: String): List<T> = flujo.value.filter { coincide(it, campo) { v -> v == valor } }
+
+    override fun observarDonde(campo: String, valor: String): Flow<List<T>> =
+        flujo.map { lista -> lista.filter { coincide(it, campo) { v -> v == valor } } }
+
+    /** Igual que Firestore: de 1 a 30 valores; la memoria no filtra por usuario, igual que [observarTodos]. */
+    override fun observarEnLista(campo: String, valores: List<String>): Flow<List<T>> {
+        require(valores.size in 1..30) { "Firestore admite de 1 a 30 valores en una consulta in" }
+        return flujo.map { lista -> lista.filter { coincide(it, campo) { v -> v in valores } } }
+    }
+
+    private fun coincide(item: T, campo: String, prueba: (String) -> Boolean): Boolean {
         val atributo = item!!.javaClass.getDeclaredField(campo).apply { isAccessible = true }
-        atributo.get(item).toString() == valor
+        return prueba(atributo.get(item).toString())
     }
 
     override fun observar(id: String): Flow<T?> = flujo.map { lista -> lista.firstOrNull { idDe(it) == id } }

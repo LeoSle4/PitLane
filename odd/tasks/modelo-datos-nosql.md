@@ -28,7 +28,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T4 S3 consultas dirigidas y observador de un documento. route: delegada (contexto) e inline para `eliminarCliente`. RED: compilación de pruebas (`listarDonde`/`observar` sin resolver); GREEN: 80 de reglas, Gradle verde
 - [x] T5 S4 placa única con `placas/{placa}`. route: delegada (contexto) y endurecimiento del formato inline. RED: 9 pruebas de reglas; GREEN: 96 de reglas, Gradle verde; verificador independiente sin bloqueos
 - [x] T6 S5 documentación y diagramas de las tres fases. route: inline. Diagramas conceptual, lógico y físico generados con `fases.py`
-- [ ] T7 S6+S7 lecturas en vivo acotadas por estado y por cliente. route: delegada (contexto)
+- [x] T7 S6+S7 lecturas en vivo acotadas por estado y por cliente. route: delegada (contexto) e inline para órdenes de cliente y de vehículo. RED: 5 de 7 pruebas nuevas y 2 más; GREEN: 100 de reglas, Gradle verde
 - [ ] T8 S8 búsqueda de clientes con términos indexados. route: delegada (contexto)
 - [ ] T9 S9 TTL de notificaciones y códigos. route: delegada (contexto)
 - [ ] T10 S10 versión de esquema. route: delegada (contexto)
@@ -81,3 +81,10 @@ L10 (T5, evaluación como ingeniero NoSQL):
 - Comparación para la exposición: en MongoDB esto es un índice único sobre `placa`; la colección `placas` existe solo porque Firestore no tiene índices únicos.
 
 L11 (2026-10-31, usuario): "Vuelve a evaluar y verifica si cumple como una verdadera base de datos no sql" y después "desarrolla todos los puntos". Evaluación previa (solo lectura): el almacenamiento es documental pero el acceso sigue siendo parcialmente relacional: 21 escuchas `observarTodos()`, 9 uniones en memoria en `Consultas.kt`, panel de activas que lee todas las órdenes (`OrdenRepository.kt:84`), búsqueda de clientes que lee todos los usuarios y vehículos (`ClienteRepository.kt:77`), cero `limit`/`orderBy`, TTL solo en tokens. Corrección a mi propio criterio: acotar el panel de activas por estado en el servidor NO necesita decisión del usuario; solo la paginación del historial la necesita.
+
+L12 (T7, evaluación como ingeniero NoSQL):
+- Lecturas y costo: el panel del Jefe pasa de leer TODA la historia de órdenes a leer solo las que están en el taller (`estado in [INGRESADO, EN_REPARACION, LISTO]`); el costo ya no crece con el historial sino con la carga de trabajo del día. Lo mismo para el panel del técnico y su carga, la búsqueda de órdenes listas (`estado == LISTO`), la ficha y los vehículos de un cliente, y las órdenes de un cliente o de un vehículo (`clienteId`/`vehiculoId`). Las pruebas lo demuestran con un envoltorio que registra qué colecciones se escuchan completas (0) y con qué consulta se escucha cada una.
+- Comportamiento: sin cambios visibles; cada prueba compara con el resultado del filtro en memoria anterior. Una orden que sale del conjunto (por ejemplo, entregada) desaparece del panel en vivo porque la consulta se reevalúa.
+- Índices: 4 compuestos nuevos (`ordenes` por `acceso`+`estado`; `ordenes`, `vehiculos` y `solicitudes` por `acceso`+`clienteId`). El emulador no los exige; sin ellos fallan en producción con FAILED_PRECONDITION. ORDEN: índices antes de publicar la app.
+- Costos pequeños que quedan: un cliente o técnico que abre una consulta de panel del Jefe la ejecuta sobre su propio alcance y descarta el resultado; `whereIn` admite 30 valores como máximo (aquí 2 o 3).
+- Siguen leyendo colecciones completas: `observarClientesRecientes` (ordena clientes por su última actividad; la solución NoSQL correcta es guardar `ultimaActividad` en el cliente y consultar los N primeros, y requiere escribirlo en cada orden o solicitud), el cruce completo de respaldo para documentos sin instantánea (se apaga al ejecutar el relleno) y la lista de solicitudes del Jefe.

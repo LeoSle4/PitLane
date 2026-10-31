@@ -150,6 +150,9 @@ node scripts/rellenarPlacas.mjs --aplicar   # escribe en el proyecto
 
 Las consultas dirigidas de la app (`acceso` contiene el usuario y un campo igual a un valor) necesitan un índice
 compuesto en producción: `ordenes` y `solicitudes` por `acceso` + `vehiculoId`, y `avances` por `acceso` + `ordenId`.
+Los paneles y la ficha del cliente añaden otros cuatro: `ordenes` por `acceso` + `estado` (panel del técnico, `in`),
+y `ordenes`, `vehiculos` y `solicitudes` por `acceso` + `clienteId` (consultas del cliente). Las consultas del Jefe
+(`estado in [...]` o `clienteId ==` sin `acceso`) usan un solo campo y no necesitan índice compuesto.
 Están en `firestore.indexes.json`. El emulador no los exige, pero Firestore real rechaza la consulta sin ellos.
 Los despliegas tú, una vez, con `firebase login` hecho:
 

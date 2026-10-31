@@ -41,6 +41,62 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "ordenes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ordenes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "clienteId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "vehiculos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "clienteId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "clienteId",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -24,6 +24,9 @@ import kotlin.coroutines.coroutineContext
 
 private const val ETIQUETA = "ColeccionFirestore"
 
+/** Máximo de valores que Firestore admite en una consulta `in`. */
+private const val MAXIMO_VALORES_EN_LISTA = 30
+
 /**
  * Lote de escrituras activo en la corrutina actual. Mientras exista, las colecciones acumulan sus
  * escrituras aquí en lugar de enviarlas una a una, y se aplican todas juntas o ninguna al cerrar el lote.
@@ -94,6 +97,21 @@ internal class ColeccionFirestore<T>(
         actor.map { alcanceDe(it, campoPropio) }.distinctUntilChanged().flatMapLatest { alcance ->
             consultaDe(alcance)?.let { instantaneas(it) } ?: flowOf(emptyList())
         }
+
+    /** Reutiliza el alcance del usuario y le suma [restriccion]; se rehace si cambia la sesión. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observarRestringido(restriccion: (Query) -> Query): Flow<List<T>> =
+        actor.map { alcanceDe(it, campoPropio) }.distinctUntilChanged().flatMapLatest { alcance ->
+            consultaDe(alcance)?.let { instantaneas(restriccion(it)) } ?: flowOf(emptyList())
+        }
+
+    override fun observarDonde(campo: String, valor: String): Flow<List<T>> =
+        observarRestringido { it.whereEqualTo(campo, valor) }
+
+    override fun observarEnLista(campo: String, valores: List<String>): Flow<List<T>> {
+        require(valores.size in 1..MAXIMO_VALORES_EN_LISTA) { "Firestore admite de 1 a $MAXIMO_VALORES_EN_LISTA valores en una consulta in" }
+        return observarRestringido { it.whereIn(campo, valores) }
+    }
 
     override suspend fun listar(): List<T> {
         val consulta = consultaDe(alcanceDe(actor.value, campoPropio)) ?: return emptyList()

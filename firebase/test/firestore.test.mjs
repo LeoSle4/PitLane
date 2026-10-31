@@ -720,4 +720,35 @@ describe('consultas dirigidas de la app', () => {
     await assertFails(getDoc(ref(s.c2, 'ordenes/o1')));
     await assertFails(getDoc(ref(s.c1, 'ordenes/o2')));
   });
+
+  it('el técnico consulta sus órdenes en curso con el filtro de acceso y recibe solo las suyas', async () => {
+    await preparar(entorno, 'ordenes/o3', orden('0003', 'c1', 't1', 'v1', { estado: 'ENTREGADO' }));
+    const enCurso = ['INGRESADO', 'EN_REPARACION'];
+    const suyas = await assertSucceeds(lista(s.t1, 'ordenes', where('acceso', 'array-contains', 't1'), where('estado', 'in', enCurso)));
+    if (suyas.size !== 1 || suyas.docs[0].id !== 'o1') throw new Error(`Se esperaba solo o1 y llegaron ${suyas.size}`);
+    await assertFails(lista(s.t1, 'ordenes', where('estado', 'in', enCurso)));
+    await assertFails(lista(s.t1, 'ordenes', where('acceso', 'array-contains', 't2'), where('estado', 'in', enCurso)));
+  });
+
+  it('el Jefe consulta las órdenes por estado sin filtro de acceso', async () => {
+    await preparar(entorno, 'ordenes/o3', orden('0003', 'c1', 't1', 'v1', { estado: 'ENTREGADO' }));
+    const activas = await assertSucceeds(lista(s.jefe, 'ordenes', where('estado', 'in', ['INGRESADO', 'EN_REPARACION', 'LISTO'])));
+    if (activas.size !== 2 || activas.docs.some((d) => d.id === 'o3')) throw new Error('Se esperaban solo o1 y o2');
+    await assertSucceeds(lista(s.jefe, 'ordenes', where('estado', '==', 'LISTO')));
+  });
+
+  it('el cliente consulta sus vehículos, órdenes y solicitudes por clienteId con el filtro de acceso', async () => {
+    for (const coleccion of ['vehiculos', 'ordenes', 'solicitudes']) {
+      const suyos = await assertSucceeds(lista(s.c1, coleccion, where('acceso', 'array-contains', 'c1'), where('clienteId', '==', 'c1')));
+      if (suyos.size < 1 || suyos.docs.some((d) => d.data().clienteId !== 'c1')) throw new Error(`${coleccion}: solo debe recibir lo suyo`);
+      await assertFails(lista(s.c1, coleccion, where('clienteId', '==', 'c1')));
+      await assertFails(lista(s.c1, coleccion, where('acceso', 'array-contains', 'c2'), where('clienteId', '==', 'c2')));
+    }
+  });
+
+  it('el Jefe consulta vehículos, órdenes y solicitudes por clienteId sin filtro de acceso', async () => {
+    for (const coleccion of ['vehiculos', 'ordenes', 'solicitudes']) {
+      await assertSucceeds(lista(s.jefe, coleccion, where('clienteId', '==', 'c1')));
+    }
+  });
 });
