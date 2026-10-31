@@ -50,8 +50,30 @@ class UsuariosDataSource(private val bd: BaseDatosLocal) : IUsuariosDataSource {
         bd.usuarioActual.value = null
     }
 
-    /** No hace nada visible: responde igual exista o no la cuenta. */
-    override suspend fun enviarEnlaceDeRestablecimiento(correo: String) = Unit
+    /** Último código "enviado"; en memoria no hay correo, así que las pruebas lo leen de aquí. */
+    var ultimoCodigoEnviado: String? = null
+        private set
+    private val codigos = HashMap<String, String>()
+
+    /** Genera el código solo si la cuenta existe, pero responde igual en ambos casos. */
+    override suspend fun solicitarCodigoDeRestablecimiento(correo: String): Resultado<Unit> {
+        val clave = correo.trim().lowercase()
+        if (bd.usuarios.value.any { it.tieneCuenta && it.correo.equals(clave, ignoreCase = true) }) {
+            val codigo = (0..5).map { (0..9).random() }.joinToString("")
+            codigos[clave] = codigo
+            ultimoCodigoEnviado = codigo
+        }
+        return Resultado.Exito(Unit)
+    }
+
+    override suspend fun restablecerContrasena(correo: String, codigo: String, contrasena: String): Resultado<Unit> {
+        val clave = correo.trim().lowercase()
+        if (codigos[clave] != codigo.trim()) return Resultado.Error("El código no es correcto")
+        val usuario = bd.usuarios.value.first { it.correo.equals(clave, ignoreCase = true) }
+        guardarUsuario(usuario.copy(contrasena = contrasena))
+        codigos.remove(clave)
+        return Resultado.Exito(Unit)
+    }
 
     /**
      * Crea la cuenta del cliente. Si el Jefe ya lo había registrado con el mismo DNI y sin cuenta, completa

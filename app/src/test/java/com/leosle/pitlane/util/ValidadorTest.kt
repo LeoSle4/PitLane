@@ -68,4 +68,13 @@ class ValidadorTest {
         assertNotNull(Validador.foto("image/gif", 1_000))
         assertNotNull(Validador.foto("image/jpeg", Validador.MAXIMO_BYTES_FOTO + 1))
     }
+
+    @Test
+    fun codigoDeRestablecimientoExigeSeisDigitos() {
+        assertNull(Validador.codigo("012345"))
+        assertNull(Validador.codigo(" 012345 "))
+        assertEquals("Escribe el código de 6 dígitos", Validador.codigo("12345"))
+        assertEquals("Escribe el código de 6 dígitos", Validador.codigo("12345a"))
+        assertEquals("Escribe el código de 6 dígitos", Validador.codigo(""))
+    }
 }

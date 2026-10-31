@@ -47,6 +47,12 @@ object Validador {
         if (valor.length >= 8 && valor.any { it.isLetter() } && valor.any { it.isDigit() }) null
         else "Mínimo 8 caracteres, con una letra y un número"
 
+    /** Valida el código de restablecimiento: exactamente 6 dígitos. */
+    fun codigo(valor: String): String? {
+        val codigo = valor.trim()
+        return if (codigo.length == 6 && codigo.all { it.isDigit() }) null else "Escribe el código de 6 dígitos"
+    }
+
     /** Verifica que la confirmación coincida con la contraseña escrita. */
     fun confirmacion(contrasena: String, confirmacion: String): String? =
         if (contrasena == confirmacion) null else "Las contraseñas no coinciden"

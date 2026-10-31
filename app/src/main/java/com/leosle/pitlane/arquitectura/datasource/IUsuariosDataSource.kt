@@ -45,8 +45,11 @@ interface IUsuariosDataSource {
     /** Cierra la sesión activa. */
     fun cerrarSesion()
 
-    /** Solicita el enlace de restablecimiento de contraseña; no revela si el correo existe. */
-    suspend fun enviarEnlaceDeRestablecimiento(correo: String)
+    /** Envía al correo un código de 6 dígitos para restablecer la contraseña; responde igual exista o no la cuenta. */
+    suspend fun solicitarCodigoDeRestablecimiento(correo: String): Resultado<Unit>
+
+    /** Cambia la contraseña de la cuenta del correo si el código es correcto y sigue vigente. */
+    suspend fun restablecerContrasena(correo: String, codigo: String, contrasena: String): Resultado<Unit>
 
     /** Crea la cuenta del cliente, une el registro previo del Jefe si el DNI ya existía y abre la sesión. */
     suspend fun registrarCuentaCliente(datos: DatosRegistroCliente): Resultado<Usuario>

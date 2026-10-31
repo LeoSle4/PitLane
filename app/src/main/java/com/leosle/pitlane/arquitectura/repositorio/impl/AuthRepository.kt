@@ -23,11 +23,11 @@ class AuthRepository(private val usuarios: IUsuariosDataSource) : IAuthRepositor
             datos.copy(nombres = Textos.nombrePropio(datos.nombres), apellidos = Textos.nombrePropio(datos.apellidos))
         )
 
-    /** Solicita el enlace y responde con éxito siempre, para no revelar qué correos existen. */
-    override suspend fun recuperarContrasena(correo: String): Resultado<Unit> {
-        usuarios.enviarEnlaceDeRestablecimiento(correo)
-        return Resultado.Exito(Unit)
-    }
+    override suspend fun solicitarCodigoDeRestablecimiento(correo: String): Resultado<Unit> =
+        usuarios.solicitarCodigoDeRestablecimiento(correo)
+
+    override suspend fun restablecerContrasena(correo: String, codigo: String, contrasena: String): Resultado<Unit> =
+        usuarios.restablecerContrasena(correo, codigo, contrasena)
 
     override fun cerrarSesion() = usuarios.cerrarSesion()
 }

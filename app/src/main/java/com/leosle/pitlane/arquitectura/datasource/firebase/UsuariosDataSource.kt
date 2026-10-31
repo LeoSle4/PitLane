@@ -127,16 +127,15 @@ class UsuariosDataSource(
         auth.signOut()
     }
 
-    /** No revela si la cuenta existe: ante cualquier resultado responde igual. */
-    override suspend fun enviarEnlaceDeRestablecimiento(correo: String) {
-        try {
-            auth.sendPasswordResetEmail(correo.trim()).esperar()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.w(ETIQUETA, "No se pudo enviar el enlace de restablecimiento", e)
-        }
-    }
+    /** El servidor genera el código, lo guarda cifrado y lo envía por correo; responde igual exista o no la cuenta. */
+    override suspend fun solicitarCodigoDeRestablecimiento(correo: String): Resultado<Unit> =
+        llamarFuncion("solicitarCodigo", mapOf("correo" to correo.trim())).comoUnidad()
+
+    override suspend fun restablecerContrasena(correo: String, codigo: String, contrasena: String): Resultado<Unit> =
+        llamarFuncion(
+            "restablecerContrasena",
+            mapOf("correo" to correo.trim(), "codigo" to codigo.trim(), "contrasena" to contrasena)
+        ).comoUnidad()
 
     /** El servidor crea la cuenta y une el registro previo del Jefe si el DNI ya existía; luego se abre la sesión. */
     override suspend fun registrarCuentaCliente(datos: DatosRegistroCliente): Resultado<Usuario> =

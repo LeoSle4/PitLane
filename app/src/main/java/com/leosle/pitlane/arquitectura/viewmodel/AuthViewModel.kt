@@ -27,9 +27,13 @@ class AuthViewModel(
     fun registrarCliente(datos: DatosRegistroCliente, alTerminar: (Resultado<Usuario>) -> Unit) =
         ejecutar({ repositorio.registrarCliente(datos) }, alTerminar)
 
-    /** Solicita el enlace de restablecimiento de contraseña. */
-    fun recuperarContrasena(correo: String, alTerminar: (Resultado<Unit>) -> Unit) =
-        ejecutar({ repositorio.recuperarContrasena(correo) }, alTerminar)
+    /** Pide que se envíe al correo el código para restablecer la contraseña. */
+    fun solicitarCodigoDeRestablecimiento(correo: String, alTerminar: (Resultado<Unit>) -> Unit) =
+        ejecutar({ repositorio.solicitarCodigoDeRestablecimiento(correo) }, alTerminar)
+
+    /** Cambia la contraseña con el código recibido por correo. */
+    fun restablecerContrasena(correo: String, codigo: String, contrasena: String, alTerminar: (Resultado<Unit>) -> Unit) =
+        ejecutar({ repositorio.restablecerContrasena(correo, codigo, contrasena) }, alTerminar)
 
     /** Cierra la sesión actual. */
     fun cerrarSesion() = repositorio.cerrarSesion()
