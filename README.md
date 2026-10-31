@@ -2,7 +2,7 @@
 
 Aplicación Android para la recepción y el seguimiento de reparaciones de vehículos en **Servicio Eléctrico Freddy**. Reemplaza las fichas en papel: el cliente avisa la falla, el Jefe de Taller registra el ingreso con fotos, el técnico documenta los avances y el cliente sigue el estado hasta recibir su vehículo.
 
-> **Estado:** la app funciona completa con datos **locales en memoria** (se reinician al cerrarla). Firebase es el diseño objetivo y aún no está conectado; el único punto de cambio será `Dependencias.kt`.
+> **Estado:** la app funciona sobre **Firebase** (Authentication, Firestore, Storage y Cloud Functions, proyecto `pitlane-ad951`). Las reglas de seguridad, las funciones y cómo desplegarlas están en [`firebase/README.md`](firebase/README.md).
 
 ## Contenido
 
@@ -56,7 +56,7 @@ La app sigue **MVVM + Repository**. Todo el patrón vive en una sola carpeta, `a
 | Vista | `arquitectura/vista/` | Fragments y Activities con layouts XML y ViewBinding, por módulo |
 | ViewModel | `arquitectura/viewmodel/` | Estado de pantalla con `StateFlow` |
 | Repository | `arquitectura/repositorio/` e `impl/` | Interfaces `I*Repository` y sus implementaciones con las reglas de negocio |
-| Fuentes de datos | `arquitectura/datasource/` y `local/` | Interfaces de acceso a datos y su versión local en memoria |
+| Fuentes de datos | `arquitectura/datasource/` y `firebase/` | Interfaces de acceso a datos y su implementación sobre Firebase |
 | Fuera del patrón | `modelo/`, `util/` | Entidades y utilidades compartidas |
 
 `Dependencias.kt` es la raíz de composición: el único lugar donde se decide qué implementación usa cada repositorio.
@@ -86,20 +86,16 @@ Por rol: Jefe de Taller 27 · Cliente 22 · Técnico 9 · Todos 3.
 
 **Requisitos:** Android Studio reciente, JDK 17 o superior (el proyecto se compila aquí con JDK 25) y un emulador o teléfono con Android 8.0 (API 26) o superior.
 
+Necesitas `app/google-services.json`, que se descarga de la consola de Firebase y no se versiona.
+
 ```bash
 ./gradlew :app:assembleDebug     # compila
 ./gradlew :app:installDebug      # instala en el emulador o dispositivo conectado
 ```
 
-La pantalla de inicio de sesión ofrece un selector de **cuentas de demostración**. Los datos de ejemplo son locales:
+En Android Studio, compilar no instala: usa **Run** para que el emulador reciba la versión nueva.
 
-| Rol | Correo | Contraseña |
-|---|---|---|
-| Jefe de Taller | `jefe@freddy.pe` | `Taller2026` |
-| Técnico | `luis@freddy.pe`, `marco@freddy.pe` | `Tecnico123` |
-| Cliente | `cliente@freddy.pe` (Ana), `carlos@freddy.pe`, `nuevo@freddy.pe` | `Cliente123` |
-
-Para ver el proceso de entrega: entra como Jefe, abre la lupa del panel de órdenes, elige `ORD-0002`, registra la conformidad y marca la orden como entregada; luego entra como `cliente@freddy.pe` y abre "Ver constancia de entrega". Para cambiar de usuario, cierra sesión dentro de la app: reiniciarla restaura los datos de ejemplo.
+Las cuentas son reales. El primer Jefe de Taller se crea una sola vez con el script de siembra (ver `firebase/README.md`); desde su cuenta se registran los técnicos y los clientes, y los clientes también pueden crear su cuenta desde la app.
 
 ## Pruebas
 
@@ -107,7 +103,7 @@ Para ver el proceso de entrega: entra como Jefe, abre la lupa del panel de órde
 ./gradlew :app:testDebugUnitTest
 ```
 
-Hay 73 pruebas unitarias: las reglas de negocio de los repositorios (`ReglasDeNegocioTest`), las fuentes de datos locales, los validadores de formularios y las utilidades de texto.
+Hay 108 pruebas unitarias: las reglas de negocio de los repositorios (`ReglasDeNegocioTest`, que usa una base de datos en memoria en lugar de Firebase), los mapeadores y el alcance por rol de Firebase, los validadores de formularios y las utilidades de texto. Las reglas de seguridad y las funciones del servidor tienen sus propias pruebas en el emulador (`firebase/`).
 
 ## Estructura del repositorio
 
@@ -119,11 +115,12 @@ app/src/main/java/com/leosle/pitlane/
 │  ├─ repositorio/      interfaces I*Repository
 │  │  └─ impl/          implementaciones con las reglas de negocio
 │  └─ datasource/       interfaces de acceso a datos
-│     └─ local/         versión local en memoria
+│     └─ firebase/      implementación sobre Firebase
 ├─ modelo/              entidades, enumeraciones y proyecciones
 ├─ util/                Resultado, Validador, Fechas, Textos, Reloj
 ├─ Dependencias.kt      raíz de composición
 └─ AplicacionPitLane.kt
+firebase/               reglas de seguridad, Cloud Functions y sus pruebas
 diagramas/              imágenes de los procesos y de la arquitectura
 odd/tasks/              bitácoras de las funcionalidades desarrolladas
 scripts/                generadores de diagramas y scripts de entrega
