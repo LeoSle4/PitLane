@@ -51,6 +51,9 @@ class OrdenRepository(
         null -> false
     }
 
+    /** Nombre del usuario para firmar un registro de la orden, o nulo si no se encuentra. */
+    private suspend fun nombreDe(usuarioId: String): String? = usuarios.obtenerUsuario(usuarioId)?.nombreCompleto
+
     /** Verdadero si el usuario existe, está activo y es Jefe de Taller (RN-06). */
     private suspend fun esJefe(usuarioId: String): Boolean =
         usuarios.obtenerUsuario(usuarioId)?.let { it.rol == Rol.JEFE && it.activo } == true
@@ -130,7 +133,7 @@ class OrdenRepository(
             fotos = guardadas,
             tecnicoId = tecnico.id,
             estado = EstadoOrden.INGRESADO,
-            historial = listOf(CambioEstado(EstadoOrden.INGRESADO, ahora, jefeId)),
+            historial = listOf(CambioEstado(EstadoOrden.INGRESADO, ahora, jefeId, usuarioNombre = nombreDe(jefeId))),
             creadaEn = ahora
         )
         // Con solicitud de origen se atiende esa; sin ella, las pendientes del mismo vehículo (HU-23)
@@ -191,7 +194,7 @@ class OrdenRepository(
         val anulada = orden.copy(
             estado = EstadoOrden.ANULADA,
             motivoAnulacion = motivo.trim(),
-            historial = orden.historial + CambioEstado(EstadoOrden.ANULADA, reloj.ahora(), usuarioId, motivo.trim())
+            historial = orden.historial + CambioEstado(EstadoOrden.ANULADA, reloj.ahora(), usuarioId, motivo.trim(), nombreDe(usuarioId))
         )
         documentos.ordenes.guardar(ordenId, anulada)
         return Resultado.Exito(anulada)
@@ -231,7 +234,7 @@ class OrdenRepository(
         if (orden.estado != EstadoOrden.INGRESADO) return Resultado.Error("La reparación ya fue iniciada")
         val enReparacion = orden.copy(
             estado = EstadoOrden.EN_REPARACION,
-            historial = orden.historial + CambioEstado(EstadoOrden.EN_REPARACION, reloj.ahora(), tecnicoId)
+            historial = orden.historial + CambioEstado(EstadoOrden.EN_REPARACION, reloj.ahora(), tecnicoId, usuarioNombre = nombreDe(tecnicoId))
         )
         documentos.ordenes.guardar(ordenId, enReparacion)
         return Resultado.Exito(enReparacion)
@@ -247,7 +250,7 @@ class OrdenRepository(
         val ahora = reloj.ahora()
         val lista = orden.copy(
             estado = EstadoOrden.LISTO,
-            historial = orden.historial + CambioEstado(EstadoOrden.LISTO, ahora, tecnicoId),
+            historial = orden.historial + CambioEstado(EstadoOrden.LISTO, ahora, tecnicoId, usuarioNombre = nombreDe(tecnicoId)),
             avisosEnviados = 1,
             ultimoAviso = ahora
         )
@@ -273,15 +276,21 @@ class OrdenRepository(
             .sortedByDescending { it.orden.fechaDeEstado(EstadoOrden.LISTO) ?: it.orden.creadaEn }
     }
 
-    /** Guarda la conformidad del cliente con la hora actual y el Jefe que la registró; solo en una orden lista y sin conformidad previa. */
+    /**
+     * Guarda la conformidad con la hora actual y quién la registró: el propio cliente de la orden desde la app o el
+     * Jefe en el taller (por ejemplo, para un cliente sin cuenta). Solo en una orden lista y sin conformidad previa.
+     */
     override suspend fun registrarConformidad(ordenId: String, usuarioId: String): Resultado<Orden> {
-        if (!esJefe(usuarioId)) return Resultado.Error(MENSAJE_SOLO_JEFE)
         val orden = documentos.ordenes.obtener(ordenId) ?: return Resultado.Error("No se encontró la orden")
+        val esSuCliente = orden.clienteId == usuarioId && usuarios.obtenerUsuario(usuarioId)?.activo == true
+        if (!esSuCliente && !esJefe(usuarioId)) {
+            return Resultado.Error("Solo el cliente de la orden o el Jefe de Taller pueden registrar la conformidad")
+        }
         if (orden.estado != EstadoOrden.LISTO) {
             return Resultado.Error("Solo se puede registrar la conformidad de una orden lista para recoger")
         }
         if (orden.conformidad != null) return Resultado.Error("La conformidad ya está registrada")
-        val conforme = orden.copy(conformidad = Conformidad(reloj.ahora(), usuarioId))
+        val conforme = orden.copy(conformidad = Conformidad(reloj.ahora(), usuarioId, nombreDe(usuarioId)))
         documentos.ordenes.guardar(ordenId, conforme)
         return Resultado.Exito(conforme)
     }
@@ -314,7 +323,7 @@ class OrdenRepository(
         if (orden.conformidad == null) return Resultado.Error("Registra la conformidad del cliente antes de entregar")
         val entregada = orden.copy(
             estado = EstadoOrden.ENTREGADO,
-            historial = orden.historial + CambioEstado(EstadoOrden.ENTREGADO, reloj.ahora(), usuarioId)
+            historial = orden.historial + CambioEstado(EstadoOrden.ENTREGADO, reloj.ahora(), usuarioId, usuarioNombre = nombreDe(usuarioId))
         )
         documentos.ordenes.guardar(ordenId, entregada)
         return Resultado.Exito(entregada)

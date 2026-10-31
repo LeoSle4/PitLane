@@ -157,6 +157,43 @@
                 android:layout_marginTop="18dp"
                 android:layout_marginBottom="14dp" />
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/mcvConformidad"
+                style="@style/Tarjeta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/txtTituloConformidad"
+                        style="@style/Texto.Subtitulo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/txtMensajeConformidad"
+                        style="@style/Texto.Secundario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp" />
+
+                    <Button
+                        android:id="@+id/btnDarConformidad"
+                        style="@style/Boton.Primario"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/cli_dar_conformidad" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"

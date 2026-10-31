@@ -411,18 +411,23 @@ class ReglasDeNegocioTest {
     }
 
     @Test
-    fun soloElJefeRegistraLaConformidadYSoloDeUnaOrdenListaUnaSolaVez() = runBlocking {
+    fun laConformidadLaRegistraElJefeOElClienteDeLaOrdenSoloEnUnaOrdenListaYUnaSolaVez() = runBlocking {
         assertEquals(
             "Solo se puede registrar la conformidad de una orden lista para recoger",
             mensajeDe(ordenes.registrarConformidad("o-3", "u-jefe"))
         )
         assertEquals(
-            "Solo el Jefe de Taller puede realizar esta acción",
-            mensajeDe(ordenes.registrarConformidad("o-2", "u-cli-ana"))
+            "Solo el cliente de la orden o el Jefe de Taller pueden registrar la conformidad",
+            mensajeDe(ordenes.registrarConformidad("o-2", "u-cli-carlos"))
+        )
+        assertEquals(
+            "Solo el cliente de la orden o el Jefe de Taller pueden registrar la conformidad",
+            mensajeDe(ordenes.registrarConformidad("o-2", "u-tec-luis"))
         )
         assertTrue(ordenes.registrarConformidad("o-2", "u-jefe") is Resultado.Exito)
         val orden = bd.ordenes.value.first { it.id == "o-2" }
-        assertEquals(Conformidad(ahora, "u-jefe"), orden.conformidad)
+        val nombreJefe = bd.usuarios.value.first { it.id == "u-jefe" }.nombreCompleto
+        assertEquals(Conformidad(ahora, "u-jefe", nombreJefe), orden.conformidad)
         assertEquals(EstadoOrden.LISTO, orden.estado)
         assertEquals("La conformidad ya está registrada", mensajeDe(ordenes.registrarConformidad("o-2", "u-jefe")))
     }
@@ -479,6 +484,18 @@ class ReglasDeNegocioTest {
     }
 
     @Test
+    fun elClienteFirmaLaConformidadDeSuPropiaOrdenYLuegoElJefeLaEntrega() = runBlocking {
+        val resultado = ordenes.registrarConformidad("o-2", "u-cli-ana")
+
+        assertTrue(resultado is Resultado.Exito)
+        val conformidad = bd.ordenes.value.first { it.id == "o-2" }.conformidad
+        assertEquals("u-cli-ana", conformidad?.usuarioId)
+        assertEquals(bd.usuarios.value.first { it.id == "u-cli-ana" }.nombreCompleto, conformidad?.usuarioNombre)
+        assertEquals("La conformidad ya está registrada", mensajeDe(ordenes.registrarConformidad("o-2", "u-jefe")))
+        assertTrue(ordenes.marcarEntregada("o-2", "u-jefe") is Resultado.Exito)
+    }
+
+    @Test
     fun laOrdenEntregadaResuelveQuienRegistroLaConformidadYLaEntrega() = runBlocking {
         sesiones.iniciarSesion("jefe@freddy.pe", "Taller2026")
         ordenes.registrarConformidad("o-2", "u-jefe")
@@ -486,6 +503,9 @@ class ReglasDeNegocioTest {
         val detalle = ordenes.observarOrden("o-2", "u-jefe").first()!!
         assertEquals("u-jefe", detalle.conformidadRegistradaPor?.id)
         assertEquals("u-jefe", detalle.entregadaPor?.id)
+        val nombreJefe = bd.usuarios.value.first { it.id == "u-jefe" }.nombreCompleto
+        assertEquals(nombreJefe, detalle.orden.conformidad?.usuarioNombre)
+        assertEquals(nombreJefe, detalle.orden.historial.last { it.estado == EstadoOrden.ENTREGADO }.usuarioNombre)
         sesiones.iniciarSesion("cliente@freddy.pe", "Cliente123")
         assertEquals("u-jefe", ordenes.observarOrden("o-2", "u-cli-ana").first()!!.entregadaPor?.id)
     }

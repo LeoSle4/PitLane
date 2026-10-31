@@ -12,6 +12,7 @@ import com.leosle.pitlane.databinding.CliFragConstanciaBinding
 import com.leosle.pitlane.databinding.CliItemDatoBinding
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.OrdenDetallada
+import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.util.Fechas
 
 /**
@@ -46,11 +47,15 @@ class FragConstancia : FragmentoVinculado<CliFragConstanciaBinding>(CliFragConst
         vinculo.txtNumeroConstancia.text = orden.numero
 
         val fechaEntrega = orden.fechaDeEstado(EstadoOrden.ENTREGADO)
+        val entrega = orden.historial.lastOrNull { it.estado == EstadoOrden.ENTREGADO }
+        // Solo el Jefe registra entregas; si la orden no guardó su nombre, se muestra el cargo.
+        val registradaPor = detalle.entregadaPor?.nombreCompleto ?: entrega?.usuarioNombre
+            ?: entrega?.let { Rol.JEFE.etiqueta } ?: getString(R.string.cli_sin_dato)
         val conformidad = orden.conformidad
         val datos = listOf(
             Dato(getString(R.string.cli_dato_placa), detalle.vehiculo?.placa.orEmpty()),
             Dato(getString(R.string.cli_dato_entrega), fechaEntrega?.let { Fechas.fechaHora(it) } ?: getString(R.string.cli_sin_dato)),
-            Dato(getString(R.string.cli_dato_registrada_por), detalle.entregadaPor?.nombreCompleto ?: getString(R.string.cli_sin_dato)),
+            Dato(getString(R.string.cli_dato_registrada_por), registradaPor),
             Dato(getString(R.string.cli_dato_conformidad), conformidad?.let { Fechas.fecha(it.fechaHora) } ?: getString(R.string.cli_sin_dato))
         )
         vinculo.llDatosConstancia.poblar(datos, R.layout.cli_item_dato) { vista, dato ->

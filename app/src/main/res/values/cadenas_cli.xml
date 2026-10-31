@@ -132,4 +132,14 @@
     <string name="cli_dato_registrada_por">Registrada por</string>
     <string name="cli_dato_conformidad">Conformidad del cliente</string>
     <string name="cli_sin_dato">Sin datos</string>
+    <string name="cli_conformidad_titulo">¿Tu vehículo quedó bien?</string>
+    <string name="cli_conformidad_mensaje">Revisa tu vehículo en el taller. Si la falla quedó resuelta, da tu conformidad para que puedan entregártelo.</string>
+    <string name="cli_dar_conformidad">Dar mi conformidad</string>
+    <string name="cli_conformidad_dialogo_titulo">¿Confirmas tu conformidad?</string>
+    <string name="cli_conformidad_dialogo_mensaje">Confirmas que revisaste tu vehículo y que la falla quedó resuelta. Quedará registrada con tu nombre, la fecha y la hora, y no se puede deshacer.</string>
+    <string name="cli_conformidad_dialogo_accion">Confirmar</string>
+    <string name="cli_conformidad_registrada_titulo">Conformidad registrada</string>
+    <string name="cli_conformidad_registrada_mensaje">Registrada el %1$s por %2$s.</string>
+    <string name="cli_conformidad_por_ti">ti</string>
+    <string name="cli_conformidad_gracias">Gracias. Registramos tu conformidad</string>
 </resources>

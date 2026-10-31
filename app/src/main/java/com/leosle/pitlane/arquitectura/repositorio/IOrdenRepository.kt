@@ -59,7 +59,7 @@ interface IOrdenRepository {
     /** Busca entre las órdenes Listo para recoger por placa, nombre o DNI del cliente o número de orden; vacío devuelve todas. */
     suspend fun buscarOrdenesListas(consulta: String): List<OrdenDetallada>
 
-    /** Registra que el cliente comprobó el resultado y quedó conforme, con fecha, hora y usuario; solo una vez y solo por el Jefe. */
+    /** Registra que el cliente comprobó el resultado y quedó conforme, con fecha, hora y usuario; una sola vez, por el propio cliente o por el Jefe. */
     suspend fun registrarConformidad(ordenId: String, usuarioId: String): Resultado<Orden>
 
     /** Agrega a una orden Listo para recoger la observación del cliente y lo acordado, sin cambiar su estado. */

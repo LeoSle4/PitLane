@@ -63,18 +63,26 @@ data class Solicitud(
     val ordenId: String? = null
 )
 
-/** Registro de un cambio de estado de la orden con su fecha, hora y autor. */
+/**
+ * Registro de un cambio de estado de la orden con su fecha, hora y autor. [usuarioNombre] guarda el nombre del autor
+ * en ese momento, como una firma: quien lee la orden lo ve aunque no tenga permiso para leer su perfil.
+ */
 data class CambioEstado(
     val estado: EstadoOrden,
     val fechaHora: Long,
     val usuarioId: String,
-    val motivo: String? = null
+    val motivo: String? = null,
+    val usuarioNombre: String? = null
 )
 
-/** Constancia de que el cliente comprobó que la falla quedó resuelta, con la fecha, la hora y el usuario que la registró. */
+/**
+ * Constancia de que el cliente comprobó que la falla quedó resuelta, con la fecha, la hora y el usuario que la
+ * registró; [usuarioNombre] guarda su nombre en ese momento.
+ */
 data class Conformidad(
     val fechaHora: Long,
-    val usuarioId: String
+    val usuarioId: String,
+    val usuarioNombre: String? = null
 )
 
 /** Observación que el cliente hace antes de recibir su vehículo y lo acordado para atenderla. */

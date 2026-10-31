@@ -121,19 +121,23 @@ internal fun Documento.aSolicitud(id: String): Solicitud = Solicitud(
     ordenId = textoONulo("ordenId")
 )
 
-private fun CambioEstado.aDocumento(): Documento =
-    mapOf("estado" to estado.name, "fechaHora" to fechaHora, "usuarioId" to usuarioId, "motivo" to motivo)
+private fun CambioEstado.aDocumento(): Documento = mapOf(
+    "estado" to estado.name, "fechaHora" to fechaHora, "usuarioId" to usuarioId, "motivo" to motivo, "usuarioNombre" to usuarioNombre
+)
 
 private fun Documento.aCambioEstado(): CambioEstado = CambioEstado(
     estado = enumeracion<EstadoOrden>("estado"),
     fechaHora = largo("fechaHora"),
     usuarioId = texto("usuarioId"),
-    motivo = textoONulo("motivo")
+    motivo = textoONulo("motivo"),
+    usuarioNombre = textoONulo("usuarioNombre")
 )
 
-private fun Conformidad.aDocumento(): Documento = mapOf("fechaHora" to fechaHora, "usuarioId" to usuarioId)
+private fun Conformidad.aDocumento(): Documento =
+    mapOf("fechaHora" to fechaHora, "usuarioId" to usuarioId, "usuarioNombre" to usuarioNombre)
 
-private fun Documento.aConformidad(): Conformidad = Conformidad(fechaHora = largo("fechaHora"), usuarioId = texto("usuarioId"))
+private fun Documento.aConformidad(): Conformidad =
+    Conformidad(fechaHora = largo("fechaHora"), usuarioId = texto("usuarioId"), usuarioNombre = textoONulo("usuarioNombre"))
 
 private fun ObservacionCliente.aDocumento(): Documento =
     mapOf("texto" to texto, "acuerdo" to acuerdo, "fechaHora" to fechaHora, "usuarioId" to usuarioId)

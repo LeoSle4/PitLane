@@ -84,7 +84,8 @@ service cloud.firestore {
       allow delete: if esJefe();
     }
 
-    // ---- Órdenes: las registra y corrige el Jefe; el técnico asignado solo avanza su estado; nadie las borra.
+    // ---- Órdenes: las registra y corrige el Jefe; el técnico asignado solo avanza su estado; el cliente solo firma su
+    // conformidad cuando su orden está lista; nadie las borra.
     match /ordenes/{id} {
       allow read: if puedeLeer(resource.data);
 
@@ -102,7 +103,12 @@ service cloud.firestore {
         || (esTecnico() && resource.data.tecnicoId == uid()
           && cambios().hasOnly(['estado', 'historial', 'avisosEnviados', 'ultimoAviso'])
           && ((resource.data.estado == 'INGRESADO' && request.resource.data.estado == 'EN_REPARACION')
-            || (resource.data.estado == 'EN_REPARACION' && request.resource.data.estado == 'LISTO')));
+            || (resource.data.estado == 'EN_REPARACION' && request.resource.data.estado == 'LISTO')))
+        || (esCliente() && resource.data.clienteId == uid()
+          && resource.data.estado == 'LISTO'
+          && resource.data.conformidad == null
+          && cambios().hasOnly(['conformidad'])
+          && request.resource.data.conformidad.usuarioId == uid());
 
       allow delete: if false;
     }
