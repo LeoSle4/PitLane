@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/https';
 import { setGlobalOptions } from 'firebase-functions/options';
 
@@ -13,7 +13,7 @@ initializeApp();
 
 export const bd = getFirestore();
 export const autenticacion = getAuth();
-export { FieldValue, HttpsError };
+export { FieldValue, HttpsError, Timestamp };
 
 /** Devuelve el usuarioId y el rol de quien llama, o rechaza si no tiene sesión con los reclamos del servidor. */
 export function sesion(request) {

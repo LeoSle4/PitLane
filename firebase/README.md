@@ -215,3 +215,26 @@ firebase deploy --only functions
 
 Las reglas de Storage consultan Firestore (`firestore.get`). Al desplegar, Firebase puede pedir permiso para darle ese
 acceso al servicio de Storage; acéptalo.
+
+### Vencimiento automático de notificaciones y códigos
+
+`notificaciones` (90 días) y `codigosRestablecimiento` (un día después de vencer el código) llevan `expiraEn`, una fecha
+(`Timestamp`) que pone el servidor. Para que Firestore los borre solo, activa una vez las políticas TTL (las ejecutas tú;
+ningún script lo hace):
+
+```bash
+gcloud firestore fields ttls update expiraEn --collection-group=notificaciones --enable-ttl --project=<id-del-proyecto>
+gcloud firestore fields ttls update expiraEn --collection-group=codigosRestablecimiento --enable-ttl --project=<id-del-proyecto>
+```
+
+Firestore borra al pasar `expiraEn`, normalmente en el día siguiente y a veces más tarde. Las notificaciones anteriores a esta
+mejora no tienen el campo y no vencerían nunca: ponles la fecha con (simulacro por defecto):
+
+```bash
+cd firebase/functions
+node scripts/rellenarExpiracion.mjs             # simulacro
+node scripts/rellenarExpiracion.mjs --aplicar   # escribe
+```
+
+`fechaHora`, `creadaEn` y demás fechas de negocio siguen siendo números (milisegundos); solo los campos de vencimiento son
+`Timestamp`.

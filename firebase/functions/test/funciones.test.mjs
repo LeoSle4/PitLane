@@ -266,6 +266,9 @@ describe('notificarOrden', () => {
     assert.equal(lista[0].esIngreso, true);
     assert.equal(lista[0].leida, false);
     assert.equal(lista[0].ordenId, 'o1');
+    // Vence a los 90 días para que la política TTL de Firestore la borre
+    const dias = (lista[0].expiraEn.toMillis() - lista[0].fechaHora) / 86_400_000;
+    assert.ok(dias > 89.9 && dias < 90.1, `La notificación debía vencer a los 90 días y venció a los ${dias}`);
 
     await bd.collection('ordenes').doc('o1').update({ estado: 'EN_REPARACION' });
     lista = await notificaciones('c1', 2);
@@ -312,6 +315,12 @@ describe('restablecer la contraseña con un código', () => {
     assert.match(guardado.hash, /^[0-9a-f]{64}$/);
     assert.equal(guardado.intentos, 0);
     assert.ok(guardado.expira >= antes + 600_000 && guardado.expira <= Date.now() + 600_000);
+  });
+
+  it('el código guardado lleva expiraEn, un día después de vencer, para que la política TTL lo borre', async () => {
+    await llamar('solicitarCodigo', { correo });
+    const guardado = (await registro().get()).data();
+    assert.equal(guardado.expiraEn.toMillis(), guardado.expira + 86_400_000);
   });
 
   it('no deja pedir otro código antes de un minuto', async () => {

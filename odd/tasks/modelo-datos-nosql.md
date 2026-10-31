@@ -30,7 +30,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T6 S5 documentación y diagramas de las tres fases. route: inline. Diagramas conceptual, lógico y físico generados con `fases.py`
 - [x] T7 S6+S7 lecturas en vivo acotadas por estado y por cliente. route: delegada (contexto) e inline para órdenes de cliente y de vehículo. RED: 5 de 7 pruebas nuevas y 2 más; GREEN: 100 de reglas, Gradle verde
 - [x] T8 S8 búsqueda de clientes con términos indexados (datos y lectura). route: delegada (contexto) en dos entregas. RED: 7 de 12 pruebas de reglas y 11 pruebas de lectura; GREEN: 111 de reglas, 46 de funciones, Gradle verde; verificador independiente sin bloqueos
-- [ ] T9 S9 TTL de notificaciones y códigos. route: delegada (contexto)
+- [x] T9 S9 TTL de notificaciones y códigos. route: inline (cambio pequeño del servidor). RED: 2 pruebas de funciones; GREEN: 47 de funciones, 111 de reglas, Gradle verde
 - [ ] T10 S10 versión de esquema. route: delegada (contexto)
 - [ ] T11 documentación y diagramas finales de la segunda ronda. route: inline
 
@@ -96,3 +96,10 @@ L14 (T8, evaluación como ingeniero NoSQL):
 - Semántica: el nombre pasa de "contiene" a "prefijo de palabra"; DNI y placa conservan "contiene". Es una limitación de Firestore, que no tiene búsqueda de texto. En MongoDB un índice de texto o Atlas Search lo resolvería sin términos manuales; en Firestore el siguiente paso, si la base creciera mucho, es un servicio de búsqueda externo.
 - Seguridad: los términos los escribe el propio usuario sobre su documento; la rama de nombres comprueba el nombre y el DNI reales, y ahora la de placas la placa real, de modo que un término falso no puede inventar coincidencias, solo ocupar espacio en el límite de 30 de quien lo falsea.
 - Migración: los clientes y vehículos anteriores NO aparecen en la búsqueda hasta ejecutar `rellenarBusqueda.mjs --aplicar`. ORDEN: relleno antes de publicar esta versión de la app.
+
+L15 (T9, evaluación como ingeniero NoSQL):
+- Crecimiento: las notificaciones se creaban en cada cambio de estado de cada orden y no se borraban jamás; los códigos de restablecimiento tampoco. Ahora llevan `expiraEn` (`Timestamp`): 90 días las notificaciones y un día después de vencer los códigos, y los tokens ya vencían a los 60 días. Con las tres políticas TTL activas ninguna colección operativa crece sin tope, y la lista de avisos de cada usuario queda en una ventana de 90 días.
+- TTL, lo que hay que saber: borra al pasar la fecha del campo, normalmente en el día siguiente y a veces después, así que no sirve para la lógica de negocio (la validez del código sigue controlándose con `expira`). No cuesta lecturas ni escrituras facturables de borrado por la app.
+- Pendiente del usuario: activar las tres políticas TTL con `gcloud` (comandos en el README); ningún script lo hace. Para las notificaciones ya existentes, `rellenarExpiracion.mjs` (simulacro por defecto, no ejecutado) les pone `expiraEn = fechaHora + 90 días`; sin él esas no vencerían nunca.
+- Compatibilidad: el campo nuevo lo escribe solo el servidor, la app no lo lee y las reglas de actualización de la notificación (solo `leida`) no cambian, así que no hace falta orden especial de despliegue.
+- No hecho, con motivo: `fechaHora` y las demás fechas de negocio siguen siendo números. Pasarlas a `Timestamp` exige migrar todos los documentos y cambiar las ordenaciones y los mapeadores, y no aporta nada que el TTL (que usa solo `expiraEn`) necesite.
