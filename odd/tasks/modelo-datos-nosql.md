@@ -21,7 +21,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T2 S1b listas desde la instantánea; detalle por get. route: delegada (contexto). RED: 5 de 7 pruebas nuevas fallaban; GREEN: 129 pruebas Android, 0 fallos
 - [x] T3 S2 tokens por dispositivo con expiración (TTL). route: delegada (contexto) y ajuste inline. RED: 5 de reglas y compilación de Kotlin; GREEN: 74 de reglas, Gradle verde
 - [x] T4 S3 consultas dirigidas y observador de un documento. route: delegada (contexto) e inline para `eliminarCliente`. RED: compilación de pruebas (`listarDonde`/`observar` sin resolver); GREEN: 80 de reglas, Gradle verde
-- [ ] T5 S4 placa única. route: delegada (contexto)
+- [x] T5 S4 placa única con `placas/{placa}`. route: delegada (contexto) y endurecimiento del formato inline. RED: 9 pruebas de reglas; GREEN: 96 de reglas, Gradle verde; verificador independiente sin bloqueos
 - [ ] T6 S5 documentación y diagrama finales. route: inline
 
 ## Log
@@ -61,3 +61,11 @@ L8 (T4, evaluación como ingeniero NoSQL):
 - Consistencia: las comprobaciones siguen siendo "leer y luego escribir" (un vehículo con una orden en curso, avances antes de marcar Listo). Con un solo Jefe y un taller pequeño el riesgo de carrera es bajo, pero no es una garantía de la base de datos; solo la placa (T5) pasa a serlo.
 - Pendiente de decisión del usuario, no hecho: ningún listado tiene `limit` ni `orderBy`. La lectura que más crecerá es la del Jefe sobre `ordenes` (todas las órdenes de la historia en cada apertura). La solución natural (mostrar solo las activas y paginar el historial) cambia la pantalla y requiere tu decisión.
 - Límite de pruebas: el fake de Kotlin no filtra por usuario, así que la visibilidad por rol solo la prueban las reglas del emulador, y la rama de `observar` con permiso denegado solo se ejercita con Firestore real.
+
+L9 (T5, verificación independiente): sin bloqueos. Carrera de 20 intentos simultáneos con la misma placa (Jefe contra cliente y cliente contra cliente): siempre un solo lote ganó y quedó un solo vehículo. Aviso 1 corregido: la placa aceptaba espacios finales y otros caracteres (`"ABC-123 "` convivía con `"ABC-123"` y rompía la unicidad); la regla ahora exige `^[A-Z0-9]{3}-[A-Z0-9]{3}$`, que es lo que produce `Validador.normalizarPlaca` para una placa válida. Avisos aceptados: 2 (un vehículo anterior sin reserva que luego se duplica queda sin poder borrarse hasta resolverlo a mano; solo ocurre si el relleno no se ejecutó antes), 3 (un permiso denegado por otro motivo al crear podría mostrarse como "placa ya registrada"), 4 (placas anteriores vacías o con `/`, que el relleno ya omite).
+L10 (T5, evaluación como ingeniero NoSQL):
+- Garantía: antes era "comprobar y luego crear" (carrera y evasión posibles); ahora la base impide el duplicado porque Firestore solo crea un documento si su id está libre y las reglas obligan a escribir vehículo y reserva en el mismo lote (`existsAfter`/`getAfter`). Es una garantía de la base, no de la aplicación, y la prueba de 20 carreras la respalda.
+- Costo: una escritura más al crear un vehículo y un borrado más al eliminarlo; las reglas hacen unas 2 a 3 lecturas internas por operación (se facturan). Volumen bajo. No hay punto caliente: cada placa es un documento distinto.
+- Límite del diseño: una placa reservada solo se libera al borrar el vehículo. Los vehículos con historial solo se ocultan (`activo = false`), así que su placa queda reservada para siempre; si el auto se vende y el nuevo dueño quiere registrarlo, hace falta que el Jefe intervenga. Es el mismo comportamiento que ya tenía la comprobación anterior, ahora también garantizado.
+- Migración: sin el relleno hay una ventana donde los vehículos antiguos no están reservados. Orden obligatorio: app nueva, `rellenarPlacas.mjs` (omite placas repetidas y las informa), índices y reglas al final. Con las reglas desplegadas antes, una app antigua no puede registrar vehículos.
+- Comparación para la exposición: en MongoDB esto es un índice único sobre `placa`; la colección `placas` existe solo porque Firestore no tiene índices únicos.

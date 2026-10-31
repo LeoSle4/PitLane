@@ -41,6 +41,9 @@ interface IColeccion<T> {
 /** Vehículo ya registrado con una placa. [clienteId] es nulo cuando quien consulta no puede conocer al dueño. */
 data class PlacaRegistrada(val clienteId: String?)
 
+/** Otro vehículo ganó la placa: la reserva `placas/{placa}` ya existía cuando se intentó registrar este. */
+class PlacaYaRegistradaException : Exception("La placa ya está registrada")
+
 /** Fuente de datos de las colecciones de la base de documentos. */
 interface IDocumentosDataSource {
     val vehiculos: IColeccion<Vehiculo>

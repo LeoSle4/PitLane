@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.repositorio.impl
 
 import com.leosle.pitlane.arquitectura.repositorio.IVehiculoRepository
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
+import com.leosle.pitlane.arquitectura.datasource.PlacaYaRegistradaException
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
 import com.leosle.pitlane.modelo.EstadoOrden
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+
+private const val MENSAJE_PLACA_REGISTRADA = "Esta placa ya está registrada. Si es tuya, comunícate con el taller"
 
 /** Gestión de vehículos sobre las fuentes de documentos y de usuarios. */
 class VehiculoRepository(
@@ -52,7 +55,7 @@ class VehiculoRepository(
         val existente = documentos.buscarPlaca(placaNormal)
         if (existente != null) {
             if (!registradoPorJefe || existente.clienteId == null) {
-                return Resultado.Error("Esta placa ya está registrada. Si es tuya, comunícate con el taller")
+                return Resultado.Error(MENSAJE_PLACA_REGISTRADA)
             }
             val dueno = usuarios.obtenerUsuario(existente.clienteId)?.nombreCompleto.orEmpty()
             return Resultado.Error("Esta placa ya está registrada a nombre de $dueno", existente.clienteId)
@@ -60,7 +63,12 @@ class VehiculoRepository(
         val vehiculo = Vehiculo(
             documentos.vehiculos.nuevoId(), clienteId, placaNormal, Textos.nombrePropio(marca), Textos.conInicialesMayusculas(modelo), anio, Textos.nombrePropio(color)
         )
-        documentos.vehiculos.guardar(vehiculo.id, vehiculo)
+        // La reserva de la placa decide quién gana si dos registros coinciden o si se omitió la consulta previa
+        try {
+            documentos.vehiculos.guardar(vehiculo.id, vehiculo)
+        } catch (e: PlacaYaRegistradaException) {
+            return Resultado.Error(MENSAJE_PLACA_REGISTRADA)
+        }
         return Resultado.Exito(vehiculo)
     }
 

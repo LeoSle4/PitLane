@@ -3,11 +3,13 @@ package com.leosle.pitlane.arquitectura.datasource.firebase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.functions.FirebaseFunctions
 import com.leosle.pitlane.arquitectura.datasource.IColeccion
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.PlacaRegistrada
+import com.leosle.pitlane.arquitectura.datasource.PlacaYaRegistradaException
 import com.leosle.pitlane.modelo.Avance
 import com.leosle.pitlane.modelo.Notificacion
 import com.leosle.pitlane.modelo.Orden
@@ -24,6 +26,14 @@ private const val CONTADOR_ORDENES = "ordenes"
 private const val CAMPO_ULTIMO = "ultimo"
 private const val USUARIOS = "usuarios"
 private const val TOKENS = "tokensDispositivo"
+private const val PLACAS = "placas"
+
+/**
+ * Ruta y datos de la reserva de la placa de un vehículo: el id del documento ES la placa, así que Firestore solo
+ * lo crea si está libre. Las reglas exigen que se escriba en el mismo lote que el vehículo.
+ */
+internal fun rutaYDatosDeReservaDePlaca(vehiculo: Vehiculo): Pair<String, Map<String, String>> =
+    "$PLACAS/${vehiculo.placa}" to mapOf("vehiculoId" to vehiculo.id, "clienteId" to vehiculo.clienteId)
 
 /** Número de orden con el formato ORD-0001 a partir de su correlativo. */
 internal fun numeroDeOrden(correlativo: Long): String = "ORD-%04d".format(correlativo)
@@ -56,12 +66,34 @@ class DocumentosDataSource(
     private val ordenesBd = bd.collection("ordenes")
     private val avancesBd = bd.collection("avances")
 
-    override val vehiculos: IColeccion<Vehiculo> = ColeccionFirestore(
+    private val vehiculosBase = ColeccionFirestore(
         vehiculosBd, actor,
         aDocumento = Vehiculo::aDocumento,
         desdeDocumento = { id, campos -> campos.aVehiculo(id) },
-        acceso = { FieldValue.arrayUnion(it.clienteId) }
+        acceso = { FieldValue.arrayUnion(it.clienteId) },
+        alGuardar = ::reservarPlaca
     )
+
+    /** El vehículo y la reserva de su placa se escriben (y se borran) juntos o ninguno. */
+    override val vehiculos: IColeccion<Vehiculo> = object : IColeccion<Vehiculo> by vehiculosBase {
+        override suspend fun guardar(id: String, valor: Vehiculo) {
+            try {
+                enLote { vehiculosBase.guardar(id, valor) }
+            } catch (e: FirebaseFirestoreException) {
+                // Si la placa ya estaba reservada, las reglas rechazan el lote completo y el vehículo no se creó
+                val perdioLaPlaca = e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ||
+                    e.code == FirebaseFirestoreException.Code.ALREADY_EXISTS
+                if (perdioLaPlaca && vehiculosBase.obtener(id) == null) throw PlacaYaRegistradaException()
+                throw e
+            }
+        }
+
+        override suspend fun eliminar(id: String) = enLote {
+            // Un vehículo anterior a las reservas no tiene ninguna; las reglas aceptan borrar una reserva inexistente
+            vehiculosBase.obtener(id)?.let { borrar(bd.document(rutaYDatosDeReservaDePlaca(it).first)) }
+            vehiculosBase.eliminar(id)
+        }
+    }
 
     override val solicitudes: IColeccion<Solicitud> = ColeccionFirestore(
         bd.collection("solicitudes"), actor,
@@ -102,6 +134,13 @@ class DocumentosDataSource(
     private suspend fun accesoDeLaOrden(ordenId: String): List<String> {
         val campo = ordenesBd.document(ordenId).get().esperar().get(CAMPO_ACCESO)
         return (campo as? List<*>).orEmpty().filterIsInstance<String>()
+    }
+
+    /** Al crear un vehículo reserva su placa en `placas/{placa}`; al editarlo la placa no cambia y la reserva sigue. */
+    private suspend fun reservarPlaca(anterior: Vehiculo?, nuevo: Vehiculo) {
+        if (anterior != null) return
+        val (ruta, datos) = rutaYDatosDeReservaDePlaca(nuevo)
+        escribir(bd.document(ruta), datos)
     }
 
     /**

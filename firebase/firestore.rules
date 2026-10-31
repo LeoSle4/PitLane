@@ -103,7 +103,12 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(
           ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
         && request.resource.data.activo == true
-        && request.resource.data.acceso == [request.resource.data.clienteId];
+        && request.resource.data.acceso == [request.resource.data.clienteId]
+        // La placa tiene el formato que produce la app (ABC-123, sin espacios) y se reserva en el mismo lote: `placas/{placa}` solo se crea si su id está libre.
+        && request.resource.data.placa is string
+        && request.resource.data.placa.matches('^[A-Z0-9]{3}-[A-Z0-9]{3}$')
+        && existsAfter(/databases/$(database)/documents/placas/$(request.resource.data.placa))
+        && getAfter(/databases/$(database)/documents/placas/$(request.resource.data.placa)).data.vehiculoId == id;
 
       allow update: if request.resource.data.clienteId == resource.data.clienteId
         && request.resource.data.placa == resource.data.placa
@@ -111,7 +116,34 @@ service cloud.firestore {
           || (esCliente() && resource.data.clienteId == uid()
               && cambios().hasOnly(['marca', 'modelo', 'anio', 'color', 'activo'])));
 
-      allow delete: if esJefe() || (esCliente() && resource.data.clienteId == uid());
+      // La reserva de la placa se libera en el mismo lote. Un vehículo anterior a las reservas no la tiene.
+      allow delete: if (esJefe() || (esCliente() && resource.data.clienteId == uid()))
+        && !existsAfter(/databases/$(database)/documents/placas/$(resource.data.placa));
+    }
+
+    // ---- Placas: índice de reservas `placas/{placa}` = {vehiculoId, clienteId}. Firestore solo crea un documento si
+    // su id está libre, y eso garantiza que no haya dos vehículos con la misma placa. Se escribe siempre en el mismo
+    // lote que el vehículo. Nadie lo lee desde la app (lo lee el servidor) y no se actualiza.
+    match /placas/{placa} {
+      allow read: if false;
+
+      allow create: if (esJefe() || (esCliente() && request.resource.data.clienteId == uid()))
+        && request.resource.data.keys().hasOnly(['vehiculoId', 'clienteId'])
+        && request.resource.data.keys().hasAll(['vehiculoId', 'clienteId'])
+        && request.resource.data.vehiculoId is string
+        && request.resource.data.clienteId is string
+        && existsAfter(/databases/$(database)/documents/vehiculos/$(request.resource.data.vehiculoId))
+        && getAfter(/databases/$(database)/documents/vehiculos/$(request.resource.data.vehiculoId)).data.placa == placa
+        && getAfter(/databases/$(database)/documents/vehiculos/$(request.resource.data.vehiculoId)).data.clienteId
+          == request.resource.data.clienteId;
+
+      allow update: if false;
+
+      // Borrar una reserva inexistente (resource == null) no cambia nada: la app lo hace al eliminar un vehículo
+      // anterior a las reservas, sin saber que no la tiene.
+      allow delete: if sesion() && resource == null
+        || ((esJefe() || (esCliente() && resource.data.clienteId == uid()))
+          && !existsAfter(/databases/$(database)/documents/vehiculos/$(resource.data.vehiculoId)));
     }
 
     // ---- Solicitudes: las crea y edita el cliente mientras están pendientes; el Jefe las marca atendidas.

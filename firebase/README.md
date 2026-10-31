@@ -121,6 +121,31 @@ node scripts/limpiarTokensAntiguos.mjs             # simulacro: no borra
 node scripts/limpiarTokensAntiguos.mjs --aplicar   # borra en el proyecto
 ```
 
+### Placa única (`placas/{placa}`)
+
+La unicidad de la placa la garantiza la colección `placas`: el id de cada documento es la placa (`ABC-123`, en mayúsculas)
+y sus campos son `{vehiculoId, clienteId}`. Firestore solo crea un documento si su id está libre, así que dos registros
+simultáneos no pueden quedarse con la misma placa. Nadie la lee desde la app, ni el Jefe, y no se actualiza.
+
+Regla del lote: el vehículo y su reserva se escriben en el MISMO lote y las reglas lo comprueban en ambos sentidos con
+`existsAfter`/`getAfter`. Crear un vehículo exige su reserva (placa en mayúsculas, `vehiculoId` igual al id del vehículo);
+crear la reserva exige el vehículo con esa placa y ese dueño. Eliminar un vehículo exige borrar su reserva en el mismo
+lote; ocultarlo (`activo = false`) la conserva. Un vehículo anterior a las reservas se elimina igual (la app intenta borrar
+una reserva inexistente y las reglas lo aceptan). Si la app pierde la carrera muestra "Esta placa ya está registrada".
+
+Orden de despliegue (importa: tras las reglas, una app antigua ya no puede registrar vehículos):
+
+1. Publica la app nueva.
+2. Ejecuta el relleno (simulacro primero; revisa los conflictos de placa repetida, que el script omite).
+3. Despliega las reglas al final.
+
+```bash
+cd firebase/functions
+export GOOGLE_APPLICATION_CREDENTIALS=/ruta/fuera/del/repo/clave-de-servicio.json
+node scripts/rellenarPlacas.mjs             # simulacro: no escribe
+node scripts/rellenarPlacas.mjs --aplicar   # escribe en el proyecto
+```
+
 ## Índices compuestos
 
 Las consultas dirigidas de la app (`acceso` contiene el usuario y un campo igual a un valor) necesitan un índice

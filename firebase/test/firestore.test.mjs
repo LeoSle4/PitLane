@@ -1,6 +1,6 @@
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
-  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, Timestamp, updateDoc, where,
+  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, Timestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import {
@@ -106,21 +106,149 @@ describe('vehiculos', () => {
     await assertFails(lista(s.c1, 'vehiculos'));
   });
 
-  it('el cliente registra su vehículo como lo hace la app (set con merge y arrayUnion)', async () => {
-    const { acceso, ...campos } = vehiculo('c1', 'XYZ987', []);
-    await assertSucceeds(setDoc(ref(s.c1, 'vehiculos/v9'), { ...campos, acceso: arrayUnion('c1') }, { merge: true }));
+  // La app escribe el vehículo y su reserva `placas/{placa}` en un mismo lote
+  const reserva = (vehiculoId, clienteId) => ({ vehiculoId, clienteId });
+  const registrar = (contexto, id, datos, placa = datos.placa, reservaDatos = reserva(id, datos.clienteId)) => {
+    const lote = writeBatch(bd(contexto));
+    lote.set(ref(contexto, `vehiculos/${id}`), datos, { merge: true });
+    lote.set(ref(contexto, `placas/${placa}`), reservaDatos);
+    return lote.commit();
+  };
+
+  it('el cliente registra su vehículo como lo hace la app (lote con merge, arrayUnion y la reserva de la placa)', async () => {
+    const { acceso, ...campos } = vehiculo('c1', 'XYZ-987', ['c1']);
+    const lote = writeBatch(bd(s.c1));
+    lote.set(ref(s.c1, 'vehiculos/v9'), { ...campos, acceso: arrayUnion('c1') }, { merge: true });
+    lote.set(ref(s.c1, 'placas/XYZ-987'), reserva('v9', 'c1'));
+    await assertSucceeds(lote.commit());
   });
 
   it('el cliente no registra vehículos a nombre de otro ni con permisos de más', async () => {
-    await assertFails(setDoc(ref(s.c1, 'vehiculos/v9'), vehiculo('c2', 'XYZ987', ['c2'])));
-    await assertFails(setDoc(ref(s.c1, 'vehiculos/v9'), vehiculo('c1', 'XYZ987', ['c1', 't1'])));
-    await assertFails(setDoc(ref(s.c1, 'vehiculos/v9'), vehiculo('c1', 'XYZ987', ['c1'], { activo: false })));
-    await assertFails(setDoc(ref(s.c1, 'vehiculos/v9'), vehiculo('c1', 'XYZ987', ['c1'], { extra: 1 })));
-    await assertFails(setDoc(ref(s.t1, 'vehiculos/v9'), vehiculo('c1', 'XYZ987', ['c1'])));
+    await assertFails(registrar(s.c1, 'v9', vehiculo('c2', 'XYZ-987', ['c2'])));
+    await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1', 't1'])));
+    await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'], { activo: false })));
+    await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'], { extra: 1 })));
+    await assertFails(registrar(s.t1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'])));
   });
 
   it('el Jefe registra un vehículo a nombre de un cliente', async () => {
-    await assertSucceeds(setDoc(ref(s.jefe, 'vehiculos/v9'), vehiculo('c2', 'XYZ987', ['c2'])));
+    await assertSucceeds(registrar(s.jefe, 'v9', vehiculo('c2', 'XYZ-987', ['c2'])));
+  });
+
+  describe('placa única (placas/{placa})', () => {
+    it('el vehículo sin su reserva se deniega, también al Jefe', async () => {
+      await assertFails(setDoc(ref(s.c1, 'vehiculos/v9'), vehiculo('c1', 'XYZ-987', ['c1'])));
+      await assertFails(setDoc(ref(s.jefe, 'vehiculos/v9'), vehiculo('c1', 'XYZ-987', ['c1'])));
+    });
+
+    it('la reserva sin su vehículo se deniega', async () => {
+      await assertFails(setDoc(ref(s.c1, 'placas/XYZ-987'), reserva('v9', 'c1')));
+      await assertFails(setDoc(ref(s.jefe, 'placas/XYZ-987'), reserva('v9', 'c1')));
+    });
+
+    it('una segunda unidad con una placa ya reservada se deniega', async () => {
+      await assertSucceeds(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'])));
+      await assertFails(registrar(s.c2, 'v10', vehiculo('c2', 'XYZ-987', ['c2'])));
+      await assertFails(registrar(s.jefe, 'v10', vehiculo('c2', 'XYZ-987', ['c2'])));
+    });
+
+    it('la placa solo admite el formato que produce la app: tres caracteres, guion y tres caracteres en mayúsculas', async () => {
+      const intenta = (placa, id) => registrar(s.c1, id, vehiculo('c1', placa, ['c1']), placa, reserva(id, 'c1'));
+      // Una placa con espacio al final conviviría con la misma sin espacio y rompería la unicidad
+      for (const [i, mala] of ['XYZ-987 ', ' XYZ-987', 'XYZ 987', 'XYZ987', 'XY-9876', 'ÑYZ-987', 'XYZ-98', 'X'.repeat(80)].entries()) {
+        await assertFails(intenta(mala, `vx${i}`));
+      }
+      await assertSucceeds(intenta('XYZ-987', 'vok'));
+    });
+
+    it('la placa debe estar en mayúsculas y coincidir con el id de la reserva', async () => {
+      await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'xyz-987', ['c1'])));
+      await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']), 'OTRA-111'));
+    });
+
+    it('la reserva debe apuntar a ese vehículo y a su dueño', async () => {
+      await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']), 'XYZ-987', reserva('v8', 'c1')));
+      await assertFails(registrar(s.jefe, 'v9', vehiculo('c1', 'XYZ-987', ['c1']), 'XYZ-987', reserva('v9', 'c2')));
+    });
+
+    it('la reserva solo lleva vehiculoId y clienteId', async () => {
+      await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']), 'XYZ-987', { ...reserva('v9', 'c1'), extra: 1 }));
+      await assertFails(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']), 'XYZ-987', { vehiculoId: 'v9' }));
+    });
+
+    it('un cliente no reserva una placa a nombre de otro cliente', async () => {
+      await assertFails(registrar(s.c1, 'v9', vehiculo('c2', 'XYZ-987', ['c2'])));
+      await assertFails(registrar(s.t1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'])));
+    });
+
+    it('una reserva no se actualiza', async () => {
+      await registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']));
+      await assertFails(updateDoc(ref(s.c1, 'placas/XYZ-987'), { clienteId: 'c2' }));
+      await assertFails(updateDoc(ref(s.jefe, 'placas/XYZ-987'), { clienteId: 'c2' }));
+      await assertFails(setDoc(ref(s.jefe, 'placas/XYZ-987'), reserva('v9', 'c1')));
+    });
+
+    it('nadie lee las reservas desde la app, ni el Jefe', async () => {
+      await registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']));
+      await assertFails(getDoc(ref(s.c1, 'placas/XYZ-987')));
+      await assertFails(getDoc(ref(s.jefe, 'placas/XYZ-987')));
+      await assertFails(lista(s.jefe, 'placas'));
+    });
+
+    it('el vehículo y su reserva se eliminan juntos; la reserva sola o el vehículo solo se deniegan', async () => {
+      await registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']));
+      await assertFails(deleteDoc(ref(s.c1, 'vehiculos/v9')));
+      await assertFails(deleteDoc(ref(s.c1, 'placas/XYZ-987')));
+      await assertFails(deleteDoc(ref(s.c2, 'placas/XYZ-987')));
+      const ajeno = writeBatch(bd(s.c2));
+      ajeno.delete(ref(s.c2, 'vehiculos/v9'));
+      ajeno.delete(ref(s.c2, 'placas/XYZ-987'));
+      await assertFails(ajeno.commit());
+      const lote = writeBatch(bd(s.c1));
+      lote.delete(ref(s.c1, 'vehiculos/v9'));
+      lote.delete(ref(s.c1, 'placas/XYZ-987'));
+      await assertSucceeds(lote.commit());
+      // la placa queda libre
+      await assertSucceeds(registrar(s.c2, 'v10', vehiculo('c2', 'XYZ-987', ['c2'])));
+    });
+
+    it('el Jefe elimina el vehículo y su reserva en un lote', async () => {
+      await registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']));
+      const lote = writeBatch(bd(s.jefe));
+      lote.delete(ref(s.jefe, 'vehiculos/v9'));
+      lote.delete(ref(s.jefe, 'placas/XYZ-987'));
+      await assertSucceeds(lote.commit());
+    });
+
+    it('un vehículo anterior a las reservas se elimina sin reserva', async () => {
+      await assertSucceeds(deleteDoc(ref(s.c1, 'vehiculos/v1')));
+      await assertSucceeds(deleteDoc(ref(s.jefe, 'vehiculos/v2')));
+    });
+
+    it('la app borra también la reserva al eliminar un vehículo anterior a las reservas y el lote funciona', async () => {
+      const lote = writeBatch(bd(s.c1));
+      lote.delete(ref(s.c1, 'placas/ABC123'));
+      lote.delete(ref(s.c1, 'vehiculos/v1'));
+      await assertSucceeds(lote.commit());
+    });
+
+    it('la reserva de otro vehículo sigue protegida aunque se pida borrarla junto a un vehículo propio', async () => {
+      await registrar(s.c2, 'v9', vehiculo('c2', 'XYZ-987', ['c2']));
+      const lote = writeBatch(bd(s.c1));
+      lote.delete(ref(s.c1, 'placas/XYZ-987'));
+      lote.delete(ref(s.c1, 'vehiculos/v1'));
+      await assertFails(lote.commit());
+    });
+
+    it('ocultar el vehículo (activo = false) conserva la reserva y funciona', async () => {
+      await registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1']));
+      await assertSucceeds(updateDoc(ref(s.c1, 'vehiculos/v9'), { activo: false }));
+      await assertFails(registrar(s.c2, 'v10', vehiculo('c2', 'XYZ-987', ['c2'])));
+      const lote = writeBatch(bd(s.c1));
+      lote.update(ref(s.c1, 'vehiculos/v9'), { activo: false });
+      lote.delete(ref(s.c1, 'placas/XYZ-987'));
+      await assertFails(lote.commit());
+    });
   });
 
   it('el cliente edita marca, modelo, año y color de su vehículo, y no la placa ni el dueño', async () => {
