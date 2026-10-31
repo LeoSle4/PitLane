@@ -77,11 +77,11 @@ class MapeadoresTest {
             falla = "Batería", kilometraje = 45_000, combustible = NivelCombustible.TRES_CUARTOS,
             observaciones = "Rayón", fotos = listOf(foto), tecnicoId = "u9", estado = EstadoOrden.LISTO,
             historial = listOf(
-                CambioEstado(EstadoOrden.INGRESADO, 1L, "u2"),
+                CambioEstado(EstadoOrden.INGRESADO, 1L, "u2", usuarioNombre = "Freddy Correa"),
                 CambioEstado(EstadoOrden.ANULADA, 2L, "u2", motivo = "Duplicada")
             ),
             creadaEn = 1L, motivoAnulacion = "Duplicada", avisosEnviados = 2, ultimoAviso = 3L,
-            editadaPor = "u2", editadaEn = 4L, conformidad = Conformidad(5L, "u1"),
+            editadaPor = "u2", editadaEn = 4L, conformidad = Conformidad(5L, "u1", usuarioNombre = "Freddy Correa"),
             observacionesCliente = listOf(ObservacionCliente("Falta limpiar", "Se limpia", 6L, "u1"))
         )
 

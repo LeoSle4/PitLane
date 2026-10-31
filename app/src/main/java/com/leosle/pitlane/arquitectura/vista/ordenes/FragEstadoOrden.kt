@@ -18,6 +18,9 @@ import com.leosle.pitlane.arquitectura.vista.comun.BarraSuperior
 import com.leosle.pitlane.arquitectura.vista.comun.EstadosVisuales
 import com.leosle.pitlane.arquitectura.vista.comun.FragmentoVinculado
 import com.leosle.pitlane.arquitectura.vista.comun.LogosMarca
+import com.leosle.pitlane.modelo.Rol
+import com.leosle.pitlane.arquitectura.vista.comun.DialogoModal
+import com.leosle.pitlane.arquitectura.vista.comun.BotonCarga
 
 /**
  * Estado actual de una orden del cliente: encabezado con la marca, foto del taller, estado actual con su ícono, fecha del último cambio, técnico,
@@ -39,6 +42,7 @@ class FragEstadoOrden : FragmentoVinculado<CliFragEstadoOrdenBinding>(CliFragEst
         vinculo.btnHallazgos.setOnClickListener { navegador.irA(FragHallazgos.nuevo(ordenId)) }
         vinculo.btnComprobante.setOnClickListener { navegador.irA(FragComprobante.nuevo(ordenId)) }
         vinculo.btnConstancia.setOnClickListener { navegador.irA(FragConstancia.nuevo(ordenId)) }
+        vinculo.btnDarConformidad.setOnClickListener { confirmarConformidad(ordenId) }
         recolectar(ordenViewModel.orden(ordenId, usuarioActual.id)) { detalle -> pintar(detalle) }
     }
 
@@ -69,6 +73,48 @@ class FragEstadoOrden : FragmentoVinculado<CliFragEstadoOrdenBinding>(CliFragEst
         LogosMarca.aplicar(vinculo.imgMarcaOrdenEstado, detalle.vehiculo?.marca.orEmpty())
         pintarIcono(estado)
         pintarProgreso(orden)
+        pintarConformidad(orden)
+    }
+
+    /**
+     * Con la orden lista para recoger muestra la tarjeta de conformidad: el botón para darla o, si ya está registrada,
+     * cuándo y quién la registró (el propio cliente o el Jefe en el taller).
+     */
+    private fun pintarConformidad(orden: Orden) {
+        vinculo.mcvConformidad.visibility = if (orden.estado == EstadoOrden.LISTO) View.VISIBLE else View.GONE
+        val conformidad = orden.conformidad
+        if (conformidad == null) {
+            vinculo.txtTituloConformidad.text = getString(R.string.cli_conformidad_titulo)
+            vinculo.txtMensajeConformidad.text = getString(R.string.cli_conformidad_mensaje)
+            vinculo.btnDarConformidad.visibility = View.VISIBLE
+        } else {
+            val quien = if (conformidad.usuarioId == usuarioActual.id) getString(R.string.cli_conformidad_por_ti)
+            else conformidad.usuarioNombre ?: Rol.JEFE.etiqueta
+            vinculo.txtTituloConformidad.text = getString(R.string.cli_conformidad_registrada_titulo)
+            vinculo.txtMensajeConformidad.text =
+                getString(R.string.cli_conformidad_registrada_mensaje, Fechas.fechaHora(conformidad.fechaHora), quien)
+            vinculo.btnDarConformidad.visibility = View.GONE
+        }
+    }
+
+    /** Pide confirmar que el vehículo quedó bien y, al aceptar, registra la conformidad firmada por el cliente. */
+    private fun confirmarConformidad(ordenId: String) {
+        DialogoModal.confirmar(
+            requireContext(),
+            R.drawable.ic_check_circle,
+            getString(R.string.cli_conformidad_dialogo_titulo),
+            getString(R.string.cli_conformidad_dialogo_mensaje),
+            getString(R.string.cli_conformidad_dialogo_accion)
+        ) {
+            BotonCarga.iniciar(vinculo.btnDarConformidad)
+            ordenViewModel.registrarConformidad(ordenId, usuarioActual.id) { resultado ->
+                if (view == null) return@registrarConformidad
+                BotonCarga.terminar(vinculo.btnDarConformidad)
+                resultado
+                    .alExito { mostrarMensaje(getString(R.string.cli_conformidad_gracias)) }
+                    .alError { DialogoModal.error(requireContext(), it.mensaje) }
+            }
+        }
     }
 
     /**

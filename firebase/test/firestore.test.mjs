@@ -231,6 +231,17 @@ describe('ordenes', () => {
     await assertFails(updateDoc(ref(s.jefe, 'ordenes/o2'), { numero: 'ORD-9999' }));
   });
 
+  it('el cliente firma su conformidad solo en su orden lista, una vez y con su propio usuario', async () => {
+    const conformidad = (usuarioId) => ({ conformidad: { fechaHora: 9, usuarioId, usuarioNombre: 'Nombre' } });
+    await assertFails(updateDoc(ref(s.c1, 'ordenes/o1'), conformidad('c1')));
+    await preparar(entorno, 'ordenes/o1', { estado: 'LISTO' });
+    await assertFails(updateDoc(ref(s.c1, 'ordenes/o1'), conformidad('j1')));
+    await assertFails(updateDoc(ref(s.c2, 'ordenes/o1'), conformidad('c2')));
+    await assertFails(updateDoc(ref(s.c1, 'ordenes/o1'), { ...conformidad('c1'), estado: 'ENTREGADO' }));
+    await assertSucceeds(updateDoc(ref(s.c1, 'ordenes/o1'), conformidad('c1')));
+    await assertFails(updateDoc(ref(s.c1, 'ordenes/o1'), conformidad('c1')));
+  });
+
   it('nadie elimina órdenes', async () => {
     await assertFails(deleteDoc(ref(s.jefe, 'ordenes/o1')));
     await assertFails(deleteDoc(ref(s.c1, 'ordenes/o1')));
@@ -331,5 +342,15 @@ describe('tokensDispositivo', () => {
     await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 123 }));
     await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 'abc', extra: 1 }));
     await assertFails(getDoc(ref(s.c1, 'tokensDispositivo/c1')));
+  });
+});
+
+describe('codigosRestablecimiento', () => {
+  it('nadie lee ni escribe los códigos desde la app, ni siquiera el Jefe', async () => {
+    await preparar(entorno, 'codigosRestablecimiento/x', { hash: 'abc', expira: 1, intentos: 0, enviadoEn: 1 });
+    await assertFails(getDoc(ref(s.jefe, 'codigosRestablecimiento/x')));
+    await assertFails(getDoc(ref(s.anonimo, 'codigosRestablecimiento/x')));
+    await assertFails(setDoc(ref(s.c1, 'codigosRestablecimiento/y'), { hash: 'abc' }));
+    await assertFails(lista(s.jefe, 'codigosRestablecimiento'));
   });
 });

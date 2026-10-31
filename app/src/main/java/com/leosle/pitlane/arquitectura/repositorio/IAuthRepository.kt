@@ -20,8 +20,11 @@ interface IAuthRepository {
     /** Crea la cuenta de un cliente, une el registro previo del Jefe si el DNI ya existía y abre la sesión. */
     suspend fun registrarCliente(datos: DatosRegistroCliente): Resultado<Usuario>
 
-    /** Envía el enlace de restablecimiento; responde igual exista o no el correo. */
-    suspend fun recuperarContrasena(correo: String): Resultado<Unit>
+    /** Envía un código de 6 dígitos al correo; responde igual exista o no la cuenta. */
+    suspend fun solicitarCodigoDeRestablecimiento(correo: String): Resultado<Unit>
+
+    /** Cambia la contraseña con el código recibido por correo. */
+    suspend fun restablecerContrasena(correo: String, codigo: String, contrasena: String): Resultado<Unit>
 
     /** Cierra la sesión activa. */
     fun cerrarSesion()

@@ -103,7 +103,7 @@ Las cuentas son reales. El primer Jefe de Taller se crea una sola vez con el scr
 ./gradlew :app:testDebugUnitTest
 ```
 
-Hay 108 pruebas unitarias: las reglas de negocio de los repositorios (`ReglasDeNegocioTest`, que usa una base de datos en memoria en lugar de Firebase), los mapeadores y el alcance por rol de Firebase, los validadores de formularios y las utilidades de texto. Las reglas de seguridad y las funciones del servidor tienen sus propias pruebas en el emulador (`firebase/`).
+Hay 113 pruebas unitarias: las reglas de negocio de los repositorios (`ReglasDeNegocioTest`, que usa una base de datos en memoria en lugar de Firebase), los mapeadores y el alcance por rol de Firebase, los validadores de formularios y las utilidades de texto. Las reglas de seguridad y las funciones del servidor tienen sus propias pruebas en el emulador (`firebase/`).
 
 ## Estructura del repositorio
 

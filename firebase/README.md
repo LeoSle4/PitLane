@@ -14,7 +14,7 @@ Reglas de Firestore y de Storage de PitLane y sus pruebas. El diseño completo e
 
 ## Probar las reglas en el emulador
 
-Requiere Node, Java y `firebase-tools`. Las pruebas usan un proyecto de demostración y no tocan el proyecto real.
+Requiere Node, Java y `firebase-tools`. Las pruebas (53 de reglas) usan un proyecto de demostración y no tocan el proyecto real.
 
 ```bash
 cd firebase
@@ -34,15 +34,36 @@ Node 22, región `southamerica-west1`. Son las operaciones que la app no puede h
 | `reactivarCuenta` | Jefe | Vuelve a habilitar la cuenta |
 | `verificarPlaca` | cualquier sesión | Dice si una placa ya existe; solo el Jefe recibe el dueño |
 | `notificarOrden` | automática | Crea el aviso del cliente cuando se registra una orden o cambia su estado |
+| `solicitarCodigo` | sin sesión | Envía por correo un código de 6 dígitos para restablecer la contraseña |
+| `restablecerContrasena` | sin sesión | Cambia la contraseña si el código es correcto y sigue vigente |
 
 ```bash
 cd firebase/functions
 npm install
-npm test      # emuladores de Auth, Firestore y Functions; 25 pruebas
+npm test      # emuladores de Auth, Firestore y Functions; 39 pruebas
 ```
 
 Una cuenta desactivada ya no puede iniciar sesión ni renovar su sesión, pero un token ya emitido sigue valiendo
 hasta una hora (lo que dura un token de Firebase).
+
+### Correo para restablecer la contraseña
+
+Los códigos los envía una cuenta de Gmail del taller. Se configura una sola vez:
+
+1. En la cuenta de Gmail, activa la **verificación en dos pasos** (Cuenta de Google, Seguridad).
+2. Crea una **contraseña de aplicación** en https://myaccount.google.com/apppasswords con el nombre `PitLane` y copia
+   las 16 letras que muestra.
+3. Guarda el correo y esa contraseña como secretos de Firebase; nunca van al repositorio:
+
+```bash
+cd firebase
+firebase functions:secrets:set CORREO_REMITENTE    # pega el correo de Gmail
+firebase functions:secrets:set CORREO_CLAVE_APP    # pega la contraseña de aplicación
+firebase deploy --only functions
+```
+
+El código vence a los 10 minutos, admite 5 intentos y no se puede pedir otro antes de un minuto. En el emulador no se
+envían correos: el código aparece en el registro de la función.
 
 ### Crear el primer Jefe
 
