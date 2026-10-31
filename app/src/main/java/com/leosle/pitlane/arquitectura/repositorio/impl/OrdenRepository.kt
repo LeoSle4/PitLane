@@ -63,10 +63,10 @@ class OrdenRepository(
 
     /** Emite la orden cada vez que cambia, solo si el usuario puede verla: el Jefe todas, el técnico las suyas y el cliente las suyas. */
     override fun observarOrden(ordenId: String, usuarioId: String): Flow<OrdenDetallada?> =
-        ordenesDetalladas(usuarios, documentos)
-            .map { lista ->
+        ordenDetallada(ordenId, usuarios, documentos)
+            .map { detalle ->
                 val usuario = usuarios.obtenerUsuario(usuarioId)
-                lista.firstOrNull { it.orden.id == ordenId }?.takeIf { puedeVer(usuario, it.orden) }
+                detalle?.takeIf { puedeVer(usuario, it.orden) }
             }
             .distinctUntilChanged()
 

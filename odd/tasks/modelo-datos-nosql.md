@@ -18,7 +18,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 
 - [x] T0 S0 reglas del Jefe. inline. commit 7826db2
 - [x] T1 S1a instantánea: datos, escritura, reglas, relleno. route: delegada (contexto). commit ver git log (feat(modelo): instantánea...). RED: 6 pruebas Android y 10 de reglas; GREEN: 65 de reglas y Gradle verde
-- [ ] T2 S1b listas desde la instantánea; detalle por get. route: delegada (contexto)
+- [x] T2 S1b listas desde la instantánea; detalle por get. route: delegada (contexto). RED: 5 de 7 pruebas nuevas fallaban; GREEN: 129 pruebas Android, 0 fallos
 - [ ] T3 S2 tokens por dispositivo. route: delegada (contexto)
 - [ ] T4 S3 consultas dirigidas. route: delegada (contexto)
 - [ ] T5 S4 placa única. route: delegada (contexto)
@@ -38,3 +38,11 @@ L5 (T1, evaluación como ingeniero NoSQL):
 - Atomicidad: sin cambio; el número de orden y la orden siguen sin transacción conjunta (punto 8 de la evaluación).
 - Migración y reversión: los lectores toleran documentos sin instantánea (null). El relleno es seco por defecto y nunca pisa una instantánea existente. Reversión: ignorar los campos. ORDEN DE DESPLIEGUE: primero publicar la app nueva, luego ejecutar el relleno, y al final desplegar las reglas; si las reglas van antes, la app antigua no podrá crear órdenes ni solicitudes porque ahora exigen la instantánea.
 - Riesgos que quedan: las reglas de `ordenes` comprueban la forma de la instantánea pero no su coincidencia con los perfiles; el relleno usa `''` o `0` si falta un dato del perfil; una solicitud puede apuntar al vehículo de otro cliente (la regla no comprueba la propiedad del vehículo).
+
+L6 (T2, evaluación como ingeniero NoSQL):
+- Lecturas y costo: con todas las órdenes y solicitudes con instantánea, la lista del Jefe lee solo `ordenes` (antes: órdenes + usuarios + vehículos + solicitudes completos, es decir O+U+V+S documentos en cada arranque o reconexión del listener). Firestore cobra el resultado inicial de cada listener y luego solo los cambios, así que el ahorro real está en cada apertura de la app y en cada reconexión, no en cada edición. CONDICIÓN: basta UNA orden sin instantánea para que toda la lista vuelva al cruce completo; por eso el relleno (`rellenarInstantaneas.mjs --aplicar`) es requisito para ver el ahorro y lo debe ejecutar el usuario.
+- Detalle: ahora hace hasta 6 `get` por cada cambio de la orden (cliente, vehículo, técnico, solicitud y dos autores) y deja de refrescarse si cambia un usuario o un vehículo por separado. Es el patrón correcto (lista barata, detalle exacto), pero sigue escuchando la colección `ordenes` completa porque `IColeccion` no tiene un observador de un solo documento; se incorpora en T4.
+- Consistencia: la lista muestra lo cierto al ingreso y el detalle los datos vivos; si alguien renombra a un cliente, lista y detalle pueden diferir. Es la consecuencia aceptada de la instantánea.
+- Seguridad: sin cambios de reglas. Un cliente no puede leer el perfil del Jefe; `obtener` convierte el rechazo en nulo, por lo que en el detalle del cliente el autor de la entrega aparece sin nombre (la lista sí lo muestra por la firma del historial).
+- Migración y reversión: si falla algo, basta no rellenar: el código cae solo al cruce completo anterior.
+- Riesgo que queda: la lista infiere el rol del autor por su id (cliente, técnico o Jefe) y los usuarios livianos traen correo vacío; ninguna pantalla los lee hoy (auditoría de campos del escritor).
