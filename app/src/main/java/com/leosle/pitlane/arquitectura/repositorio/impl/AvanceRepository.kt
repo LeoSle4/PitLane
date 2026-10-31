@@ -31,7 +31,7 @@ class AvanceRepository(
 
     /** Emite los avances de la orden del más antiguo al más reciente; un cliente solo recibe los de sus propias órdenes (RN-08). */
     override fun observarAvances(ordenId: String, usuarioId: String): Flow<List<AvanceDetallado>> =
-        avancesDetallados(usuarios, documentos).map { lista ->
+        avancesDetalladosDe(documentos.avances.observarDonde("ordenId", ordenId), usuarios).map { lista ->
             val usuario = usuarios.obtenerUsuario(usuarioId)
             val ajena = usuario?.rol == Rol.CLIENTE && documentos.ordenes.obtener(ordenId)?.clienteId != usuario.id
             if (usuario == null || ajena) emptyList() else lista.filter { it.avance.ordenId == ordenId }.sortedBy { it.avance.fechaHora }

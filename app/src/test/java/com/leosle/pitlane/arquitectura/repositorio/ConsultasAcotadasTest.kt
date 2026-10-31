@@ -6,9 +6,11 @@ import com.leosle.pitlane.arquitectura.datasource.local.BaseDatosLocal
 import com.leosle.pitlane.arquitectura.datasource.local.DocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.local.FotoStorage
 import com.leosle.pitlane.arquitectura.datasource.local.UsuariosDataSource
+import com.leosle.pitlane.arquitectura.repositorio.impl.AvanceRepository
 import com.leosle.pitlane.arquitectura.repositorio.impl.ClienteRepository
 import com.leosle.pitlane.arquitectura.repositorio.impl.OrdenRepository
 import com.leosle.pitlane.arquitectura.repositorio.impl.VehiculoRepository
+import com.leosle.pitlane.modelo.Avance
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.Orden
 import com.leosle.pitlane.modelo.Vehiculo
@@ -63,6 +65,7 @@ class ConsultasAcotadasTest {
     private lateinit var ordenes: IOrdenRepository
     private lateinit var vehiculos: IVehiculoRepository
     private lateinit var clientes: IClienteRepository
+    private lateinit var avancesRepo: IAvanceRepository
 
     @Before
     fun preparar() {
@@ -74,7 +77,9 @@ class ConsultasAcotadasTest {
             override val ordenes: IColeccion<Orden> = ColeccionRegistrada("ordenes", reales.ordenes, registro)
             override val vehiculos: IColeccion<Vehiculo> = ColeccionRegistrada("vehiculos", reales.vehiculos, registro)
             override val solicitudes: IColeccion<Solicitud> = ColeccionRegistrada("solicitudes", reales.solicitudes, registro)
+            override val avances: IColeccion<Avance> = ColeccionRegistrada("avances", reales.avances, registro)
         }
+        avancesRepo = AvanceRepository(sesiones, documentos, FotoStorage(carpetaTemporal.newFolder("fotosAvances")), reloj)
         val fotos = FotoStorage(carpetaTemporal.newFolder("fotos"))
         ordenes = OrdenRepository(sesiones, documentos, fotos, reloj)
         vehiculos = VehiculoRepository(sesiones, documentos)
@@ -184,6 +189,27 @@ class ConsultasAcotadasTest {
         assertTrue(lista.isNotEmpty())
         assertEquals(0, registro.completa("ordenes"))
         assertEquals(listOf("ordenes.vehiculoId==v-rio"), registro.consultas)
+    }
+
+    @Test
+    fun unVehiculoSeObservaPorSuDocumentoSinEscucharTodosLosVehiculos() = runBlocking {
+        iniciar("jefe@freddy.pe", "Taller2026")
+        val esperado = bd.vehiculos.value.first { it.id == "v-rio" }
+        assertEquals(esperado, vehiculos.observarVehiculo("v-rio").first())
+        assertEquals(0, registro.completa("vehiculos"))
+        iniciar("cliente@freddy.pe", "Cliente123")
+        assertEquals(null, vehiculos.observarVehiculo("v-rio").first())
+    }
+
+    @Test
+    fun losAvancesDeUnaOrdenSeConsultanPorOrdenIdYDanLoMismo() = runBlocking {
+        iniciar("jefe@freddy.pe", "Taller2026")
+        val esperado = bd.avances.value.filter { it.ordenId == "o-3" }.sortedBy { it.fechaHora }.map { it.id }
+        val lista = avancesRepo.observarAvances("o-3", "u-jefe").first()
+        assertEquals(esperado, lista.map { it.avance.id })
+        assertTrue(lista.isNotEmpty() && lista.all { it.tecnico != null })
+        assertEquals(0, registro.completa("avances"))
+        assertEquals(listOf("avances.ordenId==o-3"), registro.consultas)
     }
 
     @Test

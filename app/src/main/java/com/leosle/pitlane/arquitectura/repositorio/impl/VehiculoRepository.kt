@@ -41,8 +41,8 @@ class VehiculoRepository(
 
     /** Emite el vehículo con ese identificador cada vez que cambia. */
     override fun observarVehiculo(vehiculoId: String): Flow<Vehiculo?> =
-        combine(documentos.vehiculos.observarTodos(), usuarios.usuarioActual) { lista, actor ->
-            lista.firstOrNull { it.id == vehiculoId }?.takeIf { actor.esJefeOPropio(it.clienteId) }
+        combine(documentos.vehiculos.observar(vehiculoId), usuarios.usuarioActual) { vehiculo, actor ->
+            vehiculo?.takeIf { actor.esJefeOPropio(it.clienteId) }
         }.distinctUntilChanged()
 
     /** Guarda el vehículo con la placa normalizada; rechaza placas repetidas con el mensaje según quién registra. */

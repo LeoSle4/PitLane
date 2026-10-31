@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.repositorio.impl
 
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
+import com.leosle.pitlane.modelo.Avance
 import com.leosle.pitlane.modelo.AvanceDetallado
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.Orden
@@ -144,10 +145,12 @@ internal fun solicitudesDetalladas(usuarios: IUsuariosDataSource, documentos: ID
         }
     }
 
-/** Combina avances y usuarios para emitir cada avance con el técnico que lo registró. */
-internal fun avancesDetallados(usuarios: IUsuariosDataSource, documentos: IDocumentosDataSource): Flow<List<AvanceDetallado>> =
-    combine(documentos.avances.observarTodos(), usuarios.observarUsuarios()) { listaAvances, listaUsuarios ->
-        listaAvances.map { avance ->
-            AvanceDetallado(avance, listaUsuarios.firstOrNull { it.id == avance.tecnicoId })
-        }
+/**
+ * Emite cada avance de la fuente con el técnico que lo registró. Los técnicos se obtienen con un `get` cada uno, solo los
+ * que aparecen en la lista (unos pocos), en lugar de escuchar todos los usuarios.
+ */
+internal fun avancesDetalladosDe(fuente: Flow<List<Avance>>, usuarios: IUsuariosDataSource): Flow<List<AvanceDetallado>> =
+    fuente.map { lista ->
+        val tecnicos = lista.map { it.tecnicoId }.distinct().associateWith { usuarios.obtenerUsuario(it) }
+        lista.map { avance -> AvanceDetallado(avance, tecnicos[avance.tecnicoId]) }
     }
