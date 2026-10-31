@@ -61,8 +61,8 @@ class SolicitudRepository(
         fotos: List<Foto>
     ): Resultado<Solicitud> {
         validar(descripcion, fechaLlegada, fotos)?.let { return Resultado.Error(it) }
-        val tieneAtencion = documentos.solicitudes.listar().any { it.vehiculoId == vehiculoId && it.estado == EstadoSolicitud.PENDIENTE } ||
-            documentos.ordenes.listar().any { it.vehiculoId == vehiculoId && it.enCurso }
+        val tieneAtencion = documentos.solicitudes.listarDonde("vehiculoId", vehiculoId).any { it.estado == EstadoSolicitud.PENDIENTE } ||
+            documentos.ordenes.listarDonde("vehiculoId", vehiculoId).any { it.enCurso }
         if (tieneAtencion) return Resultado.Error("Este vehículo ya tiene una atención en curso")
         val cliente = usuarios.obtenerUsuario(clienteId) ?: return Resultado.Error("No se encontró el cliente")
         val vehiculo = documentos.vehiculos.obtener(vehiculoId) ?: return Resultado.Error("No se encontró el vehículo")

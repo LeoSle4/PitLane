@@ -3,6 +3,7 @@ package com.leosle.pitlane.arquitectura.datasource.local
 import com.leosle.pitlane.arquitectura.datasource.IColeccion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
 /**
@@ -22,6 +23,14 @@ internal class ColeccionLocal<T>(
     override fun observarTodos(): Flow<List<T>> = flujo
 
     override suspend fun listar(): List<T> = flujo.value
+
+    /** Compara el campo [campo] (leído por reflexión) con [valor]; la memoria no filtra por usuario, igual que [listar]. */
+    override suspend fun listarDonde(campo: String, valor: String): List<T> = flujo.value.filter { item ->
+        val atributo = item!!.javaClass.getDeclaredField(campo).apply { isAccessible = true }
+        atributo.get(item).toString() == valor
+    }
+
+    override fun observar(id: String): Flow<T?> = flujo.map { lista -> lista.firstOrNull { idDe(it) == id } }
 
     override suspend fun obtener(id: String): T? = flujo.value.firstOrNull { idDe(it) == id }
 

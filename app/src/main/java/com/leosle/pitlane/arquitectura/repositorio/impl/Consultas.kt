@@ -95,12 +95,11 @@ private fun ordenesCruzandoColecciones(
     }
 
 /**
- * Detalle de una orden: la sigue en la colección de órdenes y resuelve cliente, vehículo, técnico, solicitud y autores
+ * Detalle de una orden: escucha ese único documento de la colección de órdenes y resuelve cliente, vehículo, técnico, solicitud y autores
  * con un `get` de un solo documento cada uno, sin escuchar las demás colecciones completas.
  */
 internal fun ordenDetallada(ordenId: String, usuarios: IUsuariosDataSource, documentos: IDocumentosDataSource): Flow<OrdenDetallada?> =
-    documentos.ordenes.observarTodos()
-        .map { lista -> lista.firstOrNull { it.id == ordenId } }
+    documentos.ordenes.observar(ordenId)
         .distinctUntilChanged()
         .map { orden ->
             orden?.let {

@@ -132,12 +132,12 @@ class ClienteRepository(
     override suspend fun eliminarCliente(clienteId: String): Resultado<Unit> {
         val cliente = usuarios.obtenerUsuario(clienteId) ?: return Resultado.Error("No se encontró el cliente")
         if (cliente.tieneCuenta) return Resultado.Error("Este cliente tiene cuenta en la app y solo él puede eliminarla")
-        if (documentos.ordenes.listar().any { it.clienteId == clienteId }) {
+        if (documentos.ordenes.listarDonde("clienteId", clienteId).isNotEmpty()) {
             return Resultado.Error("No se puede eliminar un cliente con historial de órdenes")
         }
         documentos.enLote {
-            documentos.solicitudes.listar().filter { it.clienteId == clienteId }.forEach { documentos.solicitudes.eliminar(it.id) }
-            documentos.vehiculos.listar().filter { it.clienteId == clienteId }.forEach { documentos.vehiculos.eliminar(it.id) }
+            documentos.solicitudes.listarDonde("clienteId", clienteId).forEach { documentos.solicitudes.eliminar(it.id) }
+            documentos.vehiculos.listarDonde("clienteId", clienteId).forEach { documentos.vehiculos.eliminar(it.id) }
         }
         usuarios.eliminarUsuario(clienteId)
         return Resultado.Exito(Unit)

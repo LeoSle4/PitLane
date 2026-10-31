@@ -16,6 +16,15 @@ interface IColeccion<T> {
     /** Devuelve los documentos actuales. */
     suspend fun listar(): List<T>
 
+    /**
+     * Devuelve los documentos que el usuario puede leer y cuyo campo [campo] vale [valor]; equivale a filtrar
+     * [listar] por ese campo, pero la base solo entrega los que coinciden.
+     */
+    suspend fun listarDonde(campo: String, valor: String): List<T>
+
+    /** Emite el documento con ese identificador cada vez que cambia; nulo si no existe o el usuario no puede leerlo. */
+    fun observar(id: String): Flow<T?>
+
     /** Devuelve el documento con ese identificador, o nulo si no existe. */
     suspend fun obtener(id: String): T?
 

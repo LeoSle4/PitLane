@@ -112,7 +112,7 @@ class OrdenRepository(
         if (datos.kilometraje < 0) return Resultado.Error("Ingresa un kilometraje válido")
         if (datos.fotos.isEmpty()) return Resultado.Error("Agrega al menos una foto del estado del vehículo")
         if (datos.fotos.size > MAXIMO_FOTOS) return Resultado.Error("Máximo 6 fotos")
-        if (documentos.ordenes.listar().any { it.vehiculoId == datos.vehiculoId && it.enCurso }) {
+        if (documentos.ordenes.listarDonde("vehiculoId", datos.vehiculoId).any { it.enCurso }) {
             return Resultado.Error("Este vehículo ya tiene una orden en curso")
         }
         val tecnico = usuarios.obtenerUsuario(datos.tecnicoId)?.takeIf { it.activo && it.rol == Rol.TECNICO }
@@ -144,8 +144,8 @@ class OrdenRepository(
         )
         // Con solicitud de origen se atiende esa; sin ella, las pendientes del mismo vehículo (HU-23)
         val solicitudesAtendidas = datos.solicitudId?.let { listOf(it) }
-            ?: documentos.solicitudes.listar()
-                .filter { it.vehiculoId == datos.vehiculoId && it.estado == EstadoSolicitud.PENDIENTE }
+            ?: documentos.solicitudes.listarDonde("vehiculoId", datos.vehiculoId)
+                .filter { it.estado == EstadoSolicitud.PENDIENTE }
                 .map { it.id }
         documentos.enLote {
             documentos.ordenes.guardar(orden.id, orden)
@@ -253,7 +253,7 @@ class OrdenRepository(
         val orden = documentos.ordenes.obtener(ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.tecnicoId != tecnicoId) return Resultado.Error(MENSAJE_NO_ASIGNADA)
         if (orden.estado != EstadoOrden.EN_REPARACION) return Resultado.Error("Primero inicia la reparación")
-        val tieneTrabajo = documentos.avances.listar().any { it.ordenId == ordenId && it.tipo == TipoAvance.TRABAJO_REALIZADO }
+        val tieneTrabajo = documentos.avances.listarDonde("ordenId", ordenId).any { it.tipo == TipoAvance.TRABAJO_REALIZADO }
         if (!tieneTrabajo) return Resultado.Error("Registra el trabajo realizado antes de marcar como listo")
         val ahora = reloj.ahora()
         val lista = orden.copy(

@@ -1,4 +1,47 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "ordenes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "vehiculoId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "vehiculoId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "avances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "acceso",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "ordenId",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

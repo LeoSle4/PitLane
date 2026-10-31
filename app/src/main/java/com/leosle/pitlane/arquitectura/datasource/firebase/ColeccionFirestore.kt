@@ -100,6 +100,24 @@ internal class ColeccionFirestore<T>(
         return consulta.get().esperar().documents.mapNotNull { convertir(it.id, it.data) }
     }
 
+    override suspend fun listarDonde(campo: String, valor: String): List<T> {
+        val consulta = consultaDe(alcanceDe(actor.value, campoPropio))?.whereEqualTo(campo, valor) ?: return emptyList()
+        return consulta.get().esperar().documents.mapNotNull { convertir(it.id, it.data) }
+    }
+
+    /** Un documento que no existe o que el usuario no puede leer se emite como nulo, sin cerrar el flujo con error. */
+    override fun observar(id: String): Flow<T?> = callbackFlow {
+        val registro = coleccion.document(id).addSnapshotListener { instantanea, error ->
+            if (error != null) {
+                Log.w(ETIQUETA, "No se pudo leer ${coleccion.path}/$id", error)
+                if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) trySend(null) else close()
+                return@addSnapshotListener
+            }
+            trySend(instantanea?.takeIf { it.exists() }?.let { convertir(it.id, it.data) })
+        }
+        awaitClose { registro.remove() }
+    }
+
     /** Un documento al que el usuario no tiene acceso se trata como inexistente, sin revelar que existe. */
     override suspend fun obtener(id: String): T? = try {
         val documento = coleccion.document(id).get().esperar()

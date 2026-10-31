@@ -84,15 +84,15 @@ class VehiculoRepository(
      */
     override suspend fun eliminarVehiculo(vehiculoId: String, solicitadoPorJefe: Boolean): Resultado<Unit> {
         val vehiculo = documentos.vehiculos.obtener(vehiculoId) ?: return Resultado.Error("No se encontró el vehículo")
-        val ordenes = documentos.ordenes.listar().filter { it.vehiculoId == vehiculoId }
+        val ordenes = documentos.ordenes.listarDonde("vehiculoId", vehiculoId)
         if (solicitadoPorJefe) {
             if (ordenes.isNotEmpty()) return Resultado.Error("No se puede eliminar un vehículo con historial de órdenes")
         } else if (ordenes.any { it.enTaller }) {
             return Resultado.Error("No puedes eliminar un vehículo que está en el taller")
         }
         documentos.enLote {
-            documentos.solicitudes.listar()
-                .filter { it.vehiculoId == vehiculoId && it.estado == EstadoSolicitud.PENDIENTE }
+            documentos.solicitudes.listarDonde("vehiculoId", vehiculoId)
+                .filter { it.estado == EstadoSolicitud.PENDIENTE }
                 .forEach { documentos.solicitudes.guardar(it.id, it.copy(estado = EstadoSolicitud.CANCELADA)) }
             if (ordenes.isEmpty()) {
                 documentos.vehiculos.eliminar(vehiculo.id)

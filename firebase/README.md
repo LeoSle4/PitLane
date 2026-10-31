@@ -121,6 +121,21 @@ node scripts/limpiarTokensAntiguos.mjs             # simulacro: no borra
 node scripts/limpiarTokensAntiguos.mjs --aplicar   # borra en el proyecto
 ```
 
+## Índices compuestos
+
+Las consultas dirigidas de la app (`acceso` contiene el usuario y un campo igual a un valor) necesitan un índice
+compuesto en producción: `ordenes` y `solicitudes` por `acceso` + `vehiculoId`, y `avances` por `acceso` + `ordenId`.
+Están en `firestore.indexes.json`. El emulador no los exige, pero Firestore real rechaza la consulta sin ellos.
+Los despliegas tú, una vez, con `firebase login` hecho:
+
+```bash
+cd firebase
+firebase deploy --only firestore:indexes
+```
+
+La construcción puede tardar unos minutos; hasta que termine, esas consultas fallan con `FAILED_PRECONDITION`.
+Despliega los índices antes de publicar la app que usa las consultas.
+
 ## Desplegar las reglas
 
 Solo después de que las pruebas pasen. Con `firebase login` hecho:

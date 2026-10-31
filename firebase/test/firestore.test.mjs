@@ -553,3 +553,43 @@ describe('codigosRestablecimiento', () => {
     await assertFails(lista(s.jefe, 'codigosRestablecimiento'));
   });
 });
+
+describe('consultas dirigidas de la app', () => {
+  it('el cliente consulta sus órdenes de un vehículo con el filtro de acceso y recibe solo las suyas', async () => {
+    const suyas = await assertSucceeds(lista(s.c1, 'ordenes', where('acceso', 'array-contains', 'c1'), where('vehiculoId', '==', 'v1')));
+    if (suyas.size !== 1 || suyas.docs[0].id !== 'o1') throw new Error(`Se esperaba solo o1 y llegaron ${suyas.size}`);
+    const ajenas = await assertSucceeds(lista(s.c1, 'ordenes', where('acceso', 'array-contains', 'c1'), where('vehiculoId', '==', 'v2')));
+    if (ajenas.size !== 0) throw new Error('El cliente no debe recibir órdenes de otro vehículo');
+  });
+
+  it('la consulta por vehículo sin el filtro de acceso se deniega al cliente y al técnico', async () => {
+    await assertFails(lista(s.c1, 'ordenes', where('vehiculoId', '==', 'v1')));
+    await assertFails(lista(s.t1, 'ordenes', where('vehiculoId', '==', 'v1')));
+    await assertFails(lista(s.c1, 'solicitudes', where('vehiculoId', '==', 'v1')));
+    await assertFails(lista(s.c1, 'ordenes', where('acceso', 'array-contains', 'c2'), where('vehiculoId', '==', 'v2')));
+  });
+
+  it('el Jefe consulta por vehículo sin filtro de acceso', async () => {
+    const delVehiculo = await assertSucceeds(lista(s.jefe, 'ordenes', where('vehiculoId', '==', 'v2')));
+    if (delVehiculo.size !== 1 || delVehiculo.docs[0].id !== 'o2') throw new Error('Se esperaba solo o2');
+    await assertSucceeds(lista(s.jefe, 'solicitudes', where('vehiculoId', '==', 'v1')));
+  });
+
+  it('el cliente consulta sus solicitudes de un vehículo con el filtro de acceso', async () => {
+    const suyas = await assertSucceeds(lista(s.c1, 'solicitudes', where('acceso', 'array-contains', 'c1'), where('vehiculoId', '==', 'v1')));
+    if (suyas.size !== 1) throw new Error(`Se esperaba 1 solicitud y llegaron ${suyas.size}`);
+  });
+
+  it('el técnico consulta los avances de su orden con el filtro de acceso', async () => {
+    const delTecnico = await assertSucceeds(lista(s.t1, 'avances', where('acceso', 'array-contains', 't1'), where('ordenId', '==', 'o1')));
+    if (delTecnico.size !== 1 || delTecnico.docs[0].id !== 'a1') throw new Error('Se esperaba solo a1');
+    await assertFails(lista(s.t1, 'avances', where('ordenId', '==', 'o1')));
+    await assertFails(lista(s.t2, 'avances', where('acceso', 'array-contains', 't1'), where('ordenId', '==', 'o1')));
+  });
+
+  it('observar una orden es un get de un solo documento: el dueño lo lee y el ajeno no', async () => {
+    await assertSucceeds(getDoc(ref(s.c1, 'ordenes/o1')));
+    await assertFails(getDoc(ref(s.c2, 'ordenes/o1')));
+    await assertFails(getDoc(ref(s.c1, 'ordenes/o2')));
+  });
+});
