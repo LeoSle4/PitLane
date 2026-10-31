@@ -22,7 +22,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T3 S2 tokens por dispositivo con expiración (TTL). route: delegada (contexto) y ajuste inline. RED: 5 de reglas y compilación de Kotlin; GREEN: 74 de reglas, Gradle verde
 - [x] T4 S3 consultas dirigidas y observador de un documento. route: delegada (contexto) e inline para `eliminarCliente`. RED: compilación de pruebas (`listarDonde`/`observar` sin resolver); GREEN: 80 de reglas, Gradle verde
 - [x] T5 S4 placa única con `placas/{placa}`. route: delegada (contexto) y endurecimiento del formato inline. RED: 9 pruebas de reglas; GREEN: 96 de reglas, Gradle verde; verificador independiente sin bloqueos
-- [ ] T6 S5 documentación y diagrama finales. route: inline
+- [x] T6 S5 documentación y diagramas de las tres fases. route: inline. Diagramas conceptual, lógico y físico generados con `fases.py`
 
 ## Log
 

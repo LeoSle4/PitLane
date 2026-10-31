@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Genera los diagramas conceptual y lógico NoSQL de PitLane (SVG) con cajas en cuadrícula y líneas ortogonales.
+"""Genera los tres diagramas de PitLane por fases (SVG): conceptual, lógico NoSQL y físico de Firestore con cajas en cuadrícula y líneas ortogonales.
 
 Uso: python3 -I scripts/diagrama-base-de-datos/fases.py docs/04-arquitectura
-Escribe diagrama-conceptual.svg y diagrama-logico-nosql.svg en la carpeta indicada.
+Escribe diagrama-conceptual.svg, diagrama-logico-nosql.svg y diagrama-fisico-firestore.svg en la carpeta indicada.
 """
 import sys
 from xml.sax.saxutils import escape
@@ -17,7 +17,7 @@ SANS = "Helvetica, Arial, sans-serif"
 
 # Posición de cada rol en la cuadrícula 3×3 (columna, fila); es la misma en los dos diagramas
 POS = {"VEH": (0, 0), "USU": (1, 0), "DISP": (2, 0), "SOL": (0, 1), "ORD": (1, 1), "NOTIF": (2, 1),
-       "C1": (0, 2), "AVA": (1, 2), "C3": (2, 2)}
+       "C1": (0, 2), "AVA": (1, 2), "C3": (2, 2), "D1": (0, 3), "D2": (1, 3), "D3": (2, 3)}
 
 
 class Diagrama:
@@ -35,14 +35,15 @@ class Diagrama:
         self.cw = int(ancho + 2 * PAD)
         for c in self.cajas.values():
             c["h"] = HEAD + 14 + len(c["items"]) * LH + 12
-        self.filas = [max(c["h"] for r, c in self.cajas.items() if POS[r][1] == f) for f in range(3)]
+        self.nfilas = max(POS[r][1] for r in self.cajas) + 1
+        self.filas = [max(c["h"] for r, c in self.cajas.items() if POS[r][1] == f) for f in range(self.nfilas)]
         for r, c in self.cajas.items():
             col, fila = POS[r]
             c["w"], c["h"] = self.cw, self.filas[fila]
             c["x"] = ML + col * (self.cw + GX)
             c["y"] = MT + sum(self.filas[:fila]) + fila * GY
         self.ancho = ML + 3 * self.cw + 2 * GX + MR
-        self.alto = MT + sum(self.filas) + 2 * GY + MB
+        self.alto = MT + sum(self.filas) + (self.nfilas - 1) * GY + MB
 
     def p(self, rol, lado, f):
         b = self.cajas[rol]
@@ -137,10 +138,11 @@ class Diagrama:
             self.texto(x + bw / 2, y + 36, c["nombre"], 15, "bold", "#fff", "middle")
             ty = y + HEAD + 14
             for marca, t, tipo in c["items"]:
-                if tipo == "emb":
-                    self.w(f'<rect x="{x + 6}" y="{ty - 13}" width="{bw - 12}" height="{LH}" rx="3" fill="#EFE9F7"/>')
+                if tipo in ("emb", "sub", "idx"):
+                    fondo = {"emb": "#EFE9F7", "sub": "#E0F0EE", "idx": "#FFF4D6"}[tipo]
+                    self.w(f'<rect x="{x + 6}" y="{ty - 13}" width="{bw - 12}" height="{LH}" rx="3" fill="{fondo}"/>')
                 if marca:
-                    col = {"REF": "#C55A11", "ID": "#1F4E79", "◆": "#6B4E9B"}.get(marca, "#444")
+                    col = {"REF": "#C55A11", "ID": "#1F4E79", "◆": "#6B4E9B", "SUB": "#0F766E", "IDX": "#8A6D00"}.get(marca, "#444")
                     self.texto(x + PAD, ty, marca, 10.5, "bold", col, "start")
                 self.texto(x + PAD + 34, ty, t, 12, "normal", "#222", "start", MONO)
                 ty += LH
@@ -260,6 +262,104 @@ LOGICO_LEYENDA = [
     "ID identificador del documento     REF referencia por id (la base no la verifica)     ◆ embebido: composición, se lee y se escribe con su documento     [] lista     {} objeto",
 ]
 
+# ---------------------------------------------------------------- Fase 3: físico Cloud Firestore
+def e(texto, marca=""):
+    return (marca, texto, "attr")
+
+
+def emb(texto):
+    return ("◆", texto, "emb")
+
+
+def sub(texto, marca="SUB"):
+    return (marca, texto, "sub")
+
+
+def idx(texto):
+    return ("IDX", texto, "idx")
+
+
+FISICO_CAJAS = {
+    "VEH": caja("vehiculos", "colección · /vehiculos/{id}", AZUL,
+                [e("id : string  (automático)", "ID"), e("clienteId : string", "REF"), e("placa : string  (única, mayúsculas)"),
+                 e("marca : string"), e("modelo : string"), e("anio : number"), e("color : string"), e("activo : boolean"),
+                 e("acceso : array<string>")]),
+    "USU": caja("usuarios", "colección · /usuarios/{id}", AZUL,
+                [e("id : string  (u-cli-… · u-tec-… · u-jefe)", "ID"), e("nombres : string"), e("apellidos : string"),
+                 e("dni : string"), e("telefono : string"), e("correo : string"), e("rol : string  (CLIENTE|TECNICO|JEFE)"),
+                 e("activo : boolean"), e("tieneCuenta : boolean"), e("acceso : array<string>"),
+                 sub("subcolección  tokensDispositivo/{token}", "SUB"), sub("    token : string  (= id del documento)", ""),
+                 sub("    expiraEn : timestamp", ""), idx("expiraEn  ·  política TTL")]),
+    "DISP": caja("placas", "colección · /placas/{placa}  índice de unicidad", GRIS,
+                 [e("id : string  (= vehiculos.placa)", "ID"), e("vehiculoId : string", "REF"), e("clienteId : string", "REF"),
+                  e("Se crea en el mismo lote que su vehículo"), e("(Firestore solo crea un id libre)")]),
+    "SOL": caja("solicitudes", "colección · /solicitudes/{id}", AZUL,
+                [e("id : string  (automático)", "ID"), e("clienteId : string", "REF"), e("vehiculoId : string", "REF"),
+                 e("ordenId : string?", "REF"), e("descripcion : string"), e("sintomas : array<string>"),
+                 e("fechaLlegada : number"), e("creadaEn : number"), e("estado : string"), e("acceso : array<string>"),
+                 emb("cliente : map  ResumenCliente"), emb("vehiculo : map  ResumenVehiculo"), emb("fotos : array<map>  Foto"),
+                 idx("acceso ▸ vehiculoId")]),
+    "ORD": caja("ordenes", "colección · /ordenes/{id}", NARANJA,
+                [e("id : string  (automático)", "ID"), e("numero : string  (ORD-0001)"), e("clienteId : string", "REF"),
+                 e("vehiculoId : string", "REF"), e("tecnicoId : string", "REF"), e("solicitudId : string?", "REF"),
+                 e("falla : string"), e("kilometraje : number"), e("combustible : string"), e("observaciones : string"),
+                 e("estado : string"), e("motivoAnulacion : string?"), e("creadaEn : number"), e("editadaPor : string?"),
+                 e("editadaEn : number?"), e("avisosEnviados : number"), e("ultimoAviso : number?"),
+                 e("acceso : array<string>"),
+                 emb("cliente : map  ResumenCliente"), emb("vehiculo : map  ResumenVehiculo"),
+                 emb("tecnico : map  ResumenTecnico"), emb("fotos : array<map>  Foto"),
+                 emb("historial : array<map>  CambioEstado"), emb("conformidad : map?  Conformidad"),
+                 emb("observacionesCliente : array<map>"), idx("acceso ▸ vehiculoId")]),
+    "NOTIF": caja("notificaciones", "colección · /notificaciones/{id}  la crea el servidor", VERDE,
+                  [e("id : string  (n-<idEvento>)", "ID"), e("usuarioId : string", "REF"), e("ordenId : string", "REF"),
+                   e("titulo : string"), e("mensaje : string"), e("fechaHora : number"), e("leida : boolean"),
+                   e("esIngreso : boolean")]),
+    "C1": caja("Cloud Storage", "archivos · fotos/{clienteId}/{archivo}", AMBAR,
+               [e("formato : JPG | PNG"), e("tamaño máximo : 5 MB"), e("acceso : storage.rules"),
+                e("(lee firestore.get del técnico)")]),
+    "AVA": caja("avances", "colección · /avances/{id}", AZUL,
+                [e("id : string  (automático)", "ID"), e("ordenId : string", "REF"), e("tecnicoId : string", "REF"),
+                 e("tipo : string  (HALLAZGO|TRABAJO_REALIZADO)"), e("descripcion : string"), e("fechaHora : number"),
+                 e("acceso : array<string>"), emb("fotos : array<map>  Foto"), idx("acceso ▸ ordenId")]),
+    "C3": caja("contadores", "colección · /contadores/ordenes", GRIS,
+               [e("id : string  (ordenes)", "ID"), e("ultimo : number"), e("Se incrementa en una transacción"),
+                e("(solo el Jefe crea órdenes)")]),
+    "D1": caja("Tipos embebidos", "mapas dentro del documento", MORADO,
+               [e("Foto {id, ruta, fechaHora}"), e("CambioEstado {estado, fechaHora, usuarioId,"),
+                e("    usuarioNombre?, motivo?}"), e("Conformidad {fechaHora, usuarioId,"), e("    usuarioNombre?}"),
+                e("ObservacionCliente {texto, acuerdo,"), e("    fechaHora, usuarioId}"),
+                e("ResumenCliente {nombres, apellidos,"), e("    dni, telefono}"),
+                e("ResumenVehiculo {placa, marca, modelo,"), e("    anio, color}"), e("ResumenTecnico {nombres, apellidos}")]),
+    "D2": caja("Enumeraciones", "valores permitidos (string)", MORADO,
+               [e("rol: CLIENTE, TECNICO, JEFE"), e("EstadoSolicitud: PENDIENTE,"), e("    ATENDIDA, CANCELADA"),
+                e("EstadoOrden: INGRESADO, EN_REPARACION,"), e("    LISTO, ENTREGADO, ANULADA"),
+                e("tipo: HALLAZGO, TRABAJO_REALIZADO"), e("combustible: RESERVA, UN_CUARTO,"),
+                e("    MEDIO, TRES_CUARTOS, LLENO")]),
+    "D3": caja("codigosRestablecimiento", "colección · solo servidor, sin relaciones", GRIS,
+               [e("id : string  (SHA-256 del correo)", "ID"), e("hash : string  (código cifrado)"), e("expira : number"),
+                e("intentos : number"), e("enviadoEn : number")]),
+}
+FISICO_ARISTAS = {
+    "VEH-USU": ("clienteId", "N", "1", False),
+    "USU-ORD-c": ("clienteId", "1", "N", False),
+    "USU-ORD-t": ("tecnicoId", "1", "N", False),
+    "VEH-SOL": ("vehiculoId", "1", "N", False),
+    "VEH-ORD": ("vehiculoId", "1", "N", False),
+    "USU-NOTIF": ("usuarioId", "1", "N", False),
+    "USU-SOL": ("clienteId", "1", "N", False),
+    "SOL-ORD": ("ordenId / solicitudId", "0..1", "0..1", False),
+    "ORD-NOTIF": ("ordenId", "1", "N", False),
+    "ORD-AVA": ("ordenId", "1", "N", False),
+    "SOL-C1": ("fotos[].ruta", None, None, True),
+    "ORD-C1": ("fotos[].ruta", None, None, True),
+    "AVA-C1": ("fotos[].ruta", None, None, True),
+    "ORD-C3": ("numero (transacción)", None, None, True),
+}
+FISICO_LEYENDA = [
+    "Fase 3 · Modelo físico para Cloud Firestore: rutas de colección, tipos de Firestore, índices y política TTL. En MongoDB este diagrama sería otro (ver docs).",
+    "ID id del documento     REF referencia por id (no verificada)     ◆ mapa embebido     SUB subcolección     IDX índice compuesto o política TTL     placas se escribe en el mismo lote que vehiculos",
+]
+
 if __name__ == "__main__":
     destino = sys.argv[1]
     Diagrama("PitLane · Fase 1: Modelo conceptual (entidad-relación)",
@@ -268,3 +368,6 @@ if __name__ == "__main__":
     Diagrama("PitLane · Fase 2: Modelo lógico NoSQL (entidad-relación para documentos)",
              "Colecciones, documentos y lo que va embebido frente a lo que se referencia por id",
              LOGICO_CAJAS, LOGICO_ARISTAS, LOGICO_LEYENDA).render(f"{destino}/diagrama-logico-nosql.svg")
+    Diagrama("PitLane · Fase 3: Modelo físico (Cloud Firestore)",
+             "Colecciones y subcolecciones reales, tipos de Firestore, índices y política TTL del proyecto",
+             FISICO_CAJAS, FISICO_ARISTAS, FISICO_LEYENDA).render(f"{destino}/diagrama-fisico-firestore.svg")
