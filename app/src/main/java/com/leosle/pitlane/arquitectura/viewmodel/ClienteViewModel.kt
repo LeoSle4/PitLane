@@ -22,9 +22,18 @@ class ClienteViewModel(
     fun ficha(clienteId: String): StateFlow<FichaCliente?> =
         estadoPorClave("ficha:$clienteId", null) { repositorio.observarFichaCliente(clienteId) }
 
-    /** Busca clientes por DNI, nombre, apellido o placa y entrega las coincidencias a [alTerminar]. */
+    /** Clientes con actividad más reciente, para mostrar antes de escribir una búsqueda. */
+    val recientes: StateFlow<List<ResultadoBusqueda>> by lazy { repositorio.observarClientesRecientes().comoEstado(emptyList()) }
+
+    /**
+     * Busca clientes por DNI, nombre, apellido o placa y entrega las coincidencias a [alTerminar]; si la búsqueda
+     * falla por una causa técnica entrega una lista vacía en lugar de cerrar la aplicación.
+     */
     fun buscar(consulta: String, alTerminar: (List<ResultadoBusqueda>) -> Unit) {
-        viewModelScope.launch { alTerminar(repositorio.buscarClientes(consulta)) }
+        viewModelScope.launch {
+            val resultado = protegido { Resultado.Exito(repositorio.buscarClientes(consulta)) }
+            alTerminar((resultado as? Resultado.Exito)?.valor.orEmpty())
+        }
     }
 
     /** Registra un cliente sin cuenta de acceso. */

@@ -20,6 +20,26 @@ object Textos {
      * Pone mayúscula inicial solo a las palabras escritas completamente en minúsculas, y deja intactas las demás para no
      * dañar nombres como "CX-5" o "RAV4" ("santa fe" queda "Santa Fe").
      */
+    /**
+     * Convierte la acción de un botón en lo que está pasando mientras se ejecuta: "Registrar técnico" pasa a
+     * "Registrando…". Si el texto no empieza con un verbo en infinitivo devuelve "Procesando…".
+     */
+    fun gerundio(accion: String): String {
+        val verbo = accion.trim().substringBefore(' ').lowercase()
+        val terminacion = when {
+            verbo.length > 2 && verbo.endsWith("ar") -> "ando"
+            verbo.length > 2 && (verbo.endsWith("er") || verbo.endsWith("ir")) -> "iendo"
+            else -> return "Procesando…"
+        }
+        return verbo.dropLast(2).replaceFirstChar { it.uppercase() } + terminacion + "…"
+    }
+
+    /** Agrupa un celular de 9 dígitos de tres en tres ("923 239 575"); cualquier otro texto se deja como está. */
+    fun celular(texto: String): String {
+        val digitos = texto.filterNot { it.isWhitespace() }
+        return if (digitos.length == 9 && digitos.all { it.isDigit() }) digitos.chunked(3).joinToString(" ") else texto
+    }
+
     fun conInicialesMayusculas(texto: String): String =
         palabras(texto).joinToString(" ") { palabra ->
             if (palabra == palabra.lowercase()) capitalizar(palabra) else palabra

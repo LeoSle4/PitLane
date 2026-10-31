@@ -27,7 +27,9 @@ data class FichaCliente(
 /** Coincidencia de la búsqueda de clientes con las placas que coincidieron con el texto escrito. */
 data class ResultadoBusqueda(
     val cliente: Usuario,
-    val placasCoincidentes: List<String>
+    val placasCoincidentes: List<String>,
+    /** Todas las placas del cliente, incluidas las que coincidieron. */
+    val placas: List<String> = emptyList()
 )
 
 /** Solicitud con el cliente y el vehículo ya resueltos para mostrarla sin consultas adicionales. */
