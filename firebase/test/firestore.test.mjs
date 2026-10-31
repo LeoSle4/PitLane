@@ -1,6 +1,6 @@
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
-  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, updateDoc, where,
+  arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, runTransaction, setDoc, Timestamp, updateDoc, where,
 } from 'firebase/firestore';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import {
@@ -25,7 +25,7 @@ beforeEach(async () => {
 describe('sin sesión válida', () => {
   it('nadie sin sesión lee ni escribe', async () => {
     await assertFails(getDoc(ref(s.anonimo, 'usuarios/c1')));
-    await assertFails(setDoc(ref(s.anonimo, 'tokensDispositivo/c1'), { token: 'x' }));
+    await assertFails(setDoc(ref(s.anonimo, 'usuarios/c1/tokensDispositivo/x'), { token: 'x', expiraEn: Timestamp.fromMillis(Date.now() + 86_400_000) }));
   });
 
   it('una cuenta sin los reclamos del servidor no lee nada', async () => {
@@ -469,12 +469,78 @@ describe('contadores', () => {
 });
 
 describe('tokensDispositivo', () => {
-  it('cada usuario guarda solo su token y nadie lo lee desde la app', async () => {
-    await assertSucceeds(setDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 'abc' }, { merge: true }));
-    await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c2'), { token: 'abc' }));
-    await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 123 }));
-    await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 'abc', extra: 1 }));
+  const ruta = (usuario, token) => `usuarios/${usuario}/tokensDispositivo/${token}`;
+  const enDias = (dias) => Timestamp.fromMillis(Date.now() + dias * 86_400_000);
+  const datos = (token, extra = {}) => ({ token, expiraEn: enDias(60), ...extra });
+
+  it('el dueño guarda un documento por dispositivo y los dos conviven', async () => {
+    await assertSucceeds(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a'), { merge: true }));
+    await assertSucceeds(setDoc(ref(s.c1, ruta('c1', 'tok-b')), datos('tok-b'), { merge: true }));
+    await entorno.withSecurityRulesDisabled(async (c) => {
+      const docs = await getDocs(collection(c.firestore(), 'usuarios/c1/tokensDispositivo'));
+      if (docs.size !== 2) throw new Error(`Se esperaban 2 tokens y llegaron ${docs.size}`);
+    });
+  });
+
+  it('el dueño vuelve a guardar el mismo token y actualiza el mismo documento', async () => {
+    await assertSucceeds(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a'), { merge: true }));
+    await assertSucceeds(setDoc(ref(s.c1, ruta('c1', 'tok-a')), { token: 'tok-a', expiraEn: enDias(61) }, { merge: true }));
+    await assertSucceeds(updateDoc(ref(s.c1, ruta('c1', 'tok-a')), { expiraEn: enDias(62) }));
+  });
+
+  it('el técnico también guarda el suyo', async () => {
+    await assertSucceeds(setDoc(ref(s.t1, ruta('t1', 'tok-t')), datos('tok-t'), { merge: true }));
+  });
+
+  it('nadie toca los tokens de otro usuario, ni siquiera el Jefe', async () => {
+    await preparar(entorno, ruta('c1', 'tok-a'), datos('tok-a'));
+    for (const ajeno of [s.c2, s.t1, s.jefe]) {
+      await assertFails(setDoc(ref(ajeno, ruta('c1', 'tok-x')), datos('tok-x')));
+      await assertFails(setDoc(ref(ajeno, ruta('c1', 'tok-a')), datos('tok-a')));
+      await assertFails(updateDoc(ref(ajeno, ruta('c1', 'tok-a')), { expiraEn: enDias(60) }));
+      await assertFails(getDoc(ref(ajeno, ruta('c1', 'tok-a'))));
+      await assertFails(lista(ajeno, 'usuarios/c1/tokensDispositivo'));
+      await assertFails(deleteDoc(ref(ajeno, ruta('c1', 'tok-a'))));
+    }
+  });
+
+  it('nadie lee tokens desde la app, ni los suyos', async () => {
+    await preparar(entorno, ruta('c1', 'tok-a'), datos('tok-a'));
+    await assertFails(getDoc(ref(s.c1, ruta('c1', 'tok-a'))));
+    await assertFails(lista(s.c1, 'usuarios/c1/tokensDispositivo'));
+  });
+
+  it('la expiración debe ser una fecha futura de como máximo 90 días', async () => {
+    await assertSucceeds(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a', { expiraEn: enDias(89) })));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a', { expiraEn: enDias(91) })));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a', { expiraEn: enDias(-1) })));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a', { expiraEn: Date.now() + 86_400_000 })));
+  });
+
+  it('rechaza campos de más, un token distinto del id, tipos erróneos y falta de expiraEn', async () => {
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('tok-a', { extra: 1 })));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), datos('otro')));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), { token: 123, expiraEn: enDias(60) }));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), { token: 'tok-a', expiraEn: '1' }));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), { token: 'tok-a' }));
+    await assertFails(setDoc(ref(s.c1, ruta('c1', 'tok-a')), { expiraEn: enDias(60) }));
+  });
+
+  it('el dueño borra el suyo', async () => {
+    await preparar(entorno, ruta('c1', 'tok-a'), datos('tok-a'));
+    await assertSucceeds(deleteDoc(ref(s.c1, ruta('c1', 'tok-a'))));
+  });
+
+  it('la ruta antigua en la raíz queda denegada', async () => {
+    await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 'abc' }, { merge: true }));
+    await assertFails(setDoc(ref(s.c1, 'tokensDispositivo/c1'), datos('abc')));
+    await preparar(entorno, 'tokensDispositivo/c1', { token: 'abc' });
+    await assertFails(updateDoc(ref(s.c1, 'tokensDispositivo/c1'), { token: 'nuevo' }));
     await assertFails(getDoc(ref(s.c1, 'tokensDispositivo/c1')));
+  });
+
+  it('las reglas de usuarios no se heredan: el cliente sigue sin leer el perfil de otro', async () => {
+    await assertFails(getDoc(ref(s.c1, 'usuarios/c2')));
   });
 });
 

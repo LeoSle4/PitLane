@@ -95,6 +95,32 @@ node scripts/rellenarInstantaneas.mjs --aplicar   # escribe en el proyecto
 Despliega las reglas nuevas después del relleno o antes, da igual: las reglas no exigen las instantáneas al actualizar,
 solo al crear.
 
+### Tokens de dispositivo
+
+El token de notificaciones vive en `usuarios/{usuarioId}/tokensDispositivo/{token}`, con `{token, expiraEn}`: un
+documento por dispositivo y el propio token como id. Así un usuario con dos teléfonos no pisa el token del otro y volver a
+guardar el mismo token solo actualiza su documento. El dueño los escribe y borra; nadie los lee desde la app, ni el Jefe
+(los lee el servidor). Ninguna Cloud Function lee hoy esta colección.
+
+`expiraEn` es una fecha (`Timestamp`) que la app renueva a 60 días cada vez que abre; las reglas aceptan hasta 90. Para que
+Firestore borre solo los tokens de teléfonos que ya no se usan, activa una vez la política TTL (la ejecutas tú, no la hace
+ningún script):
+
+```bash
+gcloud firestore fields ttls update expiraEn --collection-group=tokensDispositivo --enable-ttl --project=<id-del-proyecto>
+```
+
+Antes el token estaba en la raíz, en `tokensDispositivo/{usuarioId}`. La app registra el token en la ruta nueva cada vez que
+se abre, y las reglas ya deniegan la ruta antigua, así que esos documentos quedan huérfanos. Cuando los dispositivos hayan
+abierto la app nueva, bórralos (simulacro por defecto):
+
+```bash
+cd firebase/functions
+export GOOGLE_APPLICATION_CREDENTIALS=/ruta/fuera/del/repo/clave-de-servicio.json
+node scripts/limpiarTokensAntiguos.mjs             # simulacro: no borra
+node scripts/limpiarTokensAntiguos.mjs --aplicar   # borra en el proyecto
+```
+
 ## Desplegar las reglas
 
 Solo después de que las pruebas pasen. Con `firebase login` hecho:

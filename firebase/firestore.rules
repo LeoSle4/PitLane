@@ -215,13 +215,21 @@ service cloud.firestore {
           : request.resource.data.ultimo == resource.data.ultimo + 1);
     }
 
-    // ---- Token del dispositivo: cada usuario guarda solo el suyo; lo lee el servidor.
-    match /tokensDispositivo/{id} {
+    // ---- Tokens de dispositivo: un documento por teléfono, con el token como id. Cada usuario escribe solo los
+    // suyos (ni el Jefe toca los ajenos) y nadie los lee desde la app; los lee el servidor. `expiraEn` es la fecha en que
+    // la política TTL de Firestore borra el token si el dispositivo no vuelve a abrir la app. Una ruta anidada no
+    // hereda las reglas de `usuarios/{id}`, por eso esta coincidencia es la única que la alcanza.
+    match /usuarios/{usuarioId}/tokensDispositivo/{token} {
       allow read: if false;
-      allow create, update: if sesion() && uid() == id
-        && request.resource.data.keys().hasOnly(['token'])
-        && request.resource.data.token is string;
-      allow delete: if sesion() && uid() == id;
+      allow create, update: if sesion() && uid() == usuarioId
+        && request.resource.data.keys().hasOnly(['token', 'expiraEn'])
+        && request.resource.data.keys().hasAll(['token', 'expiraEn'])
+        && request.resource.data.token is string
+        && request.resource.data.token == token
+        && request.resource.data.expiraEn is timestamp
+        && request.resource.data.expiraEn > request.time
+        && request.resource.data.expiraEn <= request.time + duration.value(90, 'd');
+      allow delete: if sesion() && uid() == usuarioId;
     }
   }
 }

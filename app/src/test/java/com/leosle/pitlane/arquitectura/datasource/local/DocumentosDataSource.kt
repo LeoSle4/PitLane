@@ -44,6 +44,6 @@ class DocumentosDataSource internal constructor(
     override suspend fun <R> enLote(bloque: suspend () -> R): R = bloque()
 
     override suspend fun guardarTokenDispositivo(usuarioId: String, token: String) {
-        bd.tokensDispositivo.update { it + (usuarioId to token) }
+        bd.tokensDispositivo.update { it + (usuarioId to (it[usuarioId].orEmpty() + token)) }
     }
 }

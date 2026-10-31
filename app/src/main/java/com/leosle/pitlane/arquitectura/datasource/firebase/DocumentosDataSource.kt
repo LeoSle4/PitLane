@@ -1,5 +1,6 @@
 package com.leosle.pitlane.arquitectura.datasource.firebase
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -13,6 +14,7 @@ import com.leosle.pitlane.modelo.Orden
 import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.Vehiculo
+import java.util.Date
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
@@ -20,10 +22,24 @@ import kotlin.coroutines.coroutineContext
 private const val CONTADORES = "contadores"
 private const val CONTADOR_ORDENES = "ordenes"
 private const val CAMPO_ULTIMO = "ultimo"
+private const val USUARIOS = "usuarios"
 private const val TOKENS = "tokensDispositivo"
 
 /** Número de orden con el formato ORD-0001 a partir de su correlativo. */
 internal fun numeroDeOrden(correlativo: Long): String = "ORD-%04d".format(correlativo)
+
+/**
+ * Ruta y datos del token de un dispositivo: un documento por token dentro del usuario, para que dos teléfonos
+ * del mismo usuario no se pisen y volver a guardar el mismo token actualice el mismo documento.
+ */
+/** Cuánto vive un token sin que el dispositivo vuelva a abrir la app: la política TTL de Firestore lo borra al vencer. */
+internal const val VIGENCIA_TOKEN_DISPOSITIVO_MS = 60L * 24 * 60 * 60 * 1000
+
+internal fun rutaYDatosDeTokenDispositivo(usuarioId: String, token: String, ahora: Long): Pair<String, Map<String, Any>> =
+    "$USUARIOS/$usuarioId/$TOKENS/$token" to mapOf(
+        "token" to token,
+        "expiraEn" to Timestamp(Date(ahora + VIGENCIA_TOKEN_DISPOSITIVO_MS))
+    )
 
 /**
  * Colecciones de documentos en Firestore. Cada colección solo entrega lo que el usuario de [actor] puede leer
@@ -156,6 +172,7 @@ class DocumentosDataSource(
     }
 
     override suspend fun guardarTokenDispositivo(usuarioId: String, token: String) {
-        bd.collection(TOKENS).document(usuarioId).set(mapOf("token" to token), SetOptions.merge()).esperar()
+        val (ruta, datos) = rutaYDatosDeTokenDispositivo(usuarioId, token, System.currentTimeMillis())
+        bd.document(ruta).set(datos, SetOptions.merge()).esperar()
     }
 }

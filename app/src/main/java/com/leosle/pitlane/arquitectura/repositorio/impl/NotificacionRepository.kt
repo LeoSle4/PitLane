@@ -55,7 +55,7 @@ class NotificacionRepository(
         return Resultado.Exito(Unit)
     }
 
-    /** Guarda el token del dispositivo del usuario; uno nuevo reemplaza al anterior. */
+    /** Guarda el token del dispositivo del usuario; cada dispositivo tiene su propio documento y vencen solos. */
     override suspend fun guardarTokenDispositivo(usuarioId: String, token: String): Resultado<Unit> {
         documentos.guardarTokenDispositivo(usuarioId, token)
         return Resultado.Exito(Unit)

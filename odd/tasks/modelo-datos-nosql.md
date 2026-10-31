@@ -19,7 +19,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T0 S0 reglas del Jefe. inline. commit 7826db2
 - [x] T1 S1a instantánea: datos, escritura, reglas, relleno. route: delegada (contexto). commit ver git log (feat(modelo): instantánea...). RED: 6 pruebas Android y 10 de reglas; GREEN: 65 de reglas y Gradle verde
 - [x] T2 S1b listas desde la instantánea; detalle por get. route: delegada (contexto). RED: 5 de 7 pruebas nuevas fallaban; GREEN: 129 pruebas Android, 0 fallos
-- [ ] T3 S2 tokens por dispositivo. route: delegada (contexto)
+- [x] T3 S2 tokens por dispositivo con expiración (TTL). route: delegada (contexto) y ajuste inline. RED: 5 de reglas y compilación de Kotlin; GREEN: 74 de reglas, Gradle verde
 - [ ] T4 S3 consultas dirigidas. route: delegada (contexto)
 - [ ] T5 S4 placa única. route: delegada (contexto)
 - [ ] T6 S5 documentación y diagrama finales. route: inline
@@ -46,3 +46,10 @@ L6 (T2, evaluación como ingeniero NoSQL):
 - Seguridad: sin cambios de reglas. Un cliente no puede leer el perfil del Jefe; `obtener` convierte el rechazo en nulo, por lo que en el detalle del cliente el autor de la entrega aparece sin nombre (la lista sí lo muestra por la firma del historial).
 - Migración y reversión: si falla algo, basta no rellenar: el código cae solo al cruce completo anterior.
 - Riesgo que queda: la lista infiere el rol del autor por su id (cliente, técnico o Jefe) y los usuarios livianos traen correo vacío; ninguna pantalla los lee hoy (auditoría de campos del escritor).
+
+L7 (T3, evaluación como ingeniero NoSQL):
+- Estructura: subcolección `usuarios/{id}/tokensDispositivo/{token}` en lugar de una lista de tokens dentro del perfil. Evita que un campo que crece viva en el documento del usuario (se lee en cada pantalla) y que dos dispositivos compitan por escribir el mismo documento. Con el token como id, volver a registrarlo es idempotente.
+- Defecto encontrado en mi propia evaluación: sin vencimiento los tokens se acumulan para siempre (cada reinstalación deja uno). La política TTL de Firestore solo funciona con `Timestamp` y borra cuando la fecha YA pasó, así que el campo es `expiraEn` (ahora + 60 días, renovado en cada apertura), no la última actualización. La regla acota la expiración a futura y de máximo 90 días, de modo que un cliente no puede fijarse una vida eterna. PENDIENTE DEL USUARIO: activar la política TTL una vez (`gcloud firestore fields ttls update expiraEn --collection-group=tokensDispositivo --enable-ttl`); el borrado de Firestore puede tardar horas tras el vencimiento.
+- Costo: la app escribe el token en cada apertura (una escritura por apertura y dispositivo, aunque no haya cambiado). Es barato con pocos usuarios; si creciera, conviene recordar localmente la última vez y renovar solo cada pocos días. No se hizo para no ampliar el alcance.
+- Seguridad: solo el dueño escribe y borra, nadie lee desde la app, la ruta antigua queda denegada y un ajeno (incluido el Jefe) no toca nada. Ninguna Cloud Function lee hoy los tokens (verificado), así que el cambio de ruta no rompe el servidor. Cuando el servidor empiece a enviar push deberá comprobar que la cuenta siga activa, porque los tokens de una cuenta desactivada sobreviven hasta vencer.
+- Migración y reversión: cada dispositivo se re-registra solo al abrir la app nueva; los documentos antiguos quedan huérfanos y `limpiarTokensAntiguos.mjs` (simulacro por defecto, no se ejecutó) los borra. ORDEN DE DESPLIEGUE: app nueva primero y reglas después; con las reglas antes, la app antigua recibe permiso denegado al guardar el token (el aviso del sistema dejaría de registrarse hasta actualizar).
