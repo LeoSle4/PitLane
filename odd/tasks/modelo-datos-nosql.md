@@ -12,6 +12,11 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - S2 `tokensDispositivo` como subcolección: `usuarios/{usuarioId}/tokensDispositivo/{token}`, un documento por dispositivo, para que un usuario con dos teléfonos no pise el token. Reglas, fuente de datos, pruebas y migración del documento antiguo.
 - S3 Consultas dirigidas en lugar de `listar()` completo: avances de una orden, órdenes y solicitudes de un vehículo. Con `whereEqualTo` más el alcance del usuario; índices en `firestore.indexes.json` si hacen falta.
 - S4 Placa única con colección `placas/{placa}`: "La unicidad de la placa no está garantizada ... check-then-create". El vehículo y su reserva se crean en el mismo lote; las reglas exigen que no exista y que se cree con el vehículo; se libera al borrar el vehículo. Script de relleno para vehículos existentes.
+- S6 Paneles con lecturas acotadas por estado: "Panel de órdenes activas del Jefe ... lee todas las órdenes de la historia ... y filtra `enTaller` en memoria". El panel del Jefe, el del técnico y la búsqueda de órdenes listas piden al servidor solo las órdenes en los estados que muestran (`estado in [...]`), sin cambiar ninguna pantalla. Índices compuestos donde el alcance lleve `acceso`.
+- S7 Ficha del cliente y vehículos de un cliente por consulta: "Pasar la ficha del cliente y sus vehículos a consultas por `clienteId`". `observarVehiculosDeCliente` y la ficha dejan de escuchar vehículos y órdenes completos.
+- S8 Búsqueda de clientes sin recorrer colecciones: "Reemplazar la búsqueda por campos indexados: DNI exacto, nombre en minúsculas con prefijo y placa por prefijo". Campos `terminos` (array de prefijos en minúsculas y sin tildes, mínimo 3 caracteres, de cada palabra del nombre completo y del DNI) en los clientes y `terminosPlaca` en los vehículos, consultados con `array-contains`. Decisión: la búsqueda pasa de "contiene" a "prefijo de palabra"; se documenta. Relleno para documentos existentes (seco por defecto, no se ejecuta).
+- S9 Ciclo de vida: "Poner TTL a las notificaciones, pasando esa fecha a `Timestamp`". `notificaciones` y `codigosRestablecimiento` llevan `expiraEn` (Timestamp) puesto por el servidor; el TTL lo activa el usuario.
+- S10 Versión de esquema: "Añadir un campo de versión de esquema a los documentos". `esquema: 2` en `ordenes` y `solicitudes` (los que cambiaron de forma con la instantánea); un documento sin el campo es de la versión 1.
 - S5 Tras cada tarea, una evaluación como ingeniero de bases de datos NoSQL (lecturas y costo, consistencia y atomicidad, seguridad, migración y reversión, riesgos que quedan), registrada en el Log. Al final se actualizan `docs/04-arquitectura/modelo-de-datos-firestore.md` y el diagrama.
 
 ## Tasks
@@ -23,6 +28,11 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T4 S3 consultas dirigidas y observador de un documento. route: delegada (contexto) e inline para `eliminarCliente`. RED: compilación de pruebas (`listarDonde`/`observar` sin resolver); GREEN: 80 de reglas, Gradle verde
 - [x] T5 S4 placa única con `placas/{placa}`. route: delegada (contexto) y endurecimiento del formato inline. RED: 9 pruebas de reglas; GREEN: 96 de reglas, Gradle verde; verificador independiente sin bloqueos
 - [x] T6 S5 documentación y diagramas de las tres fases. route: inline. Diagramas conceptual, lógico y físico generados con `fases.py`
+- [ ] T7 S6+S7 lecturas en vivo acotadas por estado y por cliente. route: delegada (contexto)
+- [ ] T8 S8 búsqueda de clientes con términos indexados. route: delegada (contexto)
+- [ ] T9 S9 TTL de notificaciones y códigos. route: delegada (contexto)
+- [ ] T10 S10 versión de esquema. route: delegada (contexto)
+- [ ] T11 documentación y diagramas finales de la segunda ronda. route: inline
 
 ## Log
 
@@ -69,3 +79,5 @@ L10 (T5, evaluación como ingeniero NoSQL):
 - Límite del diseño: una placa reservada solo se libera al borrar el vehículo. Los vehículos con historial solo se ocultan (`activo = false`), así que su placa queda reservada para siempre; si el auto se vende y el nuevo dueño quiere registrarlo, hace falta que el Jefe intervenga. Es el mismo comportamiento que ya tenía la comprobación anterior, ahora también garantizado.
 - Migración: sin el relleno hay una ventana donde los vehículos antiguos no están reservados. Orden obligatorio: app nueva, `rellenarPlacas.mjs` (omite placas repetidas y las informa), índices y reglas al final. Con las reglas desplegadas antes, una app antigua no puede registrar vehículos.
 - Comparación para la exposición: en MongoDB esto es un índice único sobre `placa`; la colección `placas` existe solo porque Firestore no tiene índices únicos.
+
+L11 (2026-10-31, usuario): "Vuelve a evaluar y verifica si cumple como una verdadera base de datos no sql" y después "desarrolla todos los puntos". Evaluación previa (solo lectura): el almacenamiento es documental pero el acceso sigue siendo parcialmente relacional: 21 escuchas `observarTodos()`, 9 uniones en memoria en `Consultas.kt`, panel de activas que lee todas las órdenes (`OrdenRepository.kt:84`), búsqueda de clientes que lee todos los usuarios y vehículos (`ClienteRepository.kt:77`), cero `limit`/`orderBy`, TTL solo en tokens. Corrección a mi propio criterio: acotar el panel de activas por estado en el servidor NO necesita decisión del usuario; solo la paginación del historial la necesita.
