@@ -3,6 +3,7 @@ import { before, beforeEach, describe, it } from 'node:test';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { cifrarCodigo, idDeCorreo } from '../src/codigos.js';
 
 // Prueba las funciones desplegadas en el emulador, con inicio de sesión real contra el emulador de Authentication.
 const PROYECTO = 'demo-pitlane';
@@ -287,5 +288,83 @@ describe('notificarOrden', () => {
     await orden('o3', 'c3', 't1', 'INGRESADO');
     await esperar(2500);
     assert.equal((await bd.collection('notificaciones').get()).size, 0);
+  });
+});
+
+describe('restablecer la contraseña con un código', () => {
+  const correo = 'c1@correo.com';
+  const registro = () => bd.collection('codigosRestablecimiento').doc(idDeCorreo(correo));
+  /** Guarda un código conocido, como si se hubiera enviado por correo. */
+  const sembrarCodigo = (extra = {}) => registro().set({
+    hash: cifrarCodigo(correo, '123456'), expira: Date.now() + 600_000, intentos: 0, enviadoEn: Date.now(), ...extra,
+  });
+  const restablecer = (datos) => llamar('restablecerContrasena', { correo, codigo: '123456', contrasena: 'NuevaClave9', ...datos });
+
+  beforeEach(async () => { await crearCuenta('c1', 'CLIENTE', correo); });
+
+  it('pedir un código guarda solo su versión cifrada, con vigencia de 10 minutos', async () => {
+    const antes = Date.now();
+    assert.deepEqual((await llamar('solicitarCodigo', { correo: '  C1@Correo.com ' })).resultado, { enviado: true });
+    const guardado = (await registro().get()).data();
+    assert.match(guardado.hash, /^[0-9a-f]{64}$/);
+    assert.equal(guardado.intentos, 0);
+    assert.ok(guardado.expira >= antes + 600_000 && guardado.expira <= Date.now() + 600_000);
+  });
+
+  it('no deja pedir otro código antes de un minuto', async () => {
+    await llamar('solicitarCodigo', { correo });
+    assert.deepEqual((await llamar('solicitarCodigo', { correo })).error,
+      { estado: 'FAILED_PRECONDITION', mensaje: 'Espera un minuto antes de pedir otro código' });
+  });
+
+  it('responde igual para un correo sin cuenta, sin revelar que no existe', async () => {
+    assert.deepEqual((await llamar('solicitarCodigo', { correo: 'nadie@correo.com' })).resultado, { enviado: true });
+    assert.deepEqual((await llamar('solicitarCodigo', { correo: 'no-es-correo' })).error,
+      { estado: 'INVALID_ARGUMENT', mensaje: 'Ingresa un correo válido' });
+  });
+
+  it('con el código correcto cambia la contraseña, borra el código y cierra la contraseña anterior', async () => {
+    await sembrarCodigo();
+    assert.equal((await restablecer()).error, undefined);
+    assert.ok(await iniciarSesion(correo, 'NuevaClave9'), 'debe entrar con la contraseña nueva');
+    assert.equal(await iniciarSesion(correo, CLAVE), null);
+    assert.equal((await registro().get()).exists, false);
+    assert.deepEqual((await restablecer()).error,
+      { estado: 'FAILED_PRECONDITION', mensaje: 'El código venció o no es válido. Pide uno nuevo' });
+  });
+
+  it('un código incorrecto suma un intento y al quinto exige un código nuevo', async () => {
+    await sembrarCodigo();
+    for (let intento = 1; intento <= 5; intento += 1) {
+      assert.deepEqual((await restablecer({ codigo: '000000' })).error,
+        { estado: 'INVALID_ARGUMENT', mensaje: 'El código no es correcto' });
+      assert.equal((await registro().get()).data().intentos, intento);
+    }
+    assert.deepEqual((await restablecer()).error,
+      { estado: 'FAILED_PRECONDITION', mensaje: 'Superaste los intentos. Pide un código nuevo' });
+    assert.ok(await iniciarSesion(correo), 'la contraseña no debe cambiar');
+  });
+
+  it('un código vencido no sirve', async () => {
+    await sembrarCodigo({ expira: Date.now() - 1 });
+    assert.deepEqual((await restablecer()).error,
+      { estado: 'FAILED_PRECONDITION', mensaje: 'El código venció o no es válido. Pide uno nuevo' });
+  });
+
+  it('valida el formato del código y la regla de contraseña antes de gastar el código', async () => {
+    await sembrarCodigo();
+    assert.deepEqual((await restablecer({ codigo: '12a' })).error,
+      { estado: 'INVALID_ARGUMENT', mensaje: 'Escribe el código de 6 dígitos' });
+    assert.deepEqual((await restablecer({ contrasena: 'corta' })).error,
+      { estado: 'INVALID_ARGUMENT', mensaje: 'Mínimo 8 caracteres, con una letra y un número' });
+    assert.equal((await registro().get()).data().intentos, 0);
+  });
+
+  it('una cuenta desactivada no puede restablecer su contraseña', async () => {
+    const { uid } = await autenticacion.getUserByEmail(correo);
+    await autenticacion.updateUser(uid, { disabled: true });
+    await sembrarCodigo();
+    assert.deepEqual((await restablecer()).error,
+      { estado: 'FAILED_PRECONDITION', mensaje: 'Tu cuenta está desactivada. Comunícate con el taller' });
   });
 });

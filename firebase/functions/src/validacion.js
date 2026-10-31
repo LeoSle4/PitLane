@@ -25,8 +25,18 @@ export function validarCuenta(cuenta) {
   if (cuenta.telefono.length !== 9 || !soloDigitos(cuenta.telefono) || !cuenta.telefono.startsWith('9')) {
     return 'El celular debe tener 9 dígitos y empezar con 9';
   }
-  if (!PATRON_CORREO.test(cuenta.correo)) return 'Ingresa un correo válido';
-  if (cuenta.contrasena.length < 8 || !/\p{L}/u.test(cuenta.contrasena) || !/\d/.test(cuenta.contrasena)) {
+  if (!correoValido(cuenta.correo)) return 'Ingresa un correo válido';
+  return validarContrasena(cuenta.contrasena);
+}
+
+/** Indica si el correo tiene un formato válido. */
+export function correoValido(correo) {
+  return PATRON_CORREO.test(correo);
+}
+
+/** Regla de contraseña de la app: mínimo 8 caracteres, con una letra y un número. Devuelve el error o nulo. */
+export function validarContrasena(contrasena) {
+  if (contrasena.length < 8 || !/\p{L}/u.test(contrasena) || !/\d/.test(contrasena)) {
     return 'Mínimo 8 caracteres, con una letra y un número';
   }
   return null;
