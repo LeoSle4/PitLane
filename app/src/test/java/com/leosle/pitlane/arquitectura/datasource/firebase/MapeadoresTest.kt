@@ -18,6 +18,7 @@ import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.TipoAvance
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.Vehiculo
+import com.leosle.pitlane.util.Busqueda
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -44,6 +45,28 @@ class MapeadoresTest {
         val usuario = Usuario("u2", "Luis", "Paz", "87654321", "", "", "", Rol.CLIENTE, activo = false, tieneCuenta = false)
 
         assertEquals(usuario, usuario.aDocumento().aUsuario("u2"))
+    }
+
+    @Test
+    fun soloElClienteLlevaTerminosDeBusqueda() {
+        val cliente = Usuario("u4", "María José", "Pérez", "72345678", "", "", "", Rol.CLIENTE)
+        val tecnico = cliente.copy(id = "u5", rol = Rol.TECNICO)
+        val jefe = cliente.copy(id = "u6", rol = Rol.JEFE)
+
+        assertEquals(Busqueda.terminosDePersona("María José", "Pérez", "72345678"), cliente.aDocumento()["terminos"])
+        assertFalse(tecnico.aDocumento().containsKey("terminos"))
+        assertFalse(jefe.aDocumento().containsKey("terminos"))
+        assertEquals(cliente.copy(contrasena = ""), cliente.aDocumento().aUsuario("u4"))
+    }
+
+    @Test
+    fun vehiculoLlevaTerminosDePlacaYLaLecturaLosIgnora() {
+        val vehiculo = Vehiculo("v2", "u1", "ABC-123", "Toyota", "Yaris", 2018, "Rojo")
+
+        val documento = vehiculo.aDocumento()
+
+        assertEquals(Busqueda.terminosDePlaca("ABC-123"), documento["terminosPlaca"])
+        assertEquals(vehiculo, documento.aVehiculo("v2"))
     }
 
     @Test

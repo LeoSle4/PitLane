@@ -26,6 +26,13 @@ service cloud.firestore {
       let v = get(/databases/$(database)/documents/vehiculos/$(vehiculoId)).data;
       return r.placa == v.placa && r.marca == v.marca && r.modelo == v.modelo && r.anio == v.anio && r.color == v.color;
     }
+    // Términos de búsqueda (S8): campos opcionales, listas acotadas. La app escribe el documento entero con merge, así que
+    // un documento anterior que se edita GANA el campo y este aparece en `affectedKeys`; por eso las reglas de
+    // actualización también lo admiten.
+    function listaAcotada(campo, maximo) {
+      return !(campo in request.resource.data)
+        || (request.resource.data[campo] is list && request.resource.data[campo].size() <= maximo);
+    }
     function orden(id) { return get(/databases/$(database)/documents/ordenes/$(id)).data; }
 
     // Instantáneas del ingreso (cliente, vehículo y técnico): mapas con exactamente estas claves. Son una foto de
@@ -79,7 +86,8 @@ service cloud.firestore {
 
       allow create: if esJefe()
         && request.resource.data.keys().hasOnly(
-          ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso'])
+          ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso', 'terminos'])
+        && listaAcotada('terminos', 120)
         && request.resource.data.keys().hasAll(
           ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso'])
         && request.resource.data.rol == 'CLIENTE'
@@ -87,8 +95,9 @@ service cloud.firestore {
         && request.resource.data.activo == true
         && request.resource.data.acceso == [id];
 
-      allow update: if (esJefe() && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'acceso']))
-        || (sesion() && uid() == id && cambios().hasOnly(['nombres', 'apellidos', 'telefono']));
+      allow update: if ((esJefe() && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'acceso', 'terminos']))
+        || (sesion() && uid() == id && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'terminos'])))
+        && listaAcotada('terminos', 120);
 
       allow delete: if esJefe() && resource.data.rol == 'CLIENTE' && resource.data.tieneCuenta == false;
     }
@@ -99,7 +108,8 @@ service cloud.firestore {
 
       allow create: if (esJefe() || (esCliente() && request.resource.data.clienteId == uid()))
         && request.resource.data.keys().hasOnly(
-          ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
+          ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso', 'terminosPlaca'])
+        && listaAcotada('terminosPlaca', 12)
         && request.resource.data.keys().hasAll(
           ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
         && request.resource.data.activo == true
@@ -112,9 +122,10 @@ service cloud.firestore {
 
       allow update: if request.resource.data.clienteId == resource.data.clienteId
         && request.resource.data.placa == resource.data.placa
+        && listaAcotada('terminosPlaca', 12)
         && (esJefe()
           || (esCliente() && resource.data.clienteId == uid()
-              && cambios().hasOnly(['marca', 'modelo', 'anio', 'color', 'activo'])));
+              && cambios().hasOnly(['marca', 'modelo', 'anio', 'color', 'activo', 'terminosPlaca'])));
 
       // La reserva de la placa se libera en el mismo lote. Un vehículo anterior a las reservas no la tiene.
       allow delete: if (esJefe() || (esCliente() && resource.data.clienteId == uid()))

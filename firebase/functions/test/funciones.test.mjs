@@ -3,6 +3,7 @@ import { before, beforeEach, describe, it } from 'node:test';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { terminosDePersona } from '../src/busqueda.js';
 import { cifrarCodigo, idDeCorreo } from '../src/codigos.js';
 
 // Prueba las funciones desplegadas en el emulador, con inicio de sesión real contra el emulador de Authentication.
@@ -86,6 +87,7 @@ describe('registrarCliente', () => {
     assert.equal(perfil.tieneCuenta, true);
     assert.deepEqual(perfil.acceso, [resultado.id]);
     assert.equal('contrasena' in perfil, false);
+    assert.deepEqual(perfil.terminos, terminosDePersona('Ana', 'Torres', '12345678'));
 
     const token = await iniciarSesion('ana@correo.com');
     assert.ok(token, 'la cuenta nueva debe poder iniciar sesión');
@@ -127,6 +129,7 @@ describe('registrarCliente', () => {
     assert.equal(perfil.tieneCuenta, true);
     assert.equal(perfil.correo, 'ana@correo.com');
     assert.deepEqual([...perfil.acceso].sort(), ['t1', 'u-cli-previo']);
+    assert.deepEqual(perfil.terminos, terminosDePersona('Ana', 'Torres', '12345678'));
     assert.equal(reclamos(await iniciarSesion('ana@correo.com')).usuarioId, 'u-cli-previo');
   });
 });

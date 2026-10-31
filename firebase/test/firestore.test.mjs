@@ -83,6 +83,42 @@ describe('usuarios', () => {
     await assertFails(setDoc(ref(s.c1, 'usuarios/c9'), perfil('c9', 'CLIENTE', ['c9'], { tieneCuenta: false })));
   });
 
+  describe('términos de búsqueda (terminos)', () => {
+    const terminos = ['ana', 'tor', '123'];
+    const sinCuenta = (extra = {}, id = 'c9') => perfil(id, 'CLIENTE', [id], { tieneCuenta: false, ...extra });
+
+    it('el Jefe registra un cliente sin cuenta con terminos y también sin ellos (app anterior)', async () => {
+      await assertSucceeds(setDoc(ref(s.jefe, 'usuarios/c9'), sinCuenta({ terminos })));
+      await assertSucceeds(setDoc(ref(s.jefe, 'usuarios/c8'), sinCuenta({}, 'c8')));
+    });
+
+    it('terminos debe ser una lista de 120 elementos como máximo al crear', async () => {
+      await assertSucceeds(setDoc(ref(s.jefe, 'usuarios/c9'), sinCuenta({ terminos: Array.from({ length: 120 }, (_, i) => `t${i}`) })));
+      await assertFails(setDoc(ref(s.jefe, 'usuarios/c8'), sinCuenta({ terminos: Array.from({ length: 121 }, (_, i) => `t${i}`) }, 'c8')));
+      await assertFails(setDoc(ref(s.jefe, 'usuarios/c7'), sinCuenta({ terminos: 'ana' }, 'c7')));
+    });
+
+    it('un cliente registrado sin terminos que el Jefe o el propio usuario edita con la app nueva gana el campo', async () => {
+      await assertSucceeds(updateDoc(ref(s.jefe, 'usuarios/c1'), { telefono: '977', terminos }));
+      await assertSucceeds(updateDoc(ref(s.c1, 'usuarios/c1'), { nombres: 'Nuevo', terminos }));
+      await assertSucceeds(setDoc(ref(s.c1, 'usuarios/c1'), { ...perfil('c1', 'CLIENTE', ['c1', 't1']), nombres: 'Otro', terminos }, { merge: true }));
+    });
+
+    it('terminos al actualizar debe ser una lista de 120 elementos como máximo', async () => {
+      await assertFails(updateDoc(ref(s.jefe, 'usuarios/c1'), { terminos: Array.from({ length: 121 }, (_, i) => `t${i}`) }));
+      await assertFails(updateDoc(ref(s.c1, 'usuarios/c1'), { terminos: Array.from({ length: 121 }, (_, i) => `t${i}`) }));
+      await assertFails(updateDoc(ref(s.jefe, 'usuarios/c1'), { terminos: 'ana' }));
+      await assertFails(updateDoc(ref(s.c1, 'usuarios/c1'), { terminos: { a: 1 } }));
+    });
+
+    it('terminos no abre otros campos ni a otros usuarios', async () => {
+      await assertFails(updateDoc(ref(s.c1, 'usuarios/c2'), { terminos }));
+      await assertFails(updateDoc(ref(s.t1, 'usuarios/c1'), { terminos }));
+      await assertFails(updateDoc(ref(s.c1, 'usuarios/c1'), { rol: 'JEFE', terminos }));
+      await assertFails(updateDoc(ref(s.jefe, 'usuarios/c1'), { activo: false, terminos }));
+    });
+  });
+
   it('el Jefe solo elimina clientes sin cuenta', async () => {
     await assertSucceeds(deleteDoc(ref(s.jefe, 'usuarios/c3')));
     await assertFails(deleteDoc(ref(s.jefe, 'usuarios/c1')));
@@ -263,6 +299,40 @@ describe('vehiculos', () => {
   it('el Jefe agrega a un técnico al acceso de un vehículo', async () => {
     await assertSucceeds(updateDoc(ref(s.jefe, 'vehiculos/v1'), { acceso: arrayUnion('t2') }));
     await assertFails(updateDoc(ref(s.jefe, 'vehiculos/v1'), { placa: 'ZZZ999' }));
+  });
+
+  describe('términos de la placa (terminosPlaca)', () => {
+    const terminosPlaca = ['abc', 'bc1', 'abc1'];
+
+    it('el cliente y el Jefe registran un vehículo con terminosPlaca y también sin ellos (app anterior)', async () => {
+      await assertSucceeds(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'], { terminosPlaca })));
+      await assertSucceeds(registrar(s.jefe, 'v10', vehiculo('c2', 'XYZ-988', ['c2'], { terminosPlaca })));
+      await assertSucceeds(registrar(s.c1, 'v11', vehiculo('c1', 'XYZ-989', ['c1'])));
+    });
+
+    it('terminosPlaca al crear debe ser una lista de 12 elementos como máximo', async () => {
+      await assertSucceeds(registrar(s.c1, 'v9', vehiculo('c1', 'XYZ-987', ['c1'], { terminosPlaca: Array.from({ length: 12 }, (_, i) => `t${i}`) })));
+      await assertFails(registrar(s.c1, 'v10', vehiculo('c1', 'XYZ-988', ['c1'], { terminosPlaca: Array.from({ length: 13 }, (_, i) => `t${i}`) })));
+      await assertFails(registrar(s.c1, 'v11', vehiculo('c1', 'XYZ-989', ['c1'], { terminosPlaca: 'xyz' })));
+    });
+
+    it('un vehículo anterior (sin terminosPlaca) editado por el cliente o el Jefe con la app nueva gana el campo', async () => {
+      await assertSucceeds(updateDoc(ref(s.c1, 'vehiculos/v1'), { marca: 'Kia', terminosPlaca }));
+      await assertSucceeds(updateDoc(ref(s.jefe, 'vehiculos/v2'), { color: 'Azul', terminosPlaca }));
+    });
+
+    it('terminosPlaca al actualizar debe ser una lista de 12 elementos como máximo', async () => {
+      await assertFails(updateDoc(ref(s.c1, 'vehiculos/v1'), { terminosPlaca: Array.from({ length: 13 }, (_, i) => `t${i}`) }));
+      await assertFails(updateDoc(ref(s.jefe, 'vehiculos/v1'), { terminosPlaca: Array.from({ length: 13 }, (_, i) => `t${i}`) }));
+      await assertFails(updateDoc(ref(s.c1, 'vehiculos/v1'), { terminosPlaca: 'abc' }));
+      await assertFails(updateDoc(ref(s.jefe, 'vehiculos/v1'), { terminosPlaca: 7 }));
+    });
+
+    it('terminosPlaca no abre otros campos ni a otros usuarios', async () => {
+      await assertFails(updateDoc(ref(s.c1, 'vehiculos/v2'), { terminosPlaca }));
+      await assertFails(updateDoc(ref(s.t1, 'vehiculos/v1'), { terminosPlaca }));
+      await assertFails(updateDoc(ref(s.c1, 'vehiculos/v1'), { acceso: ['c1', 't2'], terminosPlaca }));
+    });
   });
 
   it('el cliente elimina solo su vehículo, el Jefe cualquiera y el técnico ninguno', async () => {

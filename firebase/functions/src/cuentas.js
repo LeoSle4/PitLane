@@ -1,5 +1,6 @@
 import { onCall } from 'firebase-functions/https';
 import { autenticacion, bd, exigirJefe, FieldValue, HttpsError, sesion } from './comun.js';
+import { terminosDePersona } from './busqueda.js';
 import { normalizarCuenta, validarCuenta } from './validacion.js';
 
 const usuarios = bd.collection('usuarios');
@@ -77,6 +78,7 @@ export const registrarCliente = onCall(async (request) => {
     cuenta, id, rol: 'CLIENTE', mensajeCorreoRepetido,
     escribirPerfil: (uid) => usuarios.doc(id).set({
       ...camposDePerfil(cuenta), rol: 'CLIENTE', activo: true, tieneCuenta: true, authUid: uid,
+      terminos: terminosDePersona(cuenta.nombres, cuenta.apellidos, cuenta.dni),
       acceso: FieldValue.arrayUnion(id),
     }, { merge: true }),
   });

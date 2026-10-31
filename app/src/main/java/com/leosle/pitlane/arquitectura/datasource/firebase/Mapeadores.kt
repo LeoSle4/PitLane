@@ -18,6 +18,7 @@ import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.TipoAvance
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.Vehiculo
+import com.leosle.pitlane.util.Busqueda
 
 /**
  * Conversión entre el modelo y los documentos de Firestore. El identificador es el del documento y no se
@@ -50,6 +51,7 @@ private fun Documento.textos(campo: String): List<String> = this[campo] as? List
 private inline fun <reified E : Enum<E>> Documento.enumeracion(campo: String): E =
     enumValueOf<E>(requireNotNull(this[campo] as? String) { "Falta el campo $campo" })
 
+/** Solo los clientes llevan `terminos` (búsqueda por `array-contains`); el técnico y el Jefe no se buscan. */
 internal fun Usuario.aDocumento(): Documento = mapOf(
     "nombres" to nombres,
     "apellidos" to apellidos,
@@ -59,7 +61,7 @@ internal fun Usuario.aDocumento(): Documento = mapOf(
     "rol" to rol.name,
     "activo" to activo,
     "tieneCuenta" to tieneCuenta
-)
+) + if (rol == Rol.CLIENTE) mapOf("terminos" to Busqueda.terminosDePersona(nombres, apellidos, dni)) else emptyMap()
 
 internal fun Documento.aUsuario(id: String): Usuario = Usuario(
     id = id,
@@ -81,7 +83,8 @@ internal fun Vehiculo.aDocumento(): Documento = mapOf(
     "modelo" to modelo,
     "anio" to anio,
     "color" to color,
-    "activo" to activo
+    "activo" to activo,
+    "terminosPlaca" to Busqueda.terminosDePlaca(placa)
 )
 
 internal fun Documento.aVehiculo(id: String): Vehiculo = Vehiculo(

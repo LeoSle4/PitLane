@@ -146,6 +146,33 @@ node scripts/rellenarPlacas.mjs             # simulacro: no escribe
 node scripts/rellenarPlacas.mjs --aplicar   # escribe en el proyecto
 ```
 
+### Términos de búsqueda (`terminos`, `terminosPlaca`)
+
+Firestore no busca texto, así que la búsqueda de clientes usa campos con términos y consultas `array-contains`:
+
+- `usuarios/{id}.terminos` (solo clientes): prefijos de al menos 3 letras de cada palabra de nombres y apellidos
+  (minúsculas, sin tildes, palabra cortada a 20 caracteres) y todas las subcadenas de al menos 3 caracteres del DNI.
+  Sin repetidos, ordenados y como mucho 120.
+- `vehiculos/{id}.terminosPlaca`: la placa en minúsculas y sin guion, con todas sus subcadenas de al menos 3 caracteres
+  (10 para una placa de 6).
+
+Los calculan `Busqueda.kt` (app) y `functions/src/busqueda.js` (servidor, usado por `registrarCliente`); las dos
+versiones deben dar las mismas listas y sus pruebas comparten los mismos ejemplos. Las reglas aceptan los campos como
+opcionales (`terminos` hasta 120 elementos, `terminosPlaca` hasta 12), también al editar un documento anterior, que
+gana el campo al guardarse. La búsqueda pasa de "contiene" a "prefijo de palabra" para nombres; el DNI y la placa
+siguen admitiendo "contiene".
+
+DESPLIEGUE: ejecuta el relleno ANTES de publicar la app que use la búsqueda por términos, porque esa búsqueda solo
+encuentra los documentos que ya llevan los términos. Es seco por defecto, nunca sobrescribe un campo existente y no toca
+a técnicos ni al Jefe.
+
+```bash
+cd firebase/functions
+export GOOGLE_APPLICATION_CREDENTIALS=/ruta/fuera/del/repo/clave-de-servicio.json
+node scripts/rellenarBusqueda.mjs             # simulacro: no escribe
+node scripts/rellenarBusqueda.mjs --aplicar   # escribe en el proyecto
+```
+
 ## Índices compuestos
 
 Las consultas dirigidas de la app (`acceso` contiene el usuario y un campo igual a un valor) necesitan un índice
