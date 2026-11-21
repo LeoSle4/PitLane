@@ -244,7 +244,57 @@ class ReglasDeNegocioTest {
         avances.registrarAvance("o-3", "u-tec-luis", TipoAvance.TRABAJO_REALIZADO, "Se reparó el cableado del radio", emptyList())
         val avanceId = bd.avances.value.last().id
         ordenes.marcarListo("o-3", "u-tec-luis")
-        assertEquals("La orden ya no admite cambios en sus avances", mensajeDe(avances.eliminarAvance(avanceId, "u-tec-luis")))
+        assertEquals("La orden ya no admite cambios en sus avances", mensajeDe(avances.eliminarAvance("o-3", avanceId, "u-tec-luis")))
+        assertEquals(
+            "La orden ya no admite cambios en sus avances",
+            mensajeDe(avances.editarAvance("o-3", avanceId, "u-tec-luis", TipoAvance.HALLAZGO, "Otra descripción larga", emptyList()))
+        )
+        assertTrue(bd.avances.value.any { it.id == avanceId && it.descripcion == "Se reparó el cableado del radio" })
+    }
+
+    @Test
+    fun elTecnicoEditaYEliminaSoloSusAvancesMientrasLaOrdenSigueEnReparacion() = runBlocking {
+        val registrado = (avances.registrarAvance("o-3", "u-tec-luis", TipoAvance.HALLAZGO, "Cable cortado en el radio", emptyList())
+            as Resultado.Exito).valor
+        assertEquals("o-3", registrado.ordenId)
+        assertEquals(registrado, bd.avances.value.single { it.id == registrado.id })
+
+        assertEquals(
+            "Solo puedes editar tus propios avances",
+            mensajeDe(avances.editarAvance("o-3", registrado.id, "u-tec-marco", TipoAvance.HALLAZGO, "Intento de otro técnico", emptyList()))
+        )
+        assertEquals("Solo puedes eliminar tus propios avances", mensajeDe(avances.eliminarAvance("o-3", registrado.id, "u-tec-marco")))
+
+        val editado = avances.editarAvance("o-3", registrado.id, "u-tec-luis", TipoAvance.TRABAJO_REALIZADO, "Se cambió el cable del radio", emptyList())
+        assertTrue(editado is Resultado.Exito)
+        val guardado = bd.avances.value.single { it.id == registrado.id }
+        assertEquals(TipoAvance.TRABAJO_REALIZADO, guardado.tipo)
+        assertEquals("Se cambió el cable del radio", guardado.descripcion)
+        assertEquals("o-3", guardado.ordenId)
+
+        assertTrue(avances.eliminarAvance("o-3", registrado.id, "u-tec-luis") is Resultado.Exito)
+        assertTrue(bd.avances.value.none { it.id == registrado.id })
+    }
+
+    @Test
+    fun unAvanceSoloSeEncuentraEnLaOrdenALaQuePertenece() = runBlocking {
+        val registrado = (avances.registrarAvance("o-3", "u-tec-luis", TipoAvance.HALLAZGO, "Cable cortado en el radio", emptyList())
+            as Resultado.Exito).valor
+        assertEquals("No se encontró el avance", mensajeDe(avances.eliminarAvance("o-2", registrado.id, "u-tec-luis")))
+        assertEquals(
+            "No se encontró el avance",
+            mensajeDe(avances.editarAvance("o-2", registrado.id, "u-tec-luis", TipoAvance.HALLAZGO, "Descripción en otra orden", emptyList()))
+        )
+        assertTrue(bd.avances.value.any { it.id == registrado.id && it.ordenId == "o-3" })
+    }
+
+    @Test
+    fun alReasignarLaOrdenRegistraAvancesElTecnicoNuevoYNoElAnterior() = runBlocking {
+        bd.ordenes.value = bd.ordenes.value.map { if (it.id == "o-3") it.copy(tecnicoId = "u-tec-marco") else it }
+        assertEquals("Esta orden no está asignada a ti", mensajeDe(avances.registrarAvance("o-3", "u-tec-luis", TipoAvance.HALLAZGO, "Cable cortado en el radio", emptyList())))
+        val delNuevo = avances.registrarAvance("o-3", "u-tec-marco", TipoAvance.HALLAZGO, "Fusible del radio quemado", emptyList())
+        assertTrue(delNuevo is Resultado.Exito)
+        assertTrue(bd.avances.value.any { it.ordenId == "o-3" && it.tecnicoId == "u-tec-marco" })
     }
 
     @Test

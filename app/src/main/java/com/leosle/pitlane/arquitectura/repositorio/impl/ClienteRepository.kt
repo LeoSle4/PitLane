@@ -1,6 +1,7 @@
 package com.leosle.pitlane.arquitectura.repositorio.impl
 
 import com.leosle.pitlane.arquitectura.repositorio.IClienteRepository
+import com.leosle.pitlane.arquitectura.datasource.DniYaRegistradoException
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.util.Busqueda
 import com.leosle.pitlane.util.Textos
@@ -11,8 +12,11 @@ import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.VehiculoConHistorial
 import com.leosle.pitlane.util.Resultado
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /** Gestión de clientes del Jefe de Taller sobre las fuentes de usuarios y documentos. */
@@ -47,27 +51,20 @@ class ClienteRepository(
             FichaCliente(cliente, historiales)
         }
 
+    /**
+     * Pide al servidor los [limite] clientes con `ultimaActividad` más reciente (campo que mantienen las funciones
+     * del servidor) en vez de recorrer usuarios, vehículos, órdenes y solicitudes. Las placas salen de una consulta
+     * por cliente.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observarClientesRecientes(limite: Int): Flow<List<ResultadoBusqueda>> =
-        combine(
-            usuarios.observarUsuarios(),
-            documentos.vehiculos.observarTodos(),
-            documentos.ordenes.observarTodos(),
-            documentos.solicitudes.observarTodos(),
-            usuarios.usuarioActual
-        ) { listaUsuarios, listaVehiculos, listaOrdenes, listaSolicitudes, actor ->
-            if (!actor.esJefe()) return@combine emptyList()
-            val ultimaActividad = HashMap<String, Long>()
-            fun registrar(clienteId: String, fecha: Long) {
-                ultimaActividad[clienteId] = maxOf(ultimaActividad[clienteId] ?: Long.MIN_VALUE, fecha)
-            }
-            listaOrdenes.forEach { registrar(it.clienteId, it.fechaUltimoCambio) }
-            listaSolicitudes.forEach { registrar(it.clienteId, it.creadaEn) }
-            listaUsuarios.filter { it.rol == Rol.CLIENTE && it.id in ultimaActividad }
-                .sortedByDescending { ultimaActividad.getValue(it.id) }
-                .take(limite)
-                .map { cliente ->
-                    ResultadoBusqueda(cliente, emptyList(), listaVehiculos.filter { it.clienteId == cliente.id }.map { it.placa })
+        usuarios.usuarioActual.flatMapLatest { actor ->
+            if (!actor.esJefe()) flowOf(emptyList())
+            else usuarios.observarClientesPorActividad(limite).map { lista ->
+                lista.filter { it.rol == Rol.CLIENTE }.map { cliente ->
+                    ResultadoBusqueda(cliente, emptyList(), documentos.vehiculos.listarDonde("clienteId", cliente.id).map { it.placa })
                 }
+            }
         }
 
     /**
@@ -116,7 +113,11 @@ class ClienteRepository(
         return palabras.all { nombre.contains(it) || documento.contains(it) }
     }
 
-    /** Crea un cliente sin cuenta; rechaza DNI o correo repetidos. */
+    /**
+     * Crea un cliente sin cuenta; rechaza DNI o correo repetidos. El DNI se consulta primero para dar el id del
+     * cliente existente; si otro registro lo gana entre la consulta y el guardado, la reserva `dnis/{dni}` lo rechaza
+     * y se responde el mismo mensaje, sin id.
+     */
     override suspend fun registrarCliente(
         nombres: String,
         apellidos: String,
@@ -126,7 +127,7 @@ class ClienteRepository(
     ): Resultado<Usuario> {
         val existentes = usuarios.listarUsuarios()
         existentes.firstOrNull { it.dni == dni }?.let {
-            return Resultado.Error("Ya existe un cliente con ese DNI", it.id)
+            return Resultado.Error(MENSAJE_DNI_REPETIDO, it.id)
         }
         if (correo.isNotBlank() && existentes.any { it.correo.equals(correo.trim(), ignoreCase = true) }) {
             return Resultado.Error("Ya existe un usuario con ese correo")
@@ -142,7 +143,11 @@ class ClienteRepository(
             rol = Rol.CLIENTE,
             tieneCuenta = false
         )
-        usuarios.guardarUsuario(cliente)
+        try {
+            usuarios.guardarUsuario(cliente)
+        } catch (_: DniYaRegistradoException) {
+            return Resultado.Error(MENSAJE_DNI_REPETIDO)
+        }
         return Resultado.Exito(cliente)
     }
 
@@ -175,6 +180,7 @@ class ClienteRepository(
     }
 }
 
+private const val MENSAJE_DNI_REPETIDO = "Ya existe un cliente con ese DNI"
 private const val LARGO_MINIMO_BUSQUEDA = 3
 private const val LARGO_MAXIMO_TERMINO = 20
 private const val MAXIMO_COINCIDENCIAS = 30
