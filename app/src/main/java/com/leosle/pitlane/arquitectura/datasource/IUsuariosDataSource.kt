@@ -6,6 +6,9 @@ import com.leosle.pitlane.util.Resultado
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
+/** Otro usuario ganó el DNI: la reserva `dnis/{dni}` ya existía cuando se intentó registrar este perfil. */
+class DniYaRegistradoException : Exception("El DNI ya está registrado")
+
 /**
  * Fuente de datos de las cuentas: inicio de sesión, colección de usuarios y funciones de cuenta
  * que solo puede ejecutar el servidor (crear técnicos, unir al cliente por DNI y desactivar cuentas).
@@ -33,13 +36,23 @@ interface IUsuariosDataSource {
      */
     suspend fun buscarClientesPorTermino(termino: String, limite: Int): List<Usuario>
 
+    /**
+     * Emite, cada vez que cambian, como máximo [limite] (de 1 a 100) clientes con actividad, del que tuvo actividad
+     * más reciente al más antiguo. La base ordena por `ultimaActividad`, un campo que mantiene el servidor; los
+     * clientes que no lo tienen (anteriores al relleno `rellenarActividad.mjs`) no aparecen.
+     */
+    fun observarClientesPorActividad(limite: Int): Flow<List<Usuario>>
+
     /** Devuelve el usuario con ese identificador, o nulo si no existe. */
     suspend fun obtenerUsuario(id: String): Usuario?
 
-    /** Guarda el usuario: reemplaza el que tenga el mismo identificador o lo agrega si es nuevo. */
+    /**
+     * Guarda el usuario: reemplaza el que tenga el mismo identificador o lo agrega si es nuevo. Un perfil nuevo
+     * reserva su DNI en el mismo lote; si otro usuario ya lo tiene, no se guarda nada y lanza [DniYaRegistradoException].
+     */
     suspend fun guardarUsuario(usuario: Usuario)
 
-    /** Elimina el registro de un usuario sin cuenta de acceso. */
+    /** Elimina el registro de un usuario sin cuenta de acceso junto con la reserva de su DNI. */
     suspend fun eliminarUsuario(id: String)
 
     /** Genera un identificador nuevo con el prefijo indicado. */

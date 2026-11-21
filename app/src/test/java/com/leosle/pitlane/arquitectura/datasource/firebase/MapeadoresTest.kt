@@ -253,7 +253,14 @@ class MapeadoresTest {
     fun avanceSeConvierteIdaYVuelta() {
         val avance = Avance("a1", "o1", "u9", TipoAvance.TRABAJO_REALIZADO, "Cambio de fusible", listOf(foto), 8L)
 
-        assertEquals(avance, avance.aDocumento().aAvance("a1"))
+        assertEquals(avance, avance.aDocumento().aAvance("a1", "o1"))
+    }
+
+    @Test
+    fun elAvanceNoGuardaSuOrdenNiElAccesoPorqueLosDaLaRuta() {
+        val avance = Avance("a1", "o1", "u9", TipoAvance.HALLAZGO, "Fusible quemado", emptyList(), 8L)
+
+        assertEquals(setOf("tecnicoId", "tipo", "descripcion", "fotos", "fechaHora"), avance.aDocumento().keys)
     }
 
     @Test

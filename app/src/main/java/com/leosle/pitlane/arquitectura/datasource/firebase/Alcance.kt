@@ -22,13 +22,16 @@ internal sealed interface Alcance {
 }
 
 /**
- * Calcula qué puede leer [actor]. Si la colección tiene un [campoPropio] (como `usuarioId` en los avisos),
- * todos, también el Jefe, leen solo los documentos suyos; si no, el Jefe lee todo y los demás los que
- * lo incluyen en su campo [CAMPO_ACCESO].
+ * Calcula qué puede leer [actor]. Si la colección es la subcolección de un usuario [dueno] (como su bandeja de
+ * notificaciones), solo ese usuario la lee, entera, y nadie más (tampoco el Jefe). Si es la subcolección de un
+ * documento que decide quién la lee ([delPadre], como los avances de una orden), se lee entera y las reglas la
+ * permiten o la niegan según el padre. Si no, el Jefe lee todo y los demás los documentos que lo incluyen en su campo
+ * [CAMPO_ACCESO].
  */
-internal fun alcanceDe(actor: Usuario?, campoPropio: String? = null): Alcance = when {
+internal fun alcanceDe(actor: Usuario?, dueno: String? = null, delPadre: Boolean = false): Alcance = when {
     actor == null || !actor.activo -> Alcance.Nada
-    campoPropio != null -> Alcance.Igual(campoPropio, actor.id)
+    dueno != null -> if (actor.id == dueno) Alcance.Todo else Alcance.Nada
+    delPadre -> Alcance.Todo
     actor.rol == Rol.JEFE -> Alcance.Todo
     else -> Alcance.Contiene(CAMPO_ACCESO, actor.id)
 }

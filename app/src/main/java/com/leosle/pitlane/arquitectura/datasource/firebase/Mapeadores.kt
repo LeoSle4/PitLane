@@ -243,8 +243,8 @@ internal fun Documento.aOrden(id: String): Orden = Orden(
     esquema = esquema()
 )
 
+/** El avance vive en `ordenes/{ordenId}/avances/{id}`: la ruta da su orden, así que el documento no la repite. */
 internal fun Avance.aDocumento(): Documento = mapOf(
-    "ordenId" to ordenId,
     "tecnicoId" to tecnicoId,
     "tipo" to tipo.name,
     "descripcion" to descripcion,
@@ -252,9 +252,9 @@ internal fun Avance.aDocumento(): Documento = mapOf(
     "fechaHora" to fechaHora
 )
 
-internal fun Documento.aAvance(id: String): Avance = Avance(
+internal fun Documento.aAvance(id: String, ordenId: String): Avance = Avance(
     id = id,
-    ordenId = texto("ordenId"),
+    ordenId = ordenId,
     tecnicoId = texto("tecnicoId"),
     tipo = enumeracion<TipoAvance>("tipo"),
     descripcion = texto("descripcion"),

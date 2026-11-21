@@ -6,8 +6,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.functions.FirebaseFunctions
+import com.leosle.pitlane.arquitectura.datasource.DniYaRegistradoException
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
 import com.leosle.pitlane.modelo.DatosRegistroCliente
 import com.leosle.pitlane.modelo.Rol
@@ -22,10 +24,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val USUARIOS = "usuarios"
+private const val DNIS = "dnis"
 private const val ETIQUETA = "UsuariosDataSource"
 
 /** Tiempo máximo que se espera el perfil de una sesión guardada antes de pedir que se inicie de nuevo. */
@@ -33,6 +37,13 @@ private const val TIEMPO_RESTAURAR_SESION_MS = 5_000L
 
 /** Reclamo de la sesión con el identificador del documento del usuario; lo escriben las funciones del servidor. */
 private const val RECLAMO_USUARIO_ID = "usuarioId"
+
+/**
+ * Ruta y datos de la reserva del DNI de un usuario: el id del documento ES el DNI, así que Firestore solo lo crea si
+ * está libre. Las reglas exigen que se escriba en el mismo lote que el perfil.
+ */
+internal fun rutaYDatosDeReservaDeDni(usuario: Usuario): Pair<String, Map<String, String>> =
+    "$DNIS/${usuario.dni}" to mapOf("usuarioId" to usuario.id)
 
 /**
  * Cuentas en Firebase Authentication y perfiles en la colección `usuarios` de Firestore. Crear técnicos,
@@ -56,8 +67,16 @@ class UsuariosDataSource(
         bd.collection(USUARIOS), sesion,
         aDocumento = Usuario::aDocumento,
         desdeDocumento = { id, campos -> campos.aUsuario(id) },
-        acceso = { FieldValue.arrayUnion(it.id) }
+        acceso = { FieldValue.arrayUnion(it.id) },
+        alGuardar = ::reservarDni
     )
+
+    /** Al crear un perfil reserva su DNI en `dnis/{dni}`; al editarlo el DNI no cambia y la reserva sigue. */
+    private suspend fun reservarDni(anterior: Usuario?, nuevo: Usuario) {
+        if (anterior != null) return
+        val (ruta, datos) = rutaYDatosDeReservaDeDni(nuevo)
+        escribir(bd.document(ruta), datos)
+    }
 
     init {
         auth.addAuthStateListener { alCambiarSesion(it.currentUser) }
@@ -103,11 +122,30 @@ class UsuariosDataSource(
     override suspend fun buscarClientesPorTermino(termino: String, limite: Int): List<Usuario> =
         perfiles.buscarPorTermino("terminos", termino, limite).filter { it.rol == Rol.CLIENTE }
 
+    /** Solo el Jefe lee a todos los usuarios; el filtro de rol es una guarda más, no la que protege los datos. */
+    override fun observarClientesPorActividad(limite: Int): Flow<List<Usuario>> =
+        perfiles.observarRecientes("ultimaActividad", limite).map { lista -> lista.filter { it.rol == Rol.CLIENTE } }
+
     override suspend fun obtenerUsuario(id: String): Usuario? = perfiles.obtener(id)
 
-    override suspend fun guardarUsuario(usuario: Usuario) = perfiles.guardar(usuario.id, usuario)
+    /** El perfil y la reserva de su DNI se escriben juntos o ninguno, como el vehículo y su placa. */
+    override suspend fun guardarUsuario(usuario: Usuario) {
+        try {
+            enLoteDe(bd) { perfiles.guardar(usuario.id, usuario) }
+        } catch (e: FirebaseFirestoreException) {
+            // Si el DNI ya estaba reservado, las reglas rechazan el lote completo y el perfil no se creó
+            val perdioElDni = e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED ||
+                e.code == FirebaseFirestoreException.Code.ALREADY_EXISTS
+            if (perdioElDni && perfiles.obtener(usuario.id) == null) throw DniYaRegistradoException()
+            throw e
+        }
+    }
 
-    override suspend fun eliminarUsuario(id: String) = perfiles.eliminar(id)
+    /** Un perfil anterior a las reservas no tiene ninguna; las reglas aceptan borrar una reserva inexistente. */
+    override suspend fun eliminarUsuario(id: String) = enLoteDe(bd) {
+        perfiles.obtener(id)?.let { borrar(bd.document(rutaYDatosDeReservaDeDni(it).first)) }
+        perfiles.eliminar(id)
+    }
 
     override fun nuevoId(prefijo: String): String = "$prefijo-${bd.collection(USUARIOS).document().id}"
 

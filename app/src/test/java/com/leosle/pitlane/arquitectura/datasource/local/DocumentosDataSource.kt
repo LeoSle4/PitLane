@@ -23,18 +23,20 @@ class DocumentosDataSource internal constructor(
         ColeccionLocal(bd.vehiculos, Vehiculo::id, { bd.nuevoId("v") }, { Busqueda.terminosDePlaca(it.placa) })
 
     override val solicitudes: IColeccion<Solicitud> =
-        ColeccionLocal(bd.solicitudes, Solicitud::id, { bd.nuevoId("s") })
+        ColeccionLocal(bd.solicitudes, Solicitud::id, { bd.nuevoId("s") }, actividad = { it.creadaEn })
 
     override val ordenes: IColeccion<Orden> =
-        ColeccionLocal(bd.ordenes, Orden::id, { bd.nuevoId("o") }) { anterior, nueva ->
+        ColeccionLocal(bd.ordenes, Orden::id, { bd.nuevoId("o") }, actividad = { it.fechaUltimoCambio }) { anterior, nueva ->
             funciones.alEscribirOrden(anterior, nueva)
         }
 
-    override val avances: IColeccion<Avance> =
-        ColeccionLocal(bd.avances, Avance::id, { bd.nuevoId("a") })
+    /** Simula la subcolección `ordenes/{ordenId}/avances` sobre la lista común: su orden es `ordenId`. */
+    override fun avancesDe(ordenId: String): IColeccion<Avance> =
+        ColeccionLocal(bd.avances, Avance::id, { bd.nuevoId("a") }, pertenece = { it.ordenId == ordenId })
 
-    override val notificaciones: IColeccion<Notificacion> =
-        ColeccionLocal(bd.notificaciones, Notificacion::id, { bd.nuevoId("not") })
+    /** Simula la subcolección `usuarios/{usuarioId}/notificaciones` sobre la lista común: su dueño es `usuarioId`. */
+    override fun notificacionesDe(usuarioId: String): IColeccion<Notificacion> =
+        ColeccionLocal(bd.notificaciones, Notificacion::id, { bd.nuevoId("not") }, pertenece = { it.usuarioId == usuarioId })
 
     override suspend fun buscarPlaca(placa: String): PlacaRegistrada? =
         bd.vehiculos.value.firstOrNull { it.placa == placa }?.let { PlacaRegistrada(it.clienteId) }

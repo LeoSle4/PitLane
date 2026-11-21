@@ -18,8 +18,6 @@ import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.Vehiculo
 import java.util.Date
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
 
 private const val CONTADORES = "contadores"
 private const val CONTADOR_ORDENES = "ordenes"
@@ -27,6 +25,22 @@ private const val CAMPO_ULTIMO = "ultimo"
 private const val USUARIOS = "usuarios"
 private const val TOKENS = "tokensDispositivo"
 private const val PLACAS = "placas"
+private const val NUMEROS_ORDEN = "numerosOrden"
+private const val NOTIFICACIONES = "notificaciones"
+private const val ORDENES = "ordenes"
+private const val AVANCES = "avances"
+
+/**
+ * Bandeja de notificaciones del usuario: una subcolección dentro de su perfil. Conserva el nombre `notificaciones`
+ * porque la política TTL de `expiraEn` es por grupo de colecciones y así la misma política la alcanza.
+ */
+internal fun rutaDeNotificaciones(usuarioId: String): String = "$USUARIOS/$usuarioId/$NOTIFICACIONES"
+
+/**
+ * Avances de una orden: una subcolección dentro de la orden. Las reglas autorizan desde la orden padre, así que el
+ * avance no copia su `acceso` ni guarda su `ordenId`.
+ */
+internal fun rutaDeAvances(ordenId: String): String = "$ORDENES/$ordenId/$AVANCES"
 
 /**
  * Ruta y datos de la reserva de la placa de un vehículo: el id del documento ES la placa, así que Firestore solo
@@ -34,6 +48,13 @@ private const val PLACAS = "placas"
  */
 internal fun rutaYDatosDeReservaDePlaca(vehiculo: Vehiculo): Pair<String, Map<String, String>> =
     "$PLACAS/${vehiculo.placa}" to mapOf("vehiculoId" to vehiculo.id, "clienteId" to vehiculo.clienteId)
+
+/**
+ * Ruta y datos de la reserva del número de una orden: el id del documento ES el número, así que Firestore solo lo
+ * crea si está libre. Las reglas exigen que se escriba en el mismo lote que la orden; el contador solo genera números.
+ */
+internal fun rutaYDatosDeReservaDeNumero(numero: String, ordenId: String): Pair<String, Map<String, String>> =
+    "$NUMEROS_ORDEN/$numero" to mapOf("ordenId" to ordenId)
 
 /** Número de orden con el formato ORD-0001 a partir de su correlativo. */
 internal fun numeroDeOrden(correlativo: Long): String = "ORD-%04d".format(correlativo)
@@ -63,8 +84,7 @@ class DocumentosDataSource(
 
     private val usuariosBd = bd.collection("usuarios")
     private val vehiculosBd = bd.collection("vehiculos")
-    private val ordenesBd = bd.collection("ordenes")
-    private val avancesBd = bd.collection("avances")
+    private val ordenesBd = bd.collection(ORDENES)
 
     private val vehiculosBase = ColeccionFirestore(
         vehiculosBd, actor,
@@ -110,31 +130,26 @@ class DocumentosDataSource(
         alGuardar = ::alGuardarOrden
     )
 
-    /** La orden y los permisos que arrastra (vehículo, perfiles y avances) se escriben juntos o ninguno. */
+    /** La orden y los permisos que arrastra (vehículo y perfiles) se escriben juntos o ninguno. */
     override val ordenes: IColeccion<Orden> = object : IColeccion<Orden> by ordenesBase {
         override suspend fun guardar(id: String, valor: Orden) = enLote { ordenesBase.guardar(id, valor) }
     }
 
-    /** Un avance lo pueden leer quienes pueden leer su orden. */
-    override val avances: IColeccion<Avance> = ColeccionFirestore(
-        avancesBd, actor,
+    /** Los avances de una orden los leen quienes pueden leer la orden: las reglas lo deciden por la orden padre. */
+    override fun avancesDe(ordenId: String): IColeccion<Avance> = ColeccionFirestore(
+        bd.collection(rutaDeAvances(ordenId)), actor,
+        delPadre = true,
         aDocumento = Avance::aDocumento,
-        desdeDocumento = { id, campos -> campos.aAvance(id) },
-        acceso = { accesoDeLaOrden(it.ordenId) }
+        desdeDocumento = { id, campos -> campos.aAvance(id, ordenId) }
     )
 
-    /** Los avisos son personales: cada usuario, incluido el Jefe, lee solo los suyos. */
-    override val notificaciones: IColeccion<Notificacion> = ColeccionFirestore(
-        bd.collection("notificaciones"), actor,
-        campoPropio = "usuarioId",
+    /** Los avisos son personales: cada usuario, incluido el Jefe, lee solo su propia bandeja. */
+    override fun notificacionesDe(usuarioId: String): IColeccion<Notificacion> = ColeccionFirestore(
+        bd.collection(rutaDeNotificaciones(usuarioId)), actor,
+        dueno = usuarioId,
         aDocumento = Notificacion::aDocumento,
         desdeDocumento = { id, campos -> campos.aNotificacion(id) }
     )
-
-    private suspend fun accesoDeLaOrden(ordenId: String): List<String> {
-        val campo = ordenesBd.document(ordenId).get().esperar().get(CAMPO_ACCESO)
-        return (campo as? List<*>).orEmpty().filterIsInstance<String>()
-    }
 
     /** Al crear un vehículo reserva su placa en `placas/{placa}`; al editarlo la placa no cambia y la reserva sigue. */
     private suspend fun reservarPlaca(anterior: Vehiculo?, nuevo: Vehiculo) {
@@ -144,11 +159,15 @@ class DocumentosDataSource(
     }
 
     /**
-     * Al crear una orden o cambiar su técnico, vehículo o cliente, agrega al técnico en los permisos del vehículo
+     * Al crear una orden reserva su número en `numerosOrden/{numero}`. Al crearla o cambiar su técnico, vehículo o cliente, agrega al técnico en los permisos del vehículo
      * y del cliente, y al cliente en los del técnico. Si cambió el técnico, se los quita al anterior cuando ya no
-     * le queda otra orden con ese cliente o vehículo, y actualiza los permisos de los avances de la orden.
+     * le queda otra orden con ese cliente o vehículo. Los avances no se tocan: las reglas los autorizan por su orden.
      */
     private suspend fun alGuardarOrden(anterior: Orden?, nueva: Orden) {
+        if (anterior == null) {
+            val (ruta, datos) = rutaYDatosDeReservaDeNumero(nueva.numero, nueva.id)
+            escribir(bd.document(ruta), datos)
+        }
         val mismosParticipantes = anterior != null && anterior.tecnicoId == nueva.tecnicoId &&
             anterior.clienteId == nueva.clienteId && anterior.vehiculoId == nueva.vehiculoId
         if (mismosParticipantes) return
@@ -169,10 +188,6 @@ class DocumentosDataSource(
         }
         if (!sigueConOtraOrden("vehiculoId", nueva.vehiculoId)) {
             escribir(vehiculosBd.document(nueva.vehiculoId), mapOf(CAMPO_ACCESO to FieldValue.arrayRemove(tecnicoAnterior)))
-        }
-        val permisos = listOf(nueva.clienteId, nueva.tecnicoId)
-        avancesBd.whereEqualTo("ordenId", nueva.id).get().esperar().documents.forEach {
-            escribir(it.reference, mapOf(CAMPO_ACCESO to permisos))
         }
     }
 
@@ -202,13 +217,7 @@ class DocumentosDataSource(
      * Las escrituras que haga [bloque] se acumulan en un lote y se aplican juntas al terminar; si [bloque] falla
      * no se escribe nada. Las lecturas dentro del bloque no ven las escrituras aún pendientes del mismo lote.
      */
-    override suspend fun <R> enLote(bloque: suspend () -> R): R {
-        if (coroutineContext[LoteEscrituras] != null) return bloque()
-        val lote = LoteEscrituras(bd.batch())
-        val resultado = withContext(lote) { bloque() }
-        lote.lote.commit().esperar()
-        return resultado
-    }
+    override suspend fun <R> enLote(bloque: suspend () -> R): R = enLoteDe(bd, bloque)
 
     override suspend fun guardarTokenDispositivo(usuarioId: String, token: String) {
         val (ruta, datos) = rutaYDatosDeTokenDispositivo(usuarioId, token, System.currentTimeMillis())
