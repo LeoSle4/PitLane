@@ -26,7 +26,7 @@ DOCUMENTOS = {
              ("fechaRegistro", ""), ("claims: usuarioId, rol", "", "viajan en el token")],
             EXTERNA, "fuera de Firestore: vive en Authentication"),
     "DIS": (1, "«subcolección de USUARIO»", "DISPOSITIVO",
-            [("token", "id"), ("expiraEn", "", "TTL 60 días")],
+            [("token", "id", "token FCM real del teléfono"), ("expiraEn", "", "TTL 60 días")],
             DETALLE_COL, "usuarios/{id}/tokensDispositivo/{token}"),
     "USU": (2, "«colección»", "USUARIO",
             [("id", "id", "lo genera el servidor"), ("authUid  → CUENTA", "ref", "vacío si no tiene cuenta"),
@@ -144,7 +144,7 @@ def dibujar():
     arriba["EST"] = arriba["HIS"] + alto("HIS") + 70
     fin = arriba["EST"] + alto("EST")
 
-    c = Lienzo(2370, max(fin, arriba["EST"] + 7 * 28) + 440)
+    c = Lienzo(2370, max(fin, arriba["EST"] + 7 * 28) + 465)
     for clave, (col, est, nombre, filas, relleno, pie) in DOCUMENTOS.items():
         c.clase(clave, C[col], arriba[clave] + alto(clave) / 2, est, nombre, filas, relleno, ancho=W, nota=pie if pie.startswith("fuera") else "Firestore: " + pie)
 
@@ -248,7 +248,7 @@ def leyenda(c, y_leyenda, y_apoyo):
     for i, (t, color) in enumerate(notas):
         c.texto(1440, y_leyenda + 10 + i * 28, t, 13, ancla="start", color=color)
 
-    c.fondos.append(f'<rect x="40" y="{y_apoyo}" width="2290" height="355" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>')
+    c.fondos.append(f'<rect x="40" y="{y_apoyo}" width="2290" height="380" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4"/>')
     c.texto(70, y_apoyo + 30, "Herramientas de Firebase: qué hace cada una en este modelo", 17, "bold", ancla="start")
     reglas = [
         ("Herramienta", "Qué hace en este modelo"),
@@ -257,7 +257,8 @@ def leyenda(c, y_leyenda, y_apoyo):
         ("Reglas de seguridad", "quién lee y escribe (acceso[]); transiciones del estado; HISTORIAL DE ESTADO solo crece; CONFORMIDAD máx. 1 y fija; fechas ≈ hora del servidor; exigen la reserva con su documento"),
         ("Transacción", "el CONTADOR entrega el siguiente número de ORDEN sin que dos clientes reciban el mismo"),
         ("Lote atómico", "valores sin repetir: el id de la reserva es el valor; VEHÍCULO+placa, USUARIO+DNI y ORDEN+número se escriben juntos o ninguno"),
-        ("Cloud Functions", "crean CUENTA, USUARIO y DNI en una transacción, la NOTIFICACIÓN de cada cambio (en la bandeja del cliente) y ultimaActividad"),
+        ("Cloud Functions", "crean CUENTA, USUARIO y DNI en una transacción, la NOTIFICACIÓN de cada cambio (en la bandeja del cliente), su push por FCM a los DISPOSITIVO (borran los tokens inválidos) y ultimaActividad"),
+        ("Cloud Messaging (FCM)", "entrega el push de datos al teléfono con la app en segundo plano o cerrada; el id del DISPOSITIVO es el token FCM"),
         ("Política TTL", "borra NOTIFICACIÓN (90 días) y DISPOSITIVO (60 días) sin código"),
         ("Cloud Storage", "archivos de las fotos (JPG o PNG, hasta 5 MB) con sus propias reglas"),
         ("Índices", "consultas por acceso[] + estado, cliente, vehículo u orden; terminos[] con array-contains"),

@@ -71,7 +71,7 @@ def secuencia(c, x0, y0, o):
                ("notificaciones\ny usuarios", 4)]
     paso = 230
     xs = [x0 + 110 + i * paso for i in range(len(actores))]
-    yfin = y0 + 600
+    yfin = y0 + 640
     for (nombre, i) in actores:
         x = xs[i]
         c.formas.append(f'<rect x="{x - 95}" y="{y0}" width="190" height="52" rx="6" fill="#dbeafe" stroke="{TINTA}" stroke-width="1.4"/>')
@@ -91,8 +91,10 @@ def secuencia(c, x0, y0, o):
         (1, 2, "4. guarda el documento", False),
         (2, 3, "5. dispara onDocumentWritten", False),
         (3, 4, "6. notificarOrden: crea la notificación", False),
-        (None, None, "en usuarios/{cliente}/notificaciones (tiempo real)", None),
-        (3, 4, "7. actividadPorOrden: sube", False),
+        (None, None, "en usuarios/{cliente}/notificaciones", None),
+        (3, 4, "7. notificarOrden: envía el push por FCM", False),
+        (None, None, "a usuarios/{cliente}/tokensDispositivo (borra los inválidos)", None),
+        (3, 4, "8. actividadPorOrden: sube", False),
         (None, None, "usuarios/{cliente}.ultimaActividad", None),
     ]
     y = y0 + 95
@@ -160,7 +162,7 @@ def razones(c, x0, y0):
 
 ARBOL = [
     ("usuarios/{id}", "USUARIO (+ CLIENTE, JEFE DE TALLER, TÉCNICO por rol)", "col"),
-    ("  ├─ tokensDispositivo/{token}", "DISPOSITIVO · vence con TTL", "sub"),
+    ("  ├─ tokensDispositivo/{token}", "DISPOSITIVO · token FCM real como id · vence con TTL", "sub"),
     ("  └─ notificaciones/{id}", "NOTIFICACIÓN · la crea notificarOrden · TTL", "sub"),
     ("dnis/{dni}", "reserva del DNI (se escribe con el USUARIO)", "apoyo"),
     ("vehiculos/{id}", "VEHÍCULO", "col"),
