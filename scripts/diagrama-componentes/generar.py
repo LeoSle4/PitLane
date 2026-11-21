@@ -65,7 +65,7 @@ for c in orden_cols:
     ancho = cfg["ancho_vista"] + (0.5 if c == "NOT" else 0)
     nodo(f"V_{c}", "View", cl[1], "view", ancho, grupo=f"g_{c}")
 nodo("V_NAV", "Android", "NavegacionView", "android", 2.6, linea2="actividades y rutas por rol")
-nodo("V_MSG", "Android", "MensajesPushService", "android", 2.6, linea2="FirebaseMessagingService")
+nodo("V_MSG", "Android", "ServicioMensajesFcm", "android", 2.6, linea2="FirebaseMessagingService")
 w('    }')
 
 # ---------- VIEWMODEL ----------

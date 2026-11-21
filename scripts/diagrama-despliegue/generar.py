@@ -31,7 +31,7 @@ artefacto("A_BUILD", "Android Studio · Gradle\\nservicio-electrico-freddy.apk",
 w(f'  s_wd [shape=box, {T}, fixedsize=true, width={ESP_WS_DEV}, height=0.1, label=""];')
 artefacto("APK", "servicio-electrico-freddy.apk\\nKotlin · MVVM", 2.9, 0.75)
 ancla("M_dev", "g_eje")
-artefacto("GPS", "MensajesPushService\\nFirebaseMessagingService", 2.9, 0.75)
+artefacto("GPS", "ServicioMensajesFcm\\nMensajesPushService", 2.9, 0.75)
 fila("A_BUILD", "s_wd", "APK", "M_dev", "GPS")
 
 # r2: segundo artefacto de la estación y anclas inferiores del teléfono
