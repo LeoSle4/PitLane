@@ -242,11 +242,11 @@ def dnis():  # reserva: el id del documento ES el DNI, así Firestore no deja re
     return {dni: {"usuarioId": uid} for uid, (_n, _a, dni, *_r) in U.items()}
 
 
-def dispositivos():  # no están en el seed: ejemplo ilustrativo de la subcolección
+def dispositivos():  # no están en el seed: ejemplo ilustrativo; el id es el token FCM real que registra la app
     return {
-        "usuarios/u-cli-ana/tokensDispositivo/fcm_token_ejemplo_ana_1": {"expiraEn": ts(AHORA + 60 * DIA)},
-        "usuarios/u-cli-ana/tokensDispositivo/fcm_token_ejemplo_ana_2": {"expiraEn": ts(AHORA + 47 * DIA)},
-        "usuarios/u-tec-luis/tokensDispositivo/fcm_token_ejemplo_luis_1": {"expiraEn": ts(AHORA + 60 * DIA)},
+        "usuarios/u-cli-ana/tokensDispositivo/fcm_token_ejemplo_ana_1": {"token": "fcm_token_ejemplo_ana_1", "expiraEn": ts(AHORA + 60 * DIA)},
+        "usuarios/u-cli-ana/tokensDispositivo/fcm_token_ejemplo_ana_2": {"token": "fcm_token_ejemplo_ana_2", "expiraEn": ts(AHORA + 47 * DIA)},
+        "usuarios/u-tec-luis/tokensDispositivo/fcm_token_ejemplo_luis_1": {"token": "fcm_token_ejemplo_luis_1", "expiraEn": ts(AHORA + 60 * DIA)},
     }
 
 
