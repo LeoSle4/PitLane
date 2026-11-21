@@ -34,7 +34,7 @@ Rama: `feat/modelo-datos-nosql`. Entrega: `ask-on-risk`. Pruebas de reglas: `cd 
 - [x] T9 S9 TTL de notificaciones y códigos. route: inline (cambio pequeño del servidor). RED: 2 pruebas de funciones; GREEN: 47 de funciones, 111 de reglas, Gradle verde
 - [x] T10 S10 versión de esquema `esquema: 2` en órdenes y solicitudes. route: delegada (contexto). RED: reglas del commit anterior fallan las pruebas nuevas; GREEN: 116 de reglas, 47 de funciones, Gradle verde; verificador independiente sin bloqueos
 - [x] T11 documentación y diagramas finales de la segunda ronda. route: inline. Diagramas lógico y físico regenerados con términos, versión, vencimientos e índices
-- [ ] T12 S11 `ultimaActividad` del cliente para los recientes. route: delegada (contexto)
+- [x] T12 S11 `ultimaActividad` del cliente para los recientes. route: inline (retomada). GREEN: 119 de reglas, 53 de funciones, 194 Android
 
 ## Log
 
@@ -117,3 +117,5 @@ L17 (T10, evaluación como ingeniero NoSQL):
 L18 (revisión final, evaluación como ingeniero NoSQL): al contar de nuevo las escuchas de colección completa aparecieron dos que se me habían escapado. `observarVehiculo(id)` escuchaba TODOS los vehículos para encontrar uno, y `observarAvances(ordenId)` escuchaba TODOS los avances y TODOS los usuarios para mostrar los de una orden (con el Jefe, cada apertura de un detalle leía cada avance de la historia). Ahora el vehículo se observa por su documento y los avances por `ordenId` (índice `acceso`+`ordenId` ya declarado en T4), con los técnicos resueltos por `get` solo para los que aparecen. Las pruebas comprueban 0 escuchas completas y la consulta exacta. Escuchas de colección completa que quedan en los repositorios: `notificaciones` (ya acotada por el alcance `usuarioId`, no lee las de otros), el cruce de respaldo y la lista de solicitudes del Jefe (`Consultas.kt`) y `observarClientesRecientes` (pendiente de `ultimaActividad`).
 
 L19 (2026-10-31, usuario): respondió "Si" a la propuesta de seguir con `ultimaActividad` del cliente (la otra opción, decidir cómo paginar el historial, queda pendiente de su decisión).
+
+L20 (2026-11-21, T12 cerrada): `observarClientesRecientes` consulta `usuarios` con `orderBy(ultimaActividad desc) limit N` (índice automático de un campo) y solo lee las placas de esos N clientes, en vez de escuchar usuarios, vehículos, órdenes y solicitudes completos. Lo mantienen `actividadPorOrden` y `actividadPorSolicitud` en una transacción que nunca lo baja; la app no puede escribirlo (lista cerrada de campos de las reglas). Relleno `rellenarActividad.mjs` en simulacro, no ejecutado; va antes de la app nueva. Evaluación NoSQL: campo calculado mantenido por disparadores; una escritura más por evento a cambio de que la pantalla de inicio del Jefe lea N documentos en vez de cuatro colecciones.
