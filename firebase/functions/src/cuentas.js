@@ -4,12 +4,39 @@ import { terminosDePersona } from './busqueda.js';
 import { normalizarCuenta, validarCuenta } from './validacion.js';
 
 const usuarios = bd.collection('usuarios');
+const dnis = bd.collection('dnis');
 const ESTADOS_EN_TALLER = ['INGRESADO', 'EN_REPARACION', 'LISTO'];
 const ESTADOS_EN_CURSO = ['INGRESADO', 'EN_REPARACION'];
+const MENSAJE_DNI_REPETIDO = 'Ya existe un usuario con ese DNI';
 
+/**
+ * Perfil que ya usa el DNI: primero el de su reserva `dnis/{dni}` y, si no la hay, el que encuentre la consulta (un
+ * perfil anterior a las reservas, mientras no se ejecute `rellenarDnis.mjs`). Es una comprobación previa para dar el
+ * mensaje antes de crear la cuenta; la garantía es la reserva que escribe [escribirPerfilConDni].
+ */
 async function usuarioPorDni(dni) {
+  const reserva = await dnis.doc(dni).get();
+  if (reserva.exists) {
+    const perfil = await usuarios.doc(reserva.data().usuarioId).get();
+    if (perfil.exists) return { id: perfil.id, datos: perfil.data() };
+  }
   const resultado = await usuarios.where('dni', '==', dni).limit(1).get();
   return resultado.empty ? null : { id: resultado.docs[0].id, datos: resultado.docs[0].data() };
+}
+
+/**
+ * Escribe el perfil [id] y la reserva de su DNI en una sola transacción. Si la reserva ya existe y es de otro usuario,
+ * no escribe nada y rechaza con el mensaje del DNI repetido; si es suya (un registro previo del Jefe), la conserva;
+ * si no existe, la crea con `create`, que solo funciona si el id está libre.
+ */
+async function escribirPerfilConDni(id, dni, perfil, opciones = {}) {
+  const reserva = dnis.doc(dni);
+  await bd.runTransaction(async (transaccion) => {
+    const actual = await transaccion.get(reserva);
+    if (actual.exists && actual.data().usuarioId !== id) throw new HttpsError('already-exists', MENSAJE_DNI_REPETIDO);
+    if (!actual.exists) transaccion.create(reserva, { usuarioId: id });
+    transaccion.set(usuarios.doc(id), perfil, opciones);
+  });
 }
 
 /**
@@ -69,14 +96,14 @@ export const registrarCliente = onCall(async (request) => {
   validar(cuenta);
   const previo = await usuarioPorDni(cuenta.dni);
   if (previo && (previo.datos.tieneCuenta || previo.datos.rol !== 'CLIENTE')) {
-    throw new HttpsError('already-exists', 'Ya existe un usuario con ese DNI');
+    throw new HttpsError('already-exists', MENSAJE_DNI_REPETIDO);
   }
   const mensajeCorreoRepetido = 'Este correo ya está registrado';
   if (await correoEnUso(cuenta.correo, previo?.id)) throw new HttpsError('already-exists', mensajeCorreoRepetido);
   const id = previo?.id ?? `u-cli-${usuarios.doc().id}`;
   await abrirCuenta({
     cuenta, id, rol: 'CLIENTE', mensajeCorreoRepetido,
-    escribirPerfil: (uid) => usuarios.doc(id).set({
+    escribirPerfil: (uid) => escribirPerfilConDni(id, cuenta.dni, {
       ...camposDePerfil(cuenta), rol: 'CLIENTE', activo: true, tieneCuenta: true, authUid: uid,
       terminos: terminosDePersona(cuenta.nombres, cuenta.apellidos, cuenta.dni),
       acceso: FieldValue.arrayUnion(id),
@@ -90,13 +117,13 @@ export const crearTecnico = onCall(async (request) => {
   exigirJefe(request);
   const cuenta = normalizarCuenta(request.data);
   validar(cuenta);
-  if (await usuarioPorDni(cuenta.dni)) throw new HttpsError('already-exists', 'Ya existe un usuario con ese DNI');
+  if (await usuarioPorDni(cuenta.dni)) throw new HttpsError('already-exists', MENSAJE_DNI_REPETIDO);
   const mensajeCorreoRepetido = 'Ya existe un usuario con ese correo';
   if (await correoEnUso(cuenta.correo)) throw new HttpsError('already-exists', mensajeCorreoRepetido);
   const id = `u-tec-${usuarios.doc().id}`;
   await abrirCuenta({
     cuenta, id, rol: 'TECNICO', mensajeCorreoRepetido,
-    escribirPerfil: (uid) => usuarios.doc(id).set({
+    escribirPerfil: (uid) => escribirPerfilConDni(id, cuenta.dni, {
       ...camposDePerfil(cuenta), rol: 'TECNICO', activo: true, tieneCuenta: true, authUid: uid, acceso: [id],
     }),
   });

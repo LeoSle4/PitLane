@@ -41,6 +41,10 @@ async function iniciarSesion(correo, contrasena = CLAVE) {
 
 const reclamos = (token) => JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
 
+/** La reserva `dnis/{dni}` tal como está en la base, o nulo si no existe. */
+const reservaDni = async (dni) => (await bd.collection('dnis').doc(dni).get()).data() ?? null;
+const cuentasCon = async (correo) => (await autenticacion.listUsers()).users.filter((u) => u.email === correo).length;
+
 /** Crea una cuenta con sus reclamos y su perfil, como lo haría el servidor. */
 async function crearCuenta(id, rol, correo, extra = {}) {
   const registro = await autenticacion.createUser({ email: correo, password: CLAVE });
@@ -131,6 +135,35 @@ describe('registrarCliente', () => {
     assert.deepEqual([...perfil.acceso].sort(), ['t1', 'u-cli-previo']);
     assert.deepEqual(perfil.terminos, terminosDePersona('Ana', 'Torres', '12345678'));
     assert.equal(reclamos(await iniciarSesion('ana@correo.com')).usuarioId, 'u-cli-previo');
+    // un registro anterior a las reservas gana la suya al unirse
+    assert.deepEqual(await reservaDni('12345678'), { usuarioId: 'u-cli-previo' });
+  });
+
+  it('reserva el DNI en dnis/{dni} junto con el perfil', async () => {
+    const { resultado } = await llamar('registrarCliente', datosCliente());
+    assert.deepEqual(await reservaDni('12345678'), { usuarioId: resultado.id });
+  });
+
+  it('une el registro previo del Jefe que ya tiene su reserva y la conserva', async () => {
+    await bd.collection('usuarios').doc('u-cli-previo').set({
+      nombres: 'Ana', apellidos: 'Torres', dni: '12345678', telefono: '987654321', correo: '', rol: 'CLIENTE',
+      activo: true, tieneCuenta: false, acceso: ['u-cli-previo'],
+    });
+    await bd.collection('dnis').doc('12345678').set({ usuarioId: 'u-cli-previo' });
+    const { resultado, error } = await llamar('registrarCliente', datosCliente());
+    assert.equal(error, undefined);
+    assert.equal(resultado.id, 'u-cli-previo');
+    assert.equal((await bd.collection('usuarios').doc('u-cli-previo').get()).data().tieneCuenta, true);
+    assert.deepEqual(await reservaDni('12345678'), { usuarioId: 'u-cli-previo' });
+  });
+
+  it('un DNI reservado sin perfil que lo use se rechaza de forma atómica: sin perfil ni cuenta nuevos', async () => {
+    await bd.collection('dnis').doc('12345678').set({ usuarioId: 'u-cli-otro' });
+    assert.deepEqual((await llamar('registrarCliente', datosCliente())).error,
+      { estado: 'ALREADY_EXISTS', mensaje: 'Ya existe un usuario con ese DNI' });
+    assert.equal((await bd.collection('usuarios').where('dni', '==', '12345678').get()).size, 0);
+    assert.deepEqual(await reservaDni('12345678'), { usuarioId: 'u-cli-otro' });
+    assert.equal(await cuentasCon('ana@correo.com'), 0);
   });
 });
 
@@ -160,6 +193,20 @@ describe('crearTecnico', () => {
       { estado: 'ALREADY_EXISTS', mensaje: 'Ya existe un usuario con ese DNI' });
     assert.deepEqual((await llamar('crearTecnico', datosCliente({ dni: '87654321', correo: 'tec@correo.com' }), tokenJefe)).error,
       { estado: 'ALREADY_EXISTS', mensaje: 'Ya existe un usuario con ese correo' });
+  });
+
+  it('reserva el DNI en dnis/{dni} junto con el perfil', async () => {
+    const { resultado } = await llamar('crearTecnico', datosCliente({ correo: 'tec@correo.com' }), tokenJefe);
+    assert.deepEqual(await reservaDni('12345678'), { usuarioId: resultado.id });
+  });
+
+  it('un DNI ya reservado se rechaza de forma atómica: sin perfil ni cuenta nuevos', async () => {
+    await bd.collection('dnis').doc('12345678').set({ usuarioId: 'u-cli-otro' });
+    assert.deepEqual((await llamar('crearTecnico', datosCliente({ correo: 'tec@correo.com' }), tokenJefe)).error,
+      { estado: 'ALREADY_EXISTS', mensaje: 'Ya existe un usuario con ese DNI' });
+    assert.equal((await bd.collection('usuarios').where('rol', '==', 'TECNICO').get()).size, 0);
+    assert.deepEqual(await reservaDni('12345678'), { usuarioId: 'u-cli-otro' });
+    assert.equal(await cuentasCon('tec@correo.com'), 0);
   });
 });
 
@@ -242,11 +289,14 @@ describe('verificarPlaca', () => {
 describe('notificarOrden', () => {
   const esperar = (ms) => new Promise((resolver) => setTimeout(resolver, ms));
 
-  /** Espera a que el disparador cree las notificaciones esperadas del usuario, o falla pasado el tiempo. */
+  /** Bandeja del usuario: la subcolección `usuarios/{usuarioId}/notificaciones`. */
+  const bandeja = (usuarioId) => bd.collection('usuarios').doc(usuarioId).collection('notificaciones');
+
+  /** Espera a que el disparador cree las notificaciones esperadas en la bandeja del usuario, o falla pasado el tiempo. */
   async function notificaciones(usuarioId, cantidad) {
     for (let intento = 0; intento < 60; intento += 1) {
-      const lista = (await bd.collection('notificaciones').where('usuarioId', '==', usuarioId).get()).docs
-        .map((d) => d.data()).sort((a, b) => a.fechaHora - b.fechaHora);
+      const lista = (await bandeja(usuarioId).get()).docs
+        .map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.fechaHora - b.fechaHora);
       if (lista.length >= cantidad) return lista;
       await esperar(250);
     }
@@ -266,6 +316,13 @@ describe('notificarOrden', () => {
     assert.equal(lista[0].esIngreso, true);
     assert.equal(lista[0].leida, false);
     assert.equal(lista[0].ordenId, 'o1');
+    // El dueño lo da la ruta; el campo `usuarioId` se conserva igual a ella. El id sale del evento (reintentos idempotentes)
+    assert.equal(lista[0].usuarioId, 'c1');
+    assert.match(lista[0].id, /^n-.+/);
+    assert.deepEqual(Object.keys(lista[0]).sort(),
+      ['esIngreso', 'expiraEn', 'fechaHora', 'id', 'leida', 'mensaje', 'ordenId', 'titulo', 'usuarioId']);
+    // Ya no se escribe nada en la colección de primer nivel
+    assert.equal((await bd.collection('notificaciones').get()).size, 0);
     // Vence a los 90 días para que la política TTL de Firestore la borre
     const dias = (lista[0].expiraEn.toMillis() - lista[0].fechaHora) / 86_400_000;
     assert.ok(dias > 89.9 && dias < 90.1, `La notificación debía vencer a los 90 días y venció a los ${dias}`);
@@ -285,7 +342,9 @@ describe('notificarOrden', () => {
 
     await bd.collection('ordenes').doc('o1').update({ estado: 'ENTREGADO' });
     await esperar(2000);
-    assert.equal((await bd.collection('notificaciones').where('usuarioId', '==', 'c1').get()).size, 4);
+    assert.equal((await bandeja('c1').get()).size, 4);
+    assert.equal(new Set((await bandeja('c1').get()).docs.map((d) => d.id)).size, 4);
+    assert.equal((await bd.collection('notificaciones').get()).size, 0);
   });
 
   it('no avisa a un cliente sin cuenta', async () => {
@@ -293,7 +352,7 @@ describe('notificarOrden', () => {
     await bd.collection('vehiculos').doc('v1').update({ clienteId: 'c3' });
     await orden('o3', 'c3', 't1', 'INGRESADO');
     await esperar(2500);
-    assert.equal((await bd.collection('notificaciones').get()).size, 0);
+    assert.equal((await bd.collectionGroup('notificaciones').get()).size, 0);
   });
 });
 

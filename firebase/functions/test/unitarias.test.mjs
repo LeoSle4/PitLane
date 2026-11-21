@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { avisoDeOrden } from '../src/avisos.js';
+import { normalizarHistorial } from '../src/historial.js';
 import { normalizarCuenta, validarCuenta } from '../src/validacion.js';
 
 const valida = () => ({
@@ -57,5 +58,32 @@ describe('avisoDeOrden', () => {
     const reenviada = avisoDeOrden(orden('LISTO', { avisosEnviados: 1 }), orden('LISTO', { avisosEnviados: 2 }), 'ABC-123');
     assert.equal(reenviada.titulo, 'Vehículo listo');
     assert.equal(avisoDeOrden(orden('EN_REPARACION', { avisosEnviados: 0 }), orden('EN_REPARACION', { avisosEnviados: 1 }), 'ABC-123'), null);
+  });
+});
+
+describe('normalizarHistorial', () => {
+  it('completa con null las claves opcionales que le faltan a una entrada antigua y avisa del cambio', () => {
+    const { historial, cambio } = normalizarHistorial([
+      { estado: 'INGRESADO', fechaHora: 1, usuarioId: 'j1' },
+      { estado: 'ANULADA', fechaHora: 2, usuarioId: 'j1', motivo: 'Duplicada' },
+    ]);
+    assert.equal(cambio, true);
+    assert.deepEqual(historial, [
+      { estado: 'INGRESADO', fechaHora: 1, usuarioId: 'j1', motivo: null, usuarioNombre: null },
+      { estado: 'ANULADA', fechaHora: 2, usuarioId: 'j1', motivo: 'Duplicada', usuarioNombre: null },
+    ]);
+  });
+
+  it('deja igual un historial completo, y no toca valores ni el orden', () => {
+    const completo = [{ estado: 'INGRESADO', fechaHora: 1, usuarioId: 'j1', motivo: null, usuarioNombre: 'Ana' }];
+    const { historial, cambio } = normalizarHistorial(completo);
+    assert.equal(cambio, false);
+    assert.deepEqual(historial, completo);
+  });
+
+  it('no cambia lo que no es un historial', () => {
+    assert.deepEqual(normalizarHistorial(undefined), { historial: undefined, cambio: false });
+    assert.deepEqual(normalizarHistorial([]), { historial: [], cambio: false });
+    assert.deepEqual(normalizarHistorial([null, 'x']), { historial: [null, 'x'], cambio: false });
   });
 });

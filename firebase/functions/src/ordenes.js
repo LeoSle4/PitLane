@@ -8,7 +8,8 @@ const VIGENCIA_NOTIFICACION_MS = 90 * 24 * 60 * 60 * 1000;
 
 /**
  * Crea la notificación del cliente cuando se registra una orden o cambia su estado. Solo avisa a clientes con
- * cuenta. El id de la notificación sale del evento, así un reintento del mismo evento no la duplica.
+ * cuenta. La notificación va a la bandeja del cliente, `usuarios/{clienteId}/notificaciones/{id}`: la ruta dice de
+ * quién es. El id sale del evento, así un reintento del mismo evento no la duplica.
  */
 export const notificarOrden = onDocumentWritten('ordenes/{ordenId}', async (event) => {
   const despues = event.data?.after;
@@ -24,7 +25,8 @@ export const notificarOrden = onDocumentWritten('ordenes/{ordenId}', async (even
 
   const ahora = Date.now();
   try {
-    await bd.collection('notificaciones').doc(`n-${event.id}`).create({
+    await cliente.ref.collection('notificaciones').doc(`n-${event.id}`).create({
+      // Repite al dueño de la ruta: la app arma el aviso con él y lo vuelve a escribir al marcarlo como leído
       usuarioId: nueva.clienteId,
       titulo: aviso.titulo,
       mensaje: aviso.mensaje,
