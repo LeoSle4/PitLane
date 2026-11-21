@@ -16,7 +16,7 @@ interface INotificacionRepository {
     /** Emite cada notificación nueva que llega al usuario mientras la aplicación está abierta. */
     fun observarNuevas(usuarioId: String): Flow<Notificacion>
 
-    /** Marca una notificación como leída. */
+    /** Marca como leída una notificación de la bandeja del usuario con sesión. */
     suspend fun marcarLeida(notificacionId: String): Resultado<Unit>
 
     /** Guarda el token del dispositivo con el que se envían los avisos al usuario. */

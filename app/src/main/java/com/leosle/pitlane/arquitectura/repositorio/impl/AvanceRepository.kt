@@ -31,10 +31,10 @@ class AvanceRepository(
 
     /** Emite los avances de la orden del más antiguo al más reciente; un cliente solo recibe los de sus propias órdenes (RN-08). */
     override fun observarAvances(ordenId: String, usuarioId: String): Flow<List<AvanceDetallado>> =
-        avancesDetalladosDe(documentos.avances.observarDonde("ordenId", ordenId), usuarios).map { lista ->
+        avancesDetalladosDe(documentos.avancesDe(ordenId).observarTodos(), usuarios).map { lista ->
             val usuario = usuarios.obtenerUsuario(usuarioId)
             val ajena = usuario?.rol == Rol.CLIENTE && documentos.ordenes.obtener(ordenId)?.clienteId != usuario.id
-            if (usuario == null || ajena) emptyList() else lista.filter { it.avance.ordenId == ordenId }.sortedBy { it.avance.fechaHora }
+            if (usuario == null || ajena) emptyList() else lista.sortedBy { it.avance.fechaHora }
         }
 
     /** Valida estado de la orden, técnico, descripción y fotos; guarda el avance con la hora actual. */
@@ -53,20 +53,23 @@ class AvanceRepository(
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
         }
-        val avance = Avance(documentos.avances.nuevoId(), ordenId, tecnicoId, tipo, descripcion.trim(), guardadas, reloj.ahora())
-        documentos.avances.guardar(avance.id, avance)
+        val avancesDeLaOrden = documentos.avancesDe(ordenId)
+        val avance = Avance(avancesDeLaOrden.nuevoId(), ordenId, tecnicoId, tipo, descripcion.trim(), guardadas, reloj.ahora())
+        avancesDeLaOrden.guardar(avance.id, avance)
         return Resultado.Exito(avance)
     }
 
     /** Actualiza un avance propio mientras la orden siga En reparación y elimina las fotos que ya no se usan. */
     override suspend fun editarAvance(
+        ordenId: String,
         avanceId: String,
         tecnicoId: String,
         tipo: TipoAvance,
         descripcion: String,
         fotos: List<Foto>
     ): Resultado<Avance> {
-        val avance = documentos.avances.obtener(avanceId) ?: return Resultado.Error("No se encontró el avance")
+        val avancesDeLaOrden = documentos.avancesDe(ordenId)
+        val avance = avancesDeLaOrden.obtener(avanceId) ?: return Resultado.Error("No se encontró el avance")
         if (avance.tecnicoId != tecnicoId) return Resultado.Error("Solo puedes editar tus propios avances")
         val orden = documentos.ordenes.obtener(avance.ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.estado != EstadoOrden.EN_REPARACION) return Resultado.Error("La orden ya no admite cambios en sus avances")
@@ -78,18 +81,19 @@ class AvanceRepository(
         val idsNuevos = guardadas.map { it.id }.toSet()
         this.fotos.eliminar(avance.fotos.filter { it.id !in idsNuevos })
         val actualizado = avance.copy(tipo = tipo, descripcion = descripcion.trim(), fotos = guardadas)
-        documentos.avances.guardar(avanceId, actualizado)
+        avancesDeLaOrden.guardar(avanceId, actualizado)
         return Resultado.Exito(actualizado)
     }
 
     /** Elimina un avance propio con sus fotos mientras la orden siga En reparación. */
-    override suspend fun eliminarAvance(avanceId: String, tecnicoId: String): Resultado<Unit> {
-        val avance = documentos.avances.obtener(avanceId) ?: return Resultado.Error("No se encontró el avance")
+    override suspend fun eliminarAvance(ordenId: String, avanceId: String, tecnicoId: String): Resultado<Unit> {
+        val avancesDeLaOrden = documentos.avancesDe(ordenId)
+        val avance = avancesDeLaOrden.obtener(avanceId) ?: return Resultado.Error("No se encontró el avance")
         if (avance.tecnicoId != tecnicoId) return Resultado.Error("Solo puedes eliminar tus propios avances")
         val orden = documentos.ordenes.obtener(avance.ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.estado != EstadoOrden.EN_REPARACION) return Resultado.Error("La orden ya no admite cambios en sus avances")
         fotos.eliminar(avance.fotos)
-        documentos.avances.eliminar(avanceId)
+        avancesDeLaOrden.eliminar(avanceId)
         return Resultado.Exito(Unit)
     }
 

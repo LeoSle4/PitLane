@@ -77,7 +77,8 @@ class ConsultasAcotadasTest {
             override val ordenes: IColeccion<Orden> = ColeccionRegistrada("ordenes", reales.ordenes, registro)
             override val vehiculos: IColeccion<Vehiculo> = ColeccionRegistrada("vehiculos", reales.vehiculos, registro)
             override val solicitudes: IColeccion<Solicitud> = ColeccionRegistrada("solicitudes", reales.solicitudes, registro)
-            override val avances: IColeccion<Avance> = ColeccionRegistrada("avances", reales.avances, registro)
+            override fun avancesDe(ordenId: String): IColeccion<Avance> =
+                ColeccionRegistrada("ordenes/$ordenId/avances", reales.avancesDe(ordenId), registro)
         }
         avancesRepo = AvanceRepository(sesiones, documentos, FotoStorage(carpetaTemporal.newFolder("fotosAvances")), reloj)
         val fotos = FotoStorage(carpetaTemporal.newFolder("fotos"))
@@ -202,14 +203,16 @@ class ConsultasAcotadasTest {
     }
 
     @Test
-    fun losAvancesDeUnaOrdenSeConsultanPorOrdenIdYDanLoMismo() = runBlocking {
+    fun losAvancesDeUnaOrdenSeLeenComoSuSubcoleccionSinFiltrarYEnOrden() = runBlocking {
         iniciar("jefe@freddy.pe", "Taller2026")
-        val esperado = bd.avances.value.filter { it.ordenId == "o-3" }.sortedBy { it.fechaHora }.map { it.id }
-        val lista = avancesRepo.observarAvances("o-3", "u-jefe").first()
+        val esperado = bd.avances.value.filter { it.ordenId == "o-2" }.sortedBy { it.fechaHora }.map { it.id }
+        val lista = avancesRepo.observarAvances("o-2", "u-jefe").first()
         assertEquals(esperado, lista.map { it.avance.id })
-        assertTrue(lista.isNotEmpty() && lista.all { it.tecnico != null })
-        assertEquals(0, registro.completa("avances"))
-        assertEquals(listOf("avances.ordenId==o-3"), registro.consultas)
+        assertTrue(esperado.size > 1)
+        assertTrue(lista.all { it.avance.ordenId == "o-2" && it.tecnico != null })
+        // Se escucha entera la subcolección de esa orden y ninguna consulta con filtro
+        assertEquals(1, registro.completa("ordenes/o-2/avances"))
+        assertTrue(registro.consultas.isEmpty())
     }
 
     @Test

@@ -271,7 +271,7 @@ class OrdenRepository(
         val orden = documentos.ordenes.obtener(ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.tecnicoId != tecnicoId) return Resultado.Error(MENSAJE_NO_ASIGNADA)
         if (orden.estado != EstadoOrden.EN_REPARACION) return Resultado.Error("Primero inicia la reparación")
-        val tieneTrabajo = documentos.avances.listarDonde("ordenId", ordenId).any { it.tipo == TipoAvance.TRABAJO_REALIZADO }
+        val tieneTrabajo = documentos.avancesDe(ordenId).listar().any { it.tipo == TipoAvance.TRABAJO_REALIZADO }
         if (!tieneTrabajo) return Resultado.Error("Registra el trabajo realizado antes de marcar como listo")
         val ahora = reloj.ahora()
         val lista = orden.copy(

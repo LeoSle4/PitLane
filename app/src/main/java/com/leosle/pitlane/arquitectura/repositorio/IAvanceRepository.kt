@@ -22,8 +22,9 @@ interface IAvanceRepository {
         fotos: List<Foto>
     ): Resultado<Avance>
 
-    /** Edita un avance propio mientras la orden siga En reparación. */
+    /** Edita un avance propio de la orden [ordenId] mientras siga En reparación. */
     suspend fun editarAvance(
+        ordenId: String,
         avanceId: String,
         tecnicoId: String,
         tipo: TipoAvance,
@@ -31,6 +32,6 @@ interface IAvanceRepository {
         fotos: List<Foto>
     ): Resultado<Avance>
 
-    /** Elimina un avance propio con sus fotos mientras la orden siga En reparación. */
-    suspend fun eliminarAvance(avanceId: String, tecnicoId: String): Resultado<Unit>
+    /** Elimina un avance propio de la orden [ordenId], con sus fotos, mientras siga En reparación. */
+    suspend fun eliminarAvance(ordenId: String, avanceId: String, tecnicoId: String): Resultado<Unit>
 }

@@ -34,7 +34,8 @@ class ConsultasDirigidasTest {
     private class Conteo {
         var ordenes = 0
         var solicitudes = 0
-        var avances = 0
+        /** Órdenes cuya subcolección de avances se listó. */
+        val avancesListados = mutableListOf<String>()
     }
 
     private class ColeccionContada<T>(private val real: IColeccion<T>, private val alListar: () -> Unit) : IColeccion<T> by real {
@@ -65,7 +66,8 @@ class ConsultasDirigidasTest {
         documentos = object : IDocumentosDataSource by reales {
             override val ordenes: IColeccion<Orden> = ColeccionContada(reales.ordenes) { conteo.ordenes++ }
             override val solicitudes: IColeccion<Solicitud> = ColeccionContada(reales.solicitudes) { conteo.solicitudes++ }
-            override val avances: IColeccion<Avance> = ColeccionContada(reales.avances) { conteo.avances++ }
+            override fun avancesDe(ordenId: String): IColeccion<Avance> =
+                ColeccionContada(reales.avancesDe(ordenId)) { conteo.avancesListados += ordenId }
         }
         val fotos = FotoStorage(carpetaTemporal.newFolder("fotos"))
         ordenes = OrdenRepository(usuarios, documentos, fotos, reloj)
@@ -86,10 +88,7 @@ class ConsultasDirigidasTest {
             )
         }
         for (ordenId in bd.ordenes.value.map { it.id }) {
-            assertEquals(
-                bd.avances.value.filter { it.ordenId == ordenId },
-                reales.avances.listarDonde("ordenId", ordenId)
-            )
+            assertEquals(bd.avances.value.filter { it.ordenId == ordenId }, reales.avancesDe(ordenId).listar())
         }
         assertTrue(reales.ordenes.listarDonde("vehiculoId", "no-existe").isEmpty())
     }
@@ -144,10 +143,10 @@ class ConsultasDirigidasTest {
     }
 
     @Test
-    fun marcarListoSigueExigiendoElTrabajoSinListarTodosLosAvances() = runBlocking {
+    fun marcarListoSigueExigiendoElTrabajoYSoloLeeLosAvancesDeEsaOrden() = runBlocking {
         val resultado = ordenes.marcarListo("o-3", "u-tec-luis")
         assertEquals("Registra el trabajo realizado antes de marcar como listo", (resultado as Resultado.Error).mensaje)
-        assertEquals(0, conteo.avances)
+        assertEquals(listOf("o-3"), conteo.avancesListados)
     }
 
     @Test
