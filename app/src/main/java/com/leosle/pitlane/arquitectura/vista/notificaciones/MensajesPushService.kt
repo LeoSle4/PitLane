@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.leosle.pitlane.R
+import com.google.firebase.messaging.FirebaseMessaging
 import com.leosle.pitlane.modelo.Notificacion
 import com.leosle.pitlane.arquitectura.viewmodel.AuthViewModel
 import com.leosle.pitlane.arquitectura.viewmodel.NotificacionViewModel
@@ -25,11 +26,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 /**
  * Recibe los avisos nuevos del usuario con sesión y, cuando la aplicación no está a la vista, los muestra como
- * notificación del sistema; al tocarla se abre la orden relacionada. También entrega el token del dispositivo.
+ * notificación del sistema; al tocarla se abre la orden relacionada. También registra el token de FCM del dispositivo,
+ * con el que el servidor envía el aviso aunque la aplicación esté en segundo plano o cerrada.
  */
 object MensajesPushService {
 
@@ -43,8 +44,6 @@ object MensajesPushService {
     const val EXTRA_ES_INGRESO = "es_ingreso"
 
     private const val CANAL = "avisos_ordenes"
-    private const val ARCHIVO = "preferencias_mensajes"
-    private const val CLAVE_TOKEN = "token_dispositivo"
 
     /** Indica si alguna pantalla de la aplicación está visible; la actividad principal lo actualiza. */
     @Volatile
@@ -68,11 +67,17 @@ object MensajesPushService {
         }
     }
 
-    /** Devuelve el token de este dispositivo; se genera la primera vez y se conserva después. */
-    fun tokenDelDispositivo(contexto: Context): String {
-        val preferencias = contexto.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE)
-        return preferencias.getString(CLAVE_TOKEN, null)
-            ?: UUID.randomUUID().toString().also { preferencias.edit().putString(CLAVE_TOKEN, it).apply() }
+    /** Pide a FCM el token de este dispositivo y lo guarda para el usuario; si no se puede obtener, no hace nada. */
+    fun registrarToken(usuarioId: String) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+            notificacionViewModel.guardarTokenDispositivo(usuarioId, token)
+        }
+    }
+
+    /** Guarda el token nuevo que FCM entrega al servicio para el usuario con sesión; sin sesión se registra al entrar. */
+    fun registrarTokenNuevo(token: String) {
+        val usuario = authViewModel.usuarioActual.value ?: return
+        notificacionViewModel.guardarTokenDispositivo(usuario.id, token)
     }
 
     /** Indica si el sistema permite mostrar notificaciones de esta aplicación. */

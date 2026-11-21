@@ -318,7 +318,7 @@ class PrincipalActivity : AppCompatActivity(), Navegador {
 
     /** Guarda el token del dispositivo del usuario y pide el permiso para mostrar notificaciones del sistema. */
     private fun prepararAvisosDelSistema(usuarioId: String) {
-        notificacionViewModel.guardarTokenDispositivo(usuarioId, MensajesPushService.tokenDelDispositivo(this))
+        MensajesPushService.registrarToken(usuarioId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !MensajesPushService.puedeNotificar(this)) {
             solicitudPermisoAvisos.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
