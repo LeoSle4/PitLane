@@ -1,6 +1,8 @@
 // Pone `expiraEn` a las notificaciones anteriores a la mejora (S9): su `fechaHora` más 90 días.
 // Sin ese campo la política TTL de Firestore no las borraría nunca.
 // Solo escribe las que no lo tienen; nunca sobrescribe un `expiraEn` existente.
+// Recorre el grupo de colecciones `notificaciones`: las bandejas `usuarios/{id}/notificaciones` y, si quedara alguna
+// sin mover, la colección de primer nivel `notificaciones`.
 //
 // Por defecto NO escribe: imprime lo que haría. Para aplicar los cambios añade --aplicar.
 //
@@ -18,14 +20,14 @@ const NOVENTA_DIAS_MS = 90 * 24 * 60 * 60 * 1000;
 initializeApp({ projectId: process.env.GCLOUD_PROJECT ?? 'pitlane-ad951' });
 const bd = getFirestore();
 
-const pendientes = (await bd.collection('notificaciones').get()).docs.filter((d) => !('expiraEn' in d.data()));
+const pendientes = (await bd.collectionGroup('notificaciones').get()).docs.filter((d) => !('expiraEn' in d.data()));
 let omitidas = 0;
 const lote = [];
 for (const d of pendientes) {
   const fecha = d.data().fechaHora;
   if (typeof fecha !== 'number') {
     omitidas += 1;
-    console.warn(`  notificaciones/${d.id}: fechaHora inválida (${JSON.stringify(fecha)}); se omite`);
+    console.warn(`  ${d.ref.path}: fechaHora inválida (${JSON.stringify(fecha)}); se omite`);
     continue;
   }
   lote.push([d.ref, Timestamp.fromMillis(fecha + NOVENTA_DIAS_MS)]);

@@ -30,9 +30,19 @@ const registro = existente ?? await autenticacion.createUser({
 });
 const id = existente?.customClaims?.usuarioId ?? `u-jefe-${bd.collection('usuarios').doc().id}`;
 await autenticacion.setCustomUserClaims(registro.uid, { usuarioId: id, rol: 'JEFE' });
-await bd.collection('usuarios').doc(id).set({
-  nombres: cuenta.nombres, apellidos: cuenta.apellidos, dni: cuenta.dni, telefono: cuenta.telefono,
-  correo: cuenta.correo, rol: 'JEFE', activo: true, tieneCuenta: true, authUid: registro.uid,
-  acceso: FieldValue.arrayUnion(id),
-}, { merge: true });
+// El perfil y la reserva de su DNI (dnis/{dni}) van en la misma transacción: si el DNI ya es de otro usuario, no
+// se escribe nada.
+await bd.runTransaction(async (transaccion) => {
+  const reserva = bd.collection('dnis').doc(cuenta.dni);
+  const actual = await transaccion.get(reserva);
+  if (actual.exists && actual.data().usuarioId !== id) {
+    throw new Error(`El DNI ${cuenta.dni} ya pertenece a usuarios/${actual.data().usuarioId}`);
+  }
+  if (!actual.exists) transaccion.create(reserva, { usuarioId: id });
+  transaccion.set(bd.collection('usuarios').doc(id), {
+    nombres: cuenta.nombres, apellidos: cuenta.apellidos, dni: cuenta.dni, telefono: cuenta.telefono,
+    correo: cuenta.correo, rol: 'JEFE', activo: true, tieneCuenta: true, authUid: registro.uid,
+    acceso: FieldValue.arrayUnion(id),
+  }, { merge: true });
+});
 console.log(`Jefe listo: ${cuenta.correo} (usuarioId ${id})`);
