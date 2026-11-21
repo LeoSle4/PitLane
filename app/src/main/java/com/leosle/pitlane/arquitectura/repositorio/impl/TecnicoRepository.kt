@@ -4,6 +4,7 @@ import com.leosle.pitlane.arquitectura.repositorio.ITecnicoRepository
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
+import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.TecnicoConCarga
 import com.leosle.pitlane.modelo.Usuario
@@ -19,7 +20,7 @@ class TecnicoRepository(
 
     /** Emite cada técnico con el número de órdenes que tiene en curso, ordenados por nombre. */
     override fun observarTecnicos(): Flow<List<TecnicoConCarga>> =
-        combine(usuarios.observarUsuarios(), documentos.ordenes.observarTodos(), usuarios.usuarioActual) { listaUsuarios, listaOrdenes, actor ->
+        combine(usuarios.observarUsuarios(), documentos.ordenes.observarEnLista("estado", listOf(EstadoOrden.INGRESADO.name, EstadoOrden.EN_REPARACION.name)), usuarios.usuarioActual) { listaUsuarios, listaOrdenes, actor ->
             listaUsuarios.filter { it.rol == Rol.TECNICO && actor.esJefe() }
                 .sortedBy { it.nombres }
                 .map { tecnico ->

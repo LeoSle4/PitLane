@@ -1,8 +1,9 @@
 rules_version = '2';
 
 // Cada cuenta lleva los reclamos `usuarioId` (id de su documento en `usuarios`) y `rol`; los pone el servidor.
-// Cada documento de usuarios, vehiculos, solicitudes, ordenes y avances lleva `acceso`: los usuarioId que pueden
-// leerlo además del Jefe. La app consulta con `acceso array-contains <usuarioId>`, que es lo que estas reglas exigen.
+// Cada documento de usuarios, vehiculos, solicitudes y ordenes lleva `acceso`: los usuarioId que pueden leerlo además
+// del Jefe. La app consulta con `acceso array-contains <usuarioId>`, que es lo que estas reglas exigen. Las
+// subcolecciones (avances de una orden, bandeja y tokens de un usuario) se autorizan por su ruta.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -15,7 +16,159 @@ service cloud.firestore {
     function esCliente() { return sesion() && request.auth.token.rol == 'CLIENTE'; }
     function puedeLeer(datos) { return esJefe() || (sesion() && uid() in datos.acceso); }
     function cambios() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    // La instantánea que escribe el cliente en su solicitud debe ser copia fiel de su perfil y de su vehículo; si no,
+    // podría mostrarle al Jefe una placa o un DNI falsos.
+    function coincideConElPerfil(r) {
+      let perfil = get(/databases/$(database)/documents/usuarios/$(uid())).data;
+      return r.nombres == perfil.nombres && r.apellidos == perfil.apellidos && r.dni == perfil.dni
+        && r.telefono == perfil.telefono;
+    }
+    function coincideConElVehiculo(r, vehiculoId) {
+      let v = get(/databases/$(database)/documents/vehiculos/$(vehiculoId)).data;
+      return r.placa == v.placa && r.marca == v.marca && r.modelo == v.modelo && r.anio == v.anio && r.color == v.color;
+    }
+    // Términos de búsqueda (S8): campos opcionales, listas acotadas. La app escribe el documento entero con merge, así que
+    // un documento anterior que se edita GANA el campo y este aparece en `affectedKeys`; por eso las reglas de
+    // actualización también lo admiten.
+    function listaAcotada(campo, maximo) {
+      return !(campo in request.resource.data)
+        || (request.resource.data[campo] is list && request.resource.data[campo].size() <= maximo);
+    }
     function orden(id) { return get(/databases/$(database)/documents/ordenes/$(id)).data; }
+
+    // Fechas que el cliente no puede inventar (S4). Las fechas son milisegundos (`Long`) que pone el reloj del
+    // dispositivo; las reglas las comparan con `request.time`, la hora del servidor al recibir la escritura. Así también
+    // se cubre el historial, un arreglo donde Firestore no admite serverTimestamp.
+    // Tolerancia: 15 minutos. Los teléfonos sincronizan la hora con la red y se desvían segundos, pero alguno tiene la
+    // hora puesta a mano o desfasada unos minutos, y una escritura hecha sin conexión llega cuando vuelve la señal (si
+    // tarda más que la tolerancia, se rechaza). Un margen menor rechazaría trabajo real; uno mayor dejaría adelantar o
+    // atrasar una fecha horas. Solo se define aquí.
+    function toleranciaDelReloj() { return 15 * 60 * 1000; }
+    function fechaDelServidor(ms) {
+      return ms is int
+        && ms >= request.time.toMillis() - toleranciaDelReloj()
+        && ms <= request.time.toMillis() + toleranciaDelReloj();
+    }
+    // Una fecha de primer nivel de un documento que se actualiza: si la escritura no la cambia (la app reenvía con merge
+    // la fecha guardada, aunque sea antigua) no se mira; si la cambia, debe ser la hora del servidor. Un documento
+    // anterior que gana el campo vacío (null) no está fijando ninguna fecha.
+    function fechaCambiadaDelServidor(campo) {
+      return !cambios().hasAny([campo])
+        || (request.resource.data.get(campo, null) == null && resource.data.get(campo, null) == null)
+        || fechaDelServidor(request.resource.data.get(campo, null));
+    }
+
+    // Instantáneas del ingreso (cliente, vehículo y técnico): mapas con exactamente estas claves. Son una foto de
+    // lo cierto ese día; un cambio posterior del perfil o del vehículo no se propaga.
+    function esResumenCliente(m) {
+      return m is map && m.keys().hasOnly(['nombres', 'apellidos', 'dni', 'telefono'])
+        && m.keys().hasAll(['nombres', 'apellidos', 'dni', 'telefono'])
+        && m.nombres is string && m.apellidos is string && m.dni is string && m.telefono is string;
+    }
+    function esResumenVehiculo(m) {
+      return m is map && m.keys().hasOnly(['placa', 'marca', 'modelo', 'anio', 'color'])
+        && m.keys().hasAll(['placa', 'marca', 'modelo', 'anio', 'color'])
+        && m.placa is string && m.marca is string && m.modelo is string && m.anio is int && m.color is string;
+    }
+    function esResumenTecnico(m) {
+      return m is map && m.keys().hasOnly(['nombres', 'apellidos'])
+        && m.keys().hasAll(['nombres', 'apellidos'])
+        && m.nombres is string && m.apellidos is string;
+    }
+    // La instantánea del técnico solo cambia junto con `tecnicoId` (reasignación) y con su forma exacta.
+    function tecnicoCoherente() {
+      return !cambios().hasAny(['tecnico'])
+        || (cambios().hasAny(['tecnicoId']) && esResumenTecnico(request.resource.data.get('tecnico', null)));
+    }
+
+    // Campos que puede tener una orden; ni al crearla ni al actualizarla se aceptan otros.
+    function clavesDeOrden() {
+      return ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
+        'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
+        'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso', 'cliente', 'vehiculo', 'tecnico', 'esquema'];
+    }
+    // Versión de esquema: 2 = con instantáneas. Un documento sin el campo es de la versión 1 y solo lo recibe junto con
+    // las instantáneas (relleno); una vez presente no cambia ni se quita.
+    function esquemaCoherente() {
+      return !cambios().hasAny(['esquema'])
+        || (!('esquema' in resource.data)
+          && request.resource.data.esquema is int && request.resource.data.esquema == 2
+          && request.resource.data.get('cliente', null) is map
+          && request.resource.data.get('vehiculo', null) is map
+          && request.resource.data.get('tecnico', null) is map);
+    }
+    // Una entrada del historial: un cambio de estado firmado por quien lo hace, con sus claves exactas y textos de verdad
+    // (la app lee un valor que no es texto como null y, al reenviarlo, la orden quedaría bloqueada).
+    function esCambioPropio(c, estado) {
+      return c is map
+        && c.keys().hasAll(['estado', 'fechaHora', 'usuarioId'])
+        && c.keys().hasOnly(['estado', 'fechaHora', 'usuarioId', 'motivo', 'usuarioNombre'])
+        && c.estado == estado && c.usuarioId == uid() && fechaDelServidor(c.fechaHora)
+        && (c.get('motivo', null) == null || (c.motivo is string && c.motivo.size() <= 500))
+        && (c.get('usuarioNombre', null) == null || (c.usuarioNombre is string && c.usuarioNombre.size() <= 200));
+    }
+    // El historial solo crece (es el detalle HistorialEstado del modelo lógico): si el estado no cambia, el historial
+    // tampoco; si cambia, se agrega exactamente una entrada al final, firmada por quien hace el cambio y con el estado
+    // nuevo. Las entradas anteriores no se tocan. La fecha la pone el dispositivo (Firestore no admite serverTimestamp
+    // dentro de un arreglo): solo la de la entrada nueva se compara con la hora del servidor (esCambioPropio), nunca la
+    // de las anteriores ni con la anterior, para que un historial viejo o desordenado no bloquee el trabajo.
+    function historialSoloCrece() {
+      let antes = resource.data.get('historial', []);
+      let despues = request.resource.data.get('historial', []);
+      let n = antes.size();
+      return (request.resource.data.estado == resource.data.estado && despues == antes)
+        || (request.resource.data.estado != resource.data.estado
+          && despues is list && despues.size() == n + 1
+          && (n == 0 || despues[0:n] == antes)
+          && esCambioPropio(despues[n], request.resource.data.estado));
+    }
+    // El número de una orden es único porque su reserva `numerosOrden/{numero}` tiene el número como id: un id no se
+    // repite. La reserva se escribe en el mismo lote que la orden y apunta a ella (el contador solo genera números).
+    function numeroReservado(numero, ordenId) {
+      let reserva = /databases/$(database)/documents/numerosOrden/$(numero);
+      return existsAfter(reserva) && getAfter(reserva).data.ordenId == ordenId;
+    }
+    // La conformidad, una vez guardada, no se borra ni se cambia (RN-14).
+    function conformidadIntacta() {
+      return resource.data.get('conformidad', null) == null
+        || request.resource.data.get('conformidad', null) == resource.data.conformidad;
+    }
+    // Al registrar la conformidad, su fecha es la hora del servidor.
+    function conformidadConFechaDelServidor() {
+      return !cambios().hasAny(['conformidad'])
+        || request.resource.data.get('conformidad', null) == null
+        || (request.resource.data.conformidad is map
+          && fechaDelServidor(request.resource.data.conformidad.get('fechaHora', null)));
+    }
+    // Las observaciones del cliente se agregan de una en una al final (como la app) y la nueva lleva la hora del
+    // servidor; las anteriores se reenvían intactas y su fecha no se mira.
+    function observacionesConFechaDelServidor() {
+      let antes = resource.data.get('observacionesCliente', []);
+      let despues = request.resource.data.get('observacionesCliente', []);
+      let n = antes.size();
+      // `despues == antes`: un documento anterior sin el campo que gana la lista vacía.
+      return !cambios().hasAny(['observacionesCliente'])
+        || despues == antes
+        || (despues is list && despues.size() == n + 1
+          && (n == 0 || despues[0:n] == antes)
+          && despues[n] is map
+          && fechaDelServidor(despues[n].get('fechaHora', null)));
+    }
+    // Fechas de una orden que se actualiza: cada una solo se comprueba cuando la escritura la fija.
+    function fechasDeOrdenDelServidor() {
+      return fechaCambiadaDelServidor('editadaEn')
+        && fechaCambiadaDelServidor('ultimoAviso')
+        && conformidadConFechaDelServidor()
+        && observacionesConFechaDelServidor();
+    }
+    // El Jefe solo cambia el estado para anular una orden Ingresado o para entregar una orden Lista cuya conformidad
+    // ya estaba guardada (RN-14); el resto de las transiciones son del técnico.
+    function estadoPermitidoAlJefe() {
+      return request.resource.data.estado == resource.data.estado
+        || (resource.data.estado == 'INGRESADO' && request.resource.data.estado == 'ANULADA')
+        || (resource.data.estado == 'LISTO' && request.resource.data.estado == 'ENTREGADO'
+            && resource.data.get('conformidad', null) != null);
+    }
 
     // ---- Usuarios: los perfiles de las cuentas los crean las funciones del servidor; el Jefe solo registra
     // clientes sin cuenta y edita nombres, apellidos y teléfono.
@@ -25,18 +178,50 @@ service cloud.firestore {
 
       allow create: if esJefe()
         && request.resource.data.keys().hasOnly(
-          ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso'])
+          ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso', 'terminos'])
+        && listaAcotada('terminos', 120)
         && request.resource.data.keys().hasAll(
           ['nombres', 'apellidos', 'dni', 'telefono', 'correo', 'rol', 'activo', 'tieneCuenta', 'acceso'])
         && request.resource.data.rol == 'CLIENTE'
         && request.resource.data.tieneCuenta == false
         && request.resource.data.activo == true
-        && request.resource.data.acceso == [id];
+        && request.resource.data.acceso == [id]
+        // El DNI tiene el formato que valida la app (8 dígitos) y se reserva en el mismo lote: `dnis/{dni}` solo se crea si su id está libre.
+        && request.resource.data.dni is string
+        && request.resource.data.dni.matches('^[0-9]{8}$')
+        && existsAfter(/databases/$(database)/documents/dnis/$(request.resource.data.dni))
+        && getAfter(/databases/$(database)/documents/dnis/$(request.resource.data.dni)).data.usuarioId == id;
 
-      allow update: if (esJefe() && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'acceso']))
-        || (sesion() && uid() == id && cambios().hasOnly(['nombres', 'apellidos', 'telefono']));
+      allow update: if ((esJefe() && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'acceso', 'terminos']))
+        || (sesion() && uid() == id && cambios().hasOnly(['nombres', 'apellidos', 'telefono', 'terminos'])))
+        && listaAcotada('terminos', 120);
 
-      allow delete: if esJefe() && resource.data.rol == 'CLIENTE' && resource.data.tieneCuenta == false;
+      // La reserva del DNI se libera en el mismo lote. Un perfil anterior a las reservas no la tiene.
+      allow delete: if esJefe() && resource.data.rol == 'CLIENTE' && resource.data.tieneCuenta == false
+        && (resource.data.get('dni', '') == ''
+          || !existsAfter(/databases/$(database)/documents/dnis/$(resource.data.dni)));
+    }
+
+    // ---- DNI: índice de reservas `dnis/{dni}` = {usuarioId}. Como con las placas, Firestore solo crea un documento
+    // si su id está libre, y eso garantiza que no haya dos usuarios con el mismo DNI. Desde la app solo el Jefe la
+    // escribe, en el mismo lote que el cliente sin cuenta; las cuentas las crean las funciones del servidor en una
+    // transacción. Nadie la lee desde la app y no se actualiza (el DNI de un perfil no cambia).
+    match /dnis/{dni} {
+      allow read: if false;
+
+      allow create: if esJefe()
+        && request.resource.data.keys().hasOnly(['usuarioId'])
+        && request.resource.data.keys().hasAll(['usuarioId'])
+        && request.resource.data.usuarioId is string
+        && existsAfter(/databases/$(database)/documents/usuarios/$(request.resource.data.usuarioId))
+        && getAfter(/databases/$(database)/documents/usuarios/$(request.resource.data.usuarioId)).data.dni == dni;
+
+      allow update: if false;
+
+      // Borrar una reserva inexistente (resource == null) no cambia nada: la app lo hace al eliminar un cliente
+      // anterior a las reservas, sin saber que no la tiene.
+      allow delete: if esJefe()
+        && (resource == null || !existsAfter(/databases/$(database)/documents/usuarios/$(resource.data.usuarioId)));
     }
 
     // ---- Vehículos: el cliente administra los suyos; el Jefe todos; el técnico solo lee los de sus órdenes.
@@ -45,19 +230,53 @@ service cloud.firestore {
 
       allow create: if (esJefe() || (esCliente() && request.resource.data.clienteId == uid()))
         && request.resource.data.keys().hasOnly(
-          ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
+          ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso', 'terminosPlaca'])
+        && listaAcotada('terminosPlaca', 12)
         && request.resource.data.keys().hasAll(
           ['clienteId', 'placa', 'marca', 'modelo', 'anio', 'color', 'activo', 'acceso'])
         && request.resource.data.activo == true
-        && request.resource.data.acceso == [request.resource.data.clienteId];
+        && request.resource.data.acceso == [request.resource.data.clienteId]
+        // La placa tiene el formato que produce la app (ABC-123, sin espacios) y se reserva en el mismo lote: `placas/{placa}` solo se crea si su id está libre.
+        && request.resource.data.placa is string
+        && request.resource.data.placa.matches('^[A-Z0-9]{3}-[A-Z0-9]{3}$')
+        && existsAfter(/databases/$(database)/documents/placas/$(request.resource.data.placa))
+        && getAfter(/databases/$(database)/documents/placas/$(request.resource.data.placa)).data.vehiculoId == id;
 
       allow update: if request.resource.data.clienteId == resource.data.clienteId
         && request.resource.data.placa == resource.data.placa
+        && listaAcotada('terminosPlaca', 12)
         && (esJefe()
           || (esCliente() && resource.data.clienteId == uid()
-              && cambios().hasOnly(['marca', 'modelo', 'anio', 'color', 'activo'])));
+              && cambios().hasOnly(['marca', 'modelo', 'anio', 'color', 'activo', 'terminosPlaca'])));
 
-      allow delete: if esJefe() || (esCliente() && resource.data.clienteId == uid());
+      // La reserva de la placa se libera en el mismo lote. Un vehículo anterior a las reservas no la tiene.
+      allow delete: if (esJefe() || (esCliente() && resource.data.clienteId == uid()))
+        && !existsAfter(/databases/$(database)/documents/placas/$(resource.data.placa));
+    }
+
+    // ---- Placas: índice de reservas `placas/{placa}` = {vehiculoId, clienteId}. Firestore solo crea un documento si
+    // su id está libre, y eso garantiza que no haya dos vehículos con la misma placa. Se escribe siempre en el mismo
+    // lote que el vehículo. Nadie lo lee desde la app (lo lee el servidor) y no se actualiza.
+    match /placas/{placa} {
+      allow read: if false;
+
+      allow create: if (esJefe() || (esCliente() && request.resource.data.clienteId == uid()))
+        && request.resource.data.keys().hasOnly(['vehiculoId', 'clienteId'])
+        && request.resource.data.keys().hasAll(['vehiculoId', 'clienteId'])
+        && request.resource.data.vehiculoId is string
+        && request.resource.data.clienteId is string
+        && existsAfter(/databases/$(database)/documents/vehiculos/$(request.resource.data.vehiculoId))
+        && getAfter(/databases/$(database)/documents/vehiculos/$(request.resource.data.vehiculoId)).data.placa == placa
+        && getAfter(/databases/$(database)/documents/vehiculos/$(request.resource.data.vehiculoId)).data.clienteId
+          == request.resource.data.clienteId;
+
+      allow update: if false;
+
+      // Borrar una reserva inexistente (resource == null) no cambia nada: la app lo hace al eliminar un vehículo
+      // anterior a las reservas, sin saber que no la tiene.
+      allow delete: if sesion() && resource == null
+        || ((esJefe() || (esCliente() && resource.data.clienteId == uid()))
+          && !existsAfter(/databases/$(database)/documents/vehiculos/$(resource.data.vehiculoId)));
     }
 
     // ---- Solicitudes: las crea y edita el cliente mientras están pendientes; el Jefe las marca atendidas.
@@ -66,7 +285,14 @@ service cloud.firestore {
 
       allow create: if esCliente() && request.resource.data.clienteId == uid()
         && request.resource.data.keys().hasOnly(
-          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso'])
+          ['clienteId', 'vehiculoId', 'descripcion', 'sintomas', 'fechaLlegada', 'fotos', 'estado', 'creadaEn', 'ordenId', 'acceso', 'cliente', 'vehiculo', 'esquema'])
+        && request.resource.data.keys().hasAll(['cliente', 'vehiculo', 'esquema'])
+        && fechaDelServidor(request.resource.data.get('creadaEn', null))
+        && request.resource.data.esquema is int && request.resource.data.esquema == 2
+        && esResumenCliente(request.resource.data.cliente)
+        && esResumenVehiculo(request.resource.data.vehiculo)
+        && coincideConElPerfil(request.resource.data.cliente)
+        && coincideConElVehiculo(request.resource.data.vehiculo, request.resource.data.vehiculoId)
         && request.resource.data.estado == 'PENDIENTE'
         && request.resource.data.ordenId == null
         && request.resource.data.acceso == [request.resource.data.clienteId];
@@ -90,55 +316,94 @@ service cloud.firestore {
       allow read: if puedeLeer(resource.data);
 
       allow create: if esJefe()
-        && request.resource.data.keys().hasOnly(
-          ['numero', 'clienteId', 'vehiculoId', 'solicitudId', 'falla', 'kilometraje', 'combustible', 'observaciones',
-           'fotos', 'tecnicoId', 'estado', 'historial', 'creadaEn', 'motivoAnulacion', 'avisosEnviados', 'ultimoAviso',
-           'editadaPor', 'editadaEn', 'conformidad', 'observacionesCliente', 'acceso'])
+        && request.resource.data.keys().hasOnly(clavesDeOrden())
+        && request.resource.data.keys().hasAll(['cliente', 'vehiculo', 'tecnico', 'esquema'])
+        && request.resource.data.esquema is int && request.resource.data.esquema == 2
+        && request.resource.data.numero is string && request.resource.data.numero.matches('ORD-[0-9]{4,}')
+        && numeroReservado(request.resource.data.numero, id)
+        && esResumenCliente(request.resource.data.cliente)
+        && esResumenVehiculo(request.resource.data.vehiculo)
+        && esResumenTecnico(request.resource.data.tecnico)
+        && fechaDelServidor(request.resource.data.get('creadaEn', null))
         && request.resource.data.estado == 'INGRESADO'
+        && request.resource.data.historial is list && request.resource.data.historial.size() == 1
+        && esCambioPropio(request.resource.data.historial[0], 'INGRESADO')
         && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId];
 
       allow update: if (esJefe()
-          && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn'])
+          && request.resource.data.keys().hasOnly(clavesDeOrden())
+          && estadoPermitidoAlJefe()
+          && historialSoloCrece()
+          && conformidadIntacta()
+          && fechasDeOrdenDelServidor()
+          && !cambios().hasAny(['clienteId', 'vehiculoId', 'numero', 'creadaEn', 'cliente', 'vehiculo'])
+          && tecnicoCoherente()
+          && esquemaCoherente()
           && request.resource.data.acceso == [request.resource.data.clienteId, request.resource.data.tecnicoId])
         || (esTecnico() && resource.data.tecnicoId == uid()
           && cambios().hasOnly(['estado', 'historial', 'avisosEnviados', 'ultimoAviso'])
+          && historialSoloCrece()
+          && fechasDeOrdenDelServidor()
           && ((resource.data.estado == 'INGRESADO' && request.resource.data.estado == 'EN_REPARACION')
             || (resource.data.estado == 'EN_REPARACION' && request.resource.data.estado == 'LISTO')))
         || (esCliente() && resource.data.clienteId == uid()
           && resource.data.estado == 'LISTO'
           && resource.data.conformidad == null
           && cambios().hasOnly(['conformidad'])
-          && request.resource.data.conformidad.usuarioId == uid());
+          && request.resource.data.conformidad.usuarioId == uid()
+          && fechasDeOrdenDelServidor());
 
       allow delete: if false;
     }
 
-    // ---- Avances: los escribe el técnico asignado a la orden; el Jefe solo actualiza quién puede verlos.
-    match /avances/{id} {
-      allow read: if puedeLeer(resource.data);
+    // ---- Avances: viven dentro de su orden, `ordenes/{ordenId}/avances/{id}`, y las reglas autorizan desde la orden
+    // padre (un get de la ruta): los lee quien puede leer la orden y los escribe el técnico asignado a ella, solo los
+    // suyos. Por eso el avance no copia el `acceso` de la orden (reasignar el técnico no reescribe sus avances) ni guarda
+    // `ordenId` (lo dice la ruta). Una ruta anidada no hereda las reglas de `ordenes/{id}`. La colección de primer nivel
+    // `avances` ya no tiene reglas: la app no la lee (ver moverAvances.mjs).
+    // Como en AvanceRepository, un avance solo se registra, edita o elimina mientras la orden está En reparación; al
+    // registrarlo, su fecha es la hora del servidor (editarlo no la cambia).
+    match /ordenes/{ordenId}/avances/{id} {
+      allow read: if puedeLeer(orden(ordenId));
 
       allow create: if esTecnico() && request.resource.data.tecnicoId == uid()
-        && request.resource.data.keys().hasOnly(
-          ['ordenId', 'tecnicoId', 'tipo', 'descripcion', 'fotos', 'fechaHora', 'acceso'])
-        && orden(request.resource.data.ordenId).tecnicoId == uid()
-        && request.resource.data.acceso == orden(request.resource.data.ordenId).acceso;
+        && request.resource.data.keys().hasOnly(['tecnicoId', 'tipo', 'descripcion', 'fotos', 'fechaHora'])
+        && fechaDelServidor(request.resource.data.get('fechaHora', null))
+        && orden(ordenId).tecnicoId == uid()
+        && orden(ordenId).estado == 'EN_REPARACION';
 
-      allow update: if (esTecnico() && resource.data.tecnicoId == uid()
-          && orden(resource.data.ordenId).tecnicoId == uid()
-          && cambios().hasOnly(['tipo', 'descripcion', 'fotos']))
-        || (esJefe() && cambios().hasOnly(['acceso']));
+      allow update: if esTecnico() && resource.data.tecnicoId == uid()
+        && orden(ordenId).tecnicoId == uid()
+        && orden(ordenId).estado == 'EN_REPARACION'
+        && cambios().hasOnly(['tipo', 'descripcion', 'fotos']);
 
       allow delete: if esTecnico() && resource.data.tecnicoId == uid()
-        && orden(resource.data.ordenId).tecnicoId == uid();
+        && orden(ordenId).tecnicoId == uid()
+        && orden(ordenId).estado == 'EN_REPARACION';
     }
 
-    // ---- Notificaciones: las crea el servidor; cada usuario lee las suyas y solo puede marcarlas como leídas.
-    match /notificaciones/{id} {
-      allow read: if sesion() && resource.data.usuarioId == uid();
-      allow update: if sesion() && resource.data.usuarioId == uid()
+    // ---- Notificaciones: viven en la bandeja de su dueño, `usuarios/{usuarioId}/notificaciones/{id}`, y la ruta dice
+    // de quién son (no el campo `usuarioId`). Las crea el servidor; el dueño, y nadie más (tampoco el Jefe), las lee y solo
+    // puede marcarlas como leídas. Una ruta anidada no hereda las reglas de `usuarios/{id}`. La colección de primer
+    // nivel `notificaciones` ya no tiene reglas: la app no la lee (ver moverNotificaciones.mjs).
+    match /usuarios/{usuarioId}/notificaciones/{id} {
+      allow read: if sesion() && uid() == usuarioId;
+      allow update: if sesion() && uid() == usuarioId
         && cambios().hasOnly(['leida'])
         && request.resource.data.leida == true;
       allow create, delete: if false;
+    }
+
+    // ---- Reserva del número de orden: el id del documento es el número, así que no puede haber dos iguales. La
+    // escribe el Jefe en el mismo lote que la orden; nadie la lee, la cambia ni la borra (las órdenes no se borran).
+    match /numerosOrden/{numero} {
+      allow read: if false;
+      allow create: if esJefe()
+        && request.resource.data.keys().hasOnly(['ordenId'])
+        && request.resource.data.ordenId is string
+        && existsAfter(/databases/$(database)/documents/ordenes/$(request.resource.data.ordenId))
+        && getAfter(/databases/$(database)/documents/ordenes/$(request.resource.data.ordenId)).data.numero == numero;
+      allow update, delete: if false;
     }
 
     // ---- Contador de órdenes: solo el Jefe, de uno en uno.
@@ -151,13 +416,21 @@ service cloud.firestore {
           : request.resource.data.ultimo == resource.data.ultimo + 1);
     }
 
-    // ---- Token del dispositivo: cada usuario guarda solo el suyo; lo lee el servidor.
-    match /tokensDispositivo/{id} {
+    // ---- Tokens de dispositivo: un documento por teléfono, con el token como id. Cada usuario escribe solo los
+    // suyos (ni el Jefe toca los ajenos) y nadie los lee desde la app; los lee el servidor. `expiraEn` es la fecha en que
+    // la política TTL de Firestore borra el token si el dispositivo no vuelve a abrir la app. Una ruta anidada no
+    // hereda las reglas de `usuarios/{id}`, por eso esta coincidencia es la única que la alcanza.
+    match /usuarios/{usuarioId}/tokensDispositivo/{token} {
       allow read: if false;
-      allow create, update: if sesion() && uid() == id
-        && request.resource.data.keys().hasOnly(['token'])
-        && request.resource.data.token is string;
-      allow delete: if sesion() && uid() == id;
+      allow create, update: if sesion() && uid() == usuarioId
+        && request.resource.data.keys().hasOnly(['token', 'expiraEn'])
+        && request.resource.data.keys().hasAll(['token', 'expiraEn'])
+        && request.resource.data.token is string
+        && request.resource.data.token == token
+        && request.resource.data.expiraEn is timestamp
+        && request.resource.data.expiraEn > request.time
+        && request.resource.data.expiraEn <= request.time + duration.value(90, 'd');
+      allow delete: if sesion() && uid() == usuarioId;
     }
   }
 }

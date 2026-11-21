@@ -5,7 +5,7 @@ import nodemailer from 'nodemailer';
 import {
   ESPERA_ENTRE_PEDIDOS_MS, VIGENCIA_MS, cifrarCodigo, evaluarCodigo, idDeCorreo, normalizarCorreo, nuevoCodigo,
 } from './codigos.js';
-import { autenticacion, bd, FieldValue, HttpsError } from './comun.js';
+import { autenticacion, bd, FieldValue, HttpsError, Timestamp } from './comun.js';
 import { correoValido, validarContrasena } from './validacion.js';
 
 /** Cuenta de Gmail del taller que envía los códigos y su contraseña de aplicación; se guardan como secretos. */
@@ -52,7 +52,11 @@ export const solicitarCodigo = onCall({ secrets: [CORREO_REMITENTE, CORREO_CLAVE
   }
 
   const codigo = nuevoCodigo();
-  await registro.set({ hash: cifrarCodigo(correo, codigo), expira: ahora + VIGENCIA_MS, intentos: 0, enviadoEn: ahora });
+  // `expiraEn` es lo que usa la política TTL de Firestore: un día después de vencer el código, que ya no sirve para nada
+  await registro.set({
+    hash: cifrarCodigo(correo, codigo), expira: ahora + VIGENCIA_MS, expiraEn: Timestamp.fromMillis(ahora + VIGENCIA_MS + 86_400_000),
+    intentos: 0, enviadoEn: ahora,
+  });
   const cuenta = await autenticacion.getUserByEmail(correo).catch(() => null);
   if (cuenta && !cuenta.disabled) {
     try {

@@ -262,7 +262,7 @@ class FragDetalleOrdenTecnico : FragmentoVinculado<TecFragDetalleOrdenBinding>(T
             getString(R.string.tec_dialogo_eliminar_accion),
             peligro = true
         ) {
-            avanceViewModel.eliminarAvance(elemento.avance.id, usuarioActual.id) { resultado ->
+            avanceViewModel.eliminarAvance(elemento.avance.ordenId, elemento.avance.id, usuarioActual.id) { resultado ->
                 if (!isAdded || view == null) return@eliminarAvance
                 when (resultado) {
                     is Resultado.Exito -> mostrarMensaje(getString(R.string.tec_mensaje_avance_eliminado))

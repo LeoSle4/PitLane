@@ -143,9 +143,10 @@ class FuentesLocalesTest {
     }
 
     @Test
-    fun guardarTokenDispositivoReemplazaElTokenAnterior() = runBlocking {
+    fun guardarTokenDispositivoConservaUnTokenPorDispositivo() = runBlocking {
         notificaciones.guardarTokenDispositivo("u-cli-ana", "token-1")
         notificaciones.guardarTokenDispositivo("u-cli-ana", "token-2")
-        assertEquals("token-2", bd.tokensDispositivo.value["u-cli-ana"])
+        notificaciones.guardarTokenDispositivo("u-cli-ana", "token-2")
+        assertEquals(setOf("token-1", "token-2"), bd.tokensDispositivo.value["u-cli-ana"])
     }
 }

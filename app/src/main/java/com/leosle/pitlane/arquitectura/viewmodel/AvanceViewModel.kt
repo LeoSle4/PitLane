@@ -30,15 +30,16 @@ class AvanceViewModel(
 
     /** Guarda los cambios de un avance propio. */
     fun editarAvance(
+        ordenId: String,
         avanceId: String,
         tecnicoId: String,
         tipo: TipoAvance,
         descripcion: String,
         fotos: List<Foto>,
         alTerminar: (Resultado<Avance>) -> Unit
-    ) = ejecutar({ repositorio.editarAvance(avanceId, tecnicoId, tipo, descripcion, fotos) }, alTerminar)
+    ) = ejecutar({ repositorio.editarAvance(ordenId, avanceId, tecnicoId, tipo, descripcion, fotos) }, alTerminar)
 
     /** Elimina un avance propio. */
-    fun eliminarAvance(avanceId: String, tecnicoId: String, alTerminar: (Resultado<Unit>) -> Unit) =
-        ejecutar({ repositorio.eliminarAvance(avanceId, tecnicoId) }, alTerminar)
+    fun eliminarAvance(ordenId: String, avanceId: String, tecnicoId: String, alTerminar: (Resultado<Unit>) -> Unit) =
+        ejecutar({ repositorio.eliminarAvance(ordenId, avanceId, tecnicoId) }, alTerminar)
 }

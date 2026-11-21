@@ -1,6 +1,8 @@
 package com.leosle.pitlane.arquitectura.datasource.local
 
+import com.leosle.pitlane.arquitectura.datasource.DniYaRegistradoException
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
+import com.leosle.pitlane.util.Busqueda
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.modelo.DatosRegistroCliente
 import com.leosle.pitlane.modelo.Rol
@@ -8,6 +10,7 @@ import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.util.Resultado
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 
 /** Cuentas y sesión en memoria, con las funciones de cuenta que en la nube ejecuta el servidor. */
@@ -21,11 +24,37 @@ class UsuariosDataSource(private val bd: BaseDatosLocal) : IUsuariosDataSource {
 
     override suspend fun listarUsuarios(): List<Usuario> = bd.usuarios.value
 
+    /** Como en la nube, solo clientes y por los términos de `Busqueda`; sin filtro de usuario, igual que [listarUsuarios]. */
+    override suspend fun buscarClientesPorTermino(termino: String, limite: Int): List<Usuario> {
+        require(limite in 1..100) { "El límite debe estar entre 1 y 100" }
+        return bd.usuarios.value.filter {
+            it.rol == Rol.CLIENTE && termino in Busqueda.terminosDePersona(it.nombres, it.apellidos, it.dni)
+        }.take(limite)
+    }
+
+    /** Deriva la actividad de cada cliente de las órdenes y solicitudes, como lo hacen los disparadores del servidor. */
+    override fun observarClientesPorActividad(limite: Int): Flow<List<Usuario>> {
+        require(limite in 1..100) { "El límite debe estar entre 1 y 100" }
+        return combine(bd.usuarios, bd.ordenes, bd.solicitudes) { usuarios, ordenes, solicitudes ->
+            val actividad = HashMap<String, Long>()
+            fun registrar(clienteId: String, fecha: Long) {
+                actividad[clienteId] = maxOf(actividad[clienteId] ?: Long.MIN_VALUE, fecha)
+            }
+            ordenes.forEach { registrar(it.clienteId, it.fechaUltimoCambio) }
+            solicitudes.forEach { registrar(it.clienteId, it.creadaEn) }
+            usuarios.filter { it.rol == Rol.CLIENTE && it.id in actividad }.sortedByDescending { actividad.getValue(it.id) }.take(limite)
+        }
+    }
+
     override suspend fun obtenerUsuario(id: String): Usuario? = bd.usuarios.value.firstOrNull { it.id == id }
 
-    /** Reemplaza al usuario con el mismo identificador o lo agrega; si es el usuario activo, actualiza la sesión. */
+    /**
+     * Reemplaza al usuario con el mismo identificador o lo agrega; si es el usuario activo, actualiza la sesión. Como
+     * la reserva `dnis/{dni}` de la nube, un perfil nuevo con el DNI de otro usuario se rechaza sin guardar nada.
+     */
     override suspend fun guardarUsuario(usuario: Usuario) {
         val existe = bd.usuarios.value.any { it.id == usuario.id }
+        if (!existe && bd.usuarios.value.any { it.dni == usuario.dni }) throw DniYaRegistradoException()
         bd.usuarios.update { lista -> if (existe) lista.map { if (it.id == usuario.id) usuario else it } else lista + usuario }
         if (bd.usuarioActual.value?.id == usuario.id) bd.usuarioActual.value = usuario
     }

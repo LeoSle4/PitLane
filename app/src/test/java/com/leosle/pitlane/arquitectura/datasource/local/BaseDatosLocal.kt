@@ -37,7 +37,7 @@ class BaseDatosLocal(
     val notificaciones = MutableStateFlow<List<Notificacion>>(emptyList())
 
     /** Token de dispositivo de cada usuario, indexado por el identificador del usuario. */
-    val tokensDispositivo = MutableStateFlow<Map<String, String>>(emptyMap())
+    val tokensDispositivo = MutableStateFlow<Map<String, Set<String>>>(emptyMap())
 
     /** Usuario con la sesión abierta. */
     val usuarioActual = MutableStateFlow<Usuario?>(null)

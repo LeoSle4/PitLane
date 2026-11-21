@@ -1,7 +1,9 @@
 package com.leosle.pitlane.arquitectura.repositorio.impl
 
 import com.leosle.pitlane.arquitectura.repositorio.IClienteRepository
+import com.leosle.pitlane.arquitectura.datasource.DniYaRegistradoException
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
+import com.leosle.pitlane.util.Busqueda
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
 import com.leosle.pitlane.modelo.FichaCliente
@@ -10,8 +12,11 @@ import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.VehiculoConHistorial
 import com.leosle.pitlane.util.Resultado
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /** Gestión de clientes del Jefe de Taller sobre las fuentes de usuarios y documentos. */
@@ -31,8 +36,8 @@ class ClienteRepository(
     override fun observarFichaCliente(clienteId: String): Flow<FichaCliente?> =
         combine(
             usuarios.observarUsuarios(),
-            documentos.vehiculos.observarTodos(),
-            documentos.ordenes.observarTodos(),
+            documentos.vehiculos.observarDonde("clienteId", clienteId),
+            documentos.ordenes.observarDonde("clienteId", clienteId),
             usuarios.usuarioActual
         ) { listaUsuarios, listaVehiculos, listaOrdenes, actor ->
             if (!actor.esJefe()) return@combine null
@@ -46,46 +51,73 @@ class ClienteRepository(
             FichaCliente(cliente, historiales)
         }
 
+    /**
+     * Pide al servidor los [limite] clientes con `ultimaActividad` más reciente (campo que mantienen las funciones
+     * del servidor) en vez de recorrer usuarios, vehículos, órdenes y solicitudes. Las placas salen de una consulta
+     * por cliente.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observarClientesRecientes(limite: Int): Flow<List<ResultadoBusqueda>> =
-        combine(
-            usuarios.observarUsuarios(),
-            documentos.vehiculos.observarTodos(),
-            documentos.ordenes.observarTodos(),
-            documentos.solicitudes.observarTodos(),
-            usuarios.usuarioActual
-        ) { listaUsuarios, listaVehiculos, listaOrdenes, listaSolicitudes, actor ->
-            if (!actor.esJefe()) return@combine emptyList()
-            val ultimaActividad = HashMap<String, Long>()
-            fun registrar(clienteId: String, fecha: Long) {
-                ultimaActividad[clienteId] = maxOf(ultimaActividad[clienteId] ?: Long.MIN_VALUE, fecha)
-            }
-            listaOrdenes.forEach { registrar(it.clienteId, it.fechaUltimoCambio) }
-            listaSolicitudes.forEach { registrar(it.clienteId, it.creadaEn) }
-            listaUsuarios.filter { it.rol == Rol.CLIENTE && it.id in ultimaActividad }
-                .sortedByDescending { ultimaActividad.getValue(it.id) }
-                .take(limite)
-                .map { cliente ->
-                    ResultadoBusqueda(cliente, emptyList(), listaVehiculos.filter { it.clienteId == cliente.id }.map { it.placa })
+        usuarios.usuarioActual.flatMapLatest { actor ->
+            if (!actor.esJefe()) flowOf(emptyList())
+            else usuarios.observarClientesPorActividad(limite).map { lista ->
+                lista.filter { it.rol == Rol.CLIENTE }.map { cliente ->
+                    ResultadoBusqueda(cliente, emptyList(), documentos.vehiculos.listarDonde("clienteId", cliente.id).map { it.placa })
                 }
+            }
         }
 
-    /** Compara el texto con DNI, nombre completo y placas; exige al menos 3 caracteres. */
+    /**
+     * Busca por los términos indexados en vez de recorrer a todos los clientes y vehículos: el costo depende de las
+     * coincidencias (hasta [MAXIMO_COINCIDENCIAS] por rama), no de cuántos clientes hay. Exige al menos 3 caracteres
+     * y que quien consulta sea el Jefe.
+     *
+     * - Nombre y DNI: se consulta por la palabra más larga (de 3 o más caracteres) y luego se exige que cada palabra
+     *   de la consulta aparezca en el nombre completo o en el DNI. Los nombres coinciden por el COMIENZO de cada
+     *   palabra ("mend" encuentra a Mendoza, "ndoza" no); el DNI coincide en cualquier posición.
+     * - Placa: la consulta sin espacios ni guion se busca en cualquier posición de la placa.
+     *
+     * Los documentos anteriores al relleno de términos (`rellenarBusqueda.mjs`) no se encuentran. El resultado va
+     * ordenado por nombre completo (antes salía en el orden, sin especificar, de la lista de usuarios);
+     * `placasCoincidentes` son las placas que contienen la consulta y `placas` todas las del cliente.
+     */
     override suspend fun buscarClientes(consulta: String): List<ResultadoBusqueda> {
-        val texto = consulta.trim().lowercase()
-        if (texto.length < 3 || !usuarios.usuarioActual.value.esJefe()) return emptyList()
-        val textoPlaca = texto.replace("-", "")
-        val vehiculos = documentos.vehiculos.listar()
-        return usuarios.listarUsuarios().filter { it.rol == Rol.CLIENTE }.mapNotNull { cliente ->
-            val placas = vehiculos
-                .filter { it.clienteId == cliente.id && it.placa.replace("-", "").lowercase().contains(textoPlaca) }
-                .map { it.placa }
-            val coincidePersona = cliente.dni.contains(texto) || cliente.nombreCompleto.lowercase().contains(texto)
-            val todas = vehiculos.filter { it.clienteId == cliente.id }.map { it.placa }
-            if (coincidePersona || placas.isNotEmpty()) ResultadoBusqueda(cliente, placas, todas) else null
+        val texto = Busqueda.normalizar(consulta)
+        val placaBuscada = texto.replace(" ", "")
+        if (placaBuscada.length < LARGO_MINIMO_BUSQUEDA || !usuarios.usuarioActual.value.esJefe()) return emptyList()
+
+        val encontrados = LinkedHashMap<String, Usuario>()
+        val palabras = texto.split(' ')
+        palabras.filter { it.length >= LARGO_MINIMO_BUSQUEDA }.maxByOrNull { it.length }?.let { palabra ->
+            usuarios.buscarClientesPorTermino(palabra.take(LARGO_MAXIMO_TERMINO), MAXIMO_COINCIDENCIAS)
+                .filter { it.rol == Rol.CLIENTE && it.contieneTodas(palabras) }
+                .forEach { encontrados[it.id] = it }
+        }
+        // Los términos los escribe quien registra el vehículo; se comprueba contra la placa real, como se hace con el nombre
+        documentos.vehiculos.buscarPorTermino("terminosPlaca", placaBuscada, MAXIMO_COINCIDENCIAS)
+            .filter { Busqueda.normalizar(it.placa).replace(" ", "").contains(placaBuscada) }
+            .map { it.clienteId }.distinct().filter { it !in encontrados }
+            .mapNotNull { usuarios.obtenerUsuario(it) }.filter { it.rol == Rol.CLIENTE }
+            .forEach { encontrados[it.id] = it }
+
+        return encontrados.values.sortedBy { Busqueda.normalizar(it.nombreCompleto) }.map { cliente ->
+            val todas = documentos.vehiculos.listarDonde("clienteId", cliente.id).map { it.placa }
+            val coincidentes = todas.filter { Busqueda.normalizar(it).replace(" ", "").contains(placaBuscada) }
+            ResultadoBusqueda(cliente, coincidentes, todas)
         }
     }
 
-    /** Crea un cliente sin cuenta; rechaza DNI o correo repetidos. */
+    private fun Usuario.contieneTodas(palabras: List<String>): Boolean {
+        val nombre = Busqueda.normalizar(nombreCompleto)
+        val documento = Busqueda.normalizar(dni)
+        return palabras.all { nombre.contains(it) || documento.contains(it) }
+    }
+
+    /**
+     * Crea un cliente sin cuenta; rechaza DNI o correo repetidos. El DNI se consulta primero para dar el id del
+     * cliente existente; si otro registro lo gana entre la consulta y el guardado, la reserva `dnis/{dni}` lo rechaza
+     * y se responde el mismo mensaje, sin id.
+     */
     override suspend fun registrarCliente(
         nombres: String,
         apellidos: String,
@@ -95,7 +127,7 @@ class ClienteRepository(
     ): Resultado<Usuario> {
         val existentes = usuarios.listarUsuarios()
         existentes.firstOrNull { it.dni == dni }?.let {
-            return Resultado.Error("Ya existe un cliente con ese DNI", it.id)
+            return Resultado.Error(MENSAJE_DNI_REPETIDO, it.id)
         }
         if (correo.isNotBlank() && existentes.any { it.correo.equals(correo.trim(), ignoreCase = true) }) {
             return Resultado.Error("Ya existe un usuario con ese correo")
@@ -111,7 +143,11 @@ class ClienteRepository(
             rol = Rol.CLIENTE,
             tieneCuenta = false
         )
-        usuarios.guardarUsuario(cliente)
+        try {
+            usuarios.guardarUsuario(cliente)
+        } catch (_: DniYaRegistradoException) {
+            return Resultado.Error(MENSAJE_DNI_REPETIDO)
+        }
         return Resultado.Exito(cliente)
     }
 
@@ -132,14 +168,19 @@ class ClienteRepository(
     override suspend fun eliminarCliente(clienteId: String): Resultado<Unit> {
         val cliente = usuarios.obtenerUsuario(clienteId) ?: return Resultado.Error("No se encontró el cliente")
         if (cliente.tieneCuenta) return Resultado.Error("Este cliente tiene cuenta en la app y solo él puede eliminarla")
-        if (documentos.ordenes.listar().any { it.clienteId == clienteId }) {
+        if (documentos.ordenes.listarDonde("clienteId", clienteId).isNotEmpty()) {
             return Resultado.Error("No se puede eliminar un cliente con historial de órdenes")
         }
         documentos.enLote {
-            documentos.solicitudes.listar().filter { it.clienteId == clienteId }.forEach { documentos.solicitudes.eliminar(it.id) }
-            documentos.vehiculos.listar().filter { it.clienteId == clienteId }.forEach { documentos.vehiculos.eliminar(it.id) }
+            documentos.solicitudes.listarDonde("clienteId", clienteId).forEach { documentos.solicitudes.eliminar(it.id) }
+            documentos.vehiculos.listarDonde("clienteId", clienteId).forEach { documentos.vehiculos.eliminar(it.id) }
         }
         usuarios.eliminarUsuario(clienteId)
         return Resultado.Exito(Unit)
     }
 }
+
+private const val MENSAJE_DNI_REPETIDO = "Ya existe un cliente con ese DNI"
+private const val LARGO_MINIMO_BUSQUEDA = 3
+private const val LARGO_MAXIMO_TERMINO = 20
+private const val MAXIMO_COINCIDENCIAS = 30

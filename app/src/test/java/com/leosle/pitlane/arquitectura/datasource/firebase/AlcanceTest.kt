@@ -14,7 +14,7 @@ class AlcanceTest {
     @Test
     fun sinSesionNoSeLeeNada() {
         assertEquals(Alcance.Nada, alcanceDe(null))
-        assertEquals(Alcance.Nada, alcanceDe(null, "usuarioId"))
+        assertEquals(Alcance.Nada, alcanceDe(null, dueno = "c1"))
     }
 
     @Test
@@ -34,8 +34,30 @@ class AlcanceTest {
     }
 
     @Test
-    fun conCampoPropioTodosLeenSoloLoSuyoIncluidoElJefe() {
-        assertEquals(Alcance.Igual("usuarioId", "j1"), alcanceDe(usuario("j1", Rol.JEFE), "usuarioId"))
-        assertEquals(Alcance.Igual("usuarioId", "c1"), alcanceDe(usuario("c1", Rol.CLIENTE), "usuarioId"))
+    fun enLaBandejaDeUnUsuarioSoloSuDuenoLeeTodaLaSubcoleccionNiSiquieraElJefe() {
+        assertEquals(Alcance.Todo, alcanceDe(usuario("c1", Rol.CLIENTE), dueno = "c1"))
+        assertEquals(Alcance.Todo, alcanceDe(usuario("j1", Rol.JEFE), dueno = "j1"))
+        assertEquals(Alcance.Nada, alcanceDe(usuario("j1", Rol.JEFE), dueno = "c1"))
+        assertEquals(Alcance.Nada, alcanceDe(usuario("t1", Rol.TECNICO), dueno = "c1"))
+        assertEquals(Alcance.Nada, alcanceDe(usuario("c1", Rol.CLIENTE, activo = false), dueno = "c1"))
+    }
+
+    @Test
+    fun losAvancesDeUnaOrdenLosLeeEnterosQuienTengaSesionYLasReglasDecidenPorLaOrdenPadre() {
+        assertEquals(Alcance.Todo, alcanceDe(usuario("c1", Rol.CLIENTE), delPadre = true))
+        assertEquals(Alcance.Todo, alcanceDe(usuario("t1", Rol.TECNICO), delPadre = true))
+        assertEquals(Alcance.Todo, alcanceDe(usuario("j1", Rol.JEFE), delPadre = true))
+        assertEquals(Alcance.Nada, alcanceDe(usuario("t1", Rol.TECNICO, activo = false), delPadre = true))
+        assertEquals(Alcance.Nada, alcanceDe(null, delPadre = true))
+    }
+
+    @Test
+    fun losAvancesSonUnaSubcoleccionDeSuOrden() {
+        assertEquals("ordenes/o1/avances", rutaDeAvances("o1"))
+    }
+
+    @Test
+    fun laBandejaDeNotificacionesEsUnaSubcoleccionDelUsuario() {
+        assertEquals("usuarios/c1/notificaciones", rutaDeNotificaciones("c1"))
     }
 }

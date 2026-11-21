@@ -87,7 +87,7 @@ class HojaEditarAvance : HojaBase() {
         if (!formulario.validar()) return
         val tipo: TipoAvance = formulario.tipo() ?: return
         BotonCarga.iniciar(checkNotNull(vinculoInterno).btnGuardarAvance)
-        avanceViewModel.editarAvance(base.id, usuarioId(), tipo, formulario.descripcion(), gestorFotos.fotos) { resultado ->
+        avanceViewModel.editarAvance(base.ordenId, base.id, usuarioId(), tipo, formulario.descripcion(), gestorFotos.fotos) { resultado ->
             if (!isAdded || vinculoInterno == null) return@editarAvance
             when (resultado) {
                 is Resultado.Exito -> {

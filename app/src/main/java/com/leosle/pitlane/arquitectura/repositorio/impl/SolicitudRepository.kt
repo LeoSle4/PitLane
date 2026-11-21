@@ -5,10 +5,13 @@ import kotlinx.coroutines.flow.combine
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
 import com.leosle.pitlane.arquitectura.datasource.IFotoStorage
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
 import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.SolicitudDetallada
+import com.leosle.pitlane.modelo.comoResumen
+import com.leosle.pitlane.modelo.comoResumenCliente
 import com.leosle.pitlane.util.Fechas
 import com.leosle.pitlane.util.Reloj
 import com.leosle.pitlane.util.Resultado
@@ -59,9 +62,11 @@ class SolicitudRepository(
         fotos: List<Foto>
     ): Resultado<Solicitud> {
         validar(descripcion, fechaLlegada, fotos)?.let { return Resultado.Error(it) }
-        val tieneAtencion = documentos.solicitudes.listar().any { it.vehiculoId == vehiculoId && it.estado == EstadoSolicitud.PENDIENTE } ||
-            documentos.ordenes.listar().any { it.vehiculoId == vehiculoId && it.enCurso }
+        val tieneAtencion = documentos.solicitudes.listarDonde("vehiculoId", vehiculoId).any { it.estado == EstadoSolicitud.PENDIENTE } ||
+            documentos.ordenes.listarDonde("vehiculoId", vehiculoId).any { it.enCurso }
         if (tieneAtencion) return Resultado.Error("Este vehículo ya tiene una atención en curso")
+        val cliente = usuarios.obtenerUsuario(clienteId) ?: return Resultado.Error("No se encontró el cliente")
+        val vehiculo = documentos.vehiculos.obtener(vehiculoId) ?: return Resultado.Error("No se encontró el vehículo")
         val guardadas = when (val subida = this.fotos.subir(clienteId, fotos)) {
             is Resultado.Error -> return subida
             is Resultado.Exito -> subida.valor
@@ -75,7 +80,10 @@ class SolicitudRepository(
             fechaLlegada = fechaLlegada,
             fotos = guardadas,
             estado = EstadoSolicitud.PENDIENTE,
-            creadaEn = reloj.ahora()
+            creadaEn = reloj.ahora(),
+            cliente = cliente.comoResumenCliente(),
+            vehiculo = vehiculo.comoResumen(),
+            esquema = ESQUEMA_ACTUAL
         )
         documentos.solicitudes.guardar(solicitud.id, solicitud)
         return Resultado.Exito(solicitud)

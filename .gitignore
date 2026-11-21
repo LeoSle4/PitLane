@@ -29,3 +29,4 @@ firebase/**/firebase-debug.log
 firebase/.firebase/
 firebase/functions/node_modules/
 firebase/functions/.secret.local
+__pycache__/

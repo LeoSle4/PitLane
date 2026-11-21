@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.repositorio.impl
 
 import com.leosle.pitlane.arquitectura.repositorio.IVehiculoRepository
 import com.leosle.pitlane.arquitectura.datasource.IDocumentosDataSource
+import com.leosle.pitlane.arquitectura.datasource.PlacaYaRegistradaException
 import com.leosle.pitlane.util.Textos
 import com.leosle.pitlane.arquitectura.datasource.IUsuariosDataSource
 import com.leosle.pitlane.modelo.EstadoOrden
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
+private const val MENSAJE_PLACA_REGISTRADA = "Esta placa ya está registrada. Si es tuya, comunícate con el taller"
+
 /** Gestión de vehículos sobre las fuentes de documentos y de usuarios. */
 class VehiculoRepository(
     private val usuarios: IUsuariosDataSource,
@@ -23,7 +26,11 @@ class VehiculoRepository(
 
     /** Emite los vehículos visibles del cliente junto con su orden más reciente que no esté anulada ni entregada. */
     override fun observarVehiculosDeCliente(clienteId: String): Flow<List<VehiculoConEstado>> =
-        combine(documentos.vehiculos.observarTodos(), documentos.ordenes.observarTodos(), usuarios.usuarioActual) { listaVehiculos, listaOrdenes, actor ->
+        combine(
+            documentos.vehiculos.observarDonde("clienteId", clienteId),
+            documentos.ordenes.observarDonde("clienteId", clienteId),
+            usuarios.usuarioActual
+        ) { listaVehiculos, listaOrdenes, actor ->
             listaVehiculos.filter { it.clienteId == clienteId && it.activo && actor.esJefeOPropio(clienteId) }.map { vehiculo ->
                 val activa = listaOrdenes
                     .filter { it.vehiculoId == vehiculo.id && it.estado != EstadoOrden.ANULADA && it.estado != EstadoOrden.ENTREGADO }
@@ -34,8 +41,8 @@ class VehiculoRepository(
 
     /** Emite el vehículo con ese identificador cada vez que cambia. */
     override fun observarVehiculo(vehiculoId: String): Flow<Vehiculo?> =
-        combine(documentos.vehiculos.observarTodos(), usuarios.usuarioActual) { lista, actor ->
-            lista.firstOrNull { it.id == vehiculoId }?.takeIf { actor.esJefeOPropio(it.clienteId) }
+        combine(documentos.vehiculos.observar(vehiculoId), usuarios.usuarioActual) { vehiculo, actor ->
+            vehiculo?.takeIf { actor.esJefeOPropio(it.clienteId) }
         }.distinctUntilChanged()
 
     /** Guarda el vehículo con la placa normalizada; rechaza placas repetidas con el mensaje según quién registra. */
@@ -52,7 +59,7 @@ class VehiculoRepository(
         val existente = documentos.buscarPlaca(placaNormal)
         if (existente != null) {
             if (!registradoPorJefe || existente.clienteId == null) {
-                return Resultado.Error("Esta placa ya está registrada. Si es tuya, comunícate con el taller")
+                return Resultado.Error(MENSAJE_PLACA_REGISTRADA)
             }
             val dueno = usuarios.obtenerUsuario(existente.clienteId)?.nombreCompleto.orEmpty()
             return Resultado.Error("Esta placa ya está registrada a nombre de $dueno", existente.clienteId)
@@ -60,7 +67,12 @@ class VehiculoRepository(
         val vehiculo = Vehiculo(
             documentos.vehiculos.nuevoId(), clienteId, placaNormal, Textos.nombrePropio(marca), Textos.conInicialesMayusculas(modelo), anio, Textos.nombrePropio(color)
         )
-        documentos.vehiculos.guardar(vehiculo.id, vehiculo)
+        // La reserva de la placa decide quién gana si dos registros coinciden o si se omitió la consulta previa
+        try {
+            documentos.vehiculos.guardar(vehiculo.id, vehiculo)
+        } catch (e: PlacaYaRegistradaException) {
+            return Resultado.Error(MENSAJE_PLACA_REGISTRADA)
+        }
         return Resultado.Exito(vehiculo)
     }
 
@@ -84,15 +96,15 @@ class VehiculoRepository(
      */
     override suspend fun eliminarVehiculo(vehiculoId: String, solicitadoPorJefe: Boolean): Resultado<Unit> {
         val vehiculo = documentos.vehiculos.obtener(vehiculoId) ?: return Resultado.Error("No se encontró el vehículo")
-        val ordenes = documentos.ordenes.listar().filter { it.vehiculoId == vehiculoId }
+        val ordenes = documentos.ordenes.listarDonde("vehiculoId", vehiculoId)
         if (solicitadoPorJefe) {
             if (ordenes.isNotEmpty()) return Resultado.Error("No se puede eliminar un vehículo con historial de órdenes")
         } else if (ordenes.any { it.enTaller }) {
             return Resultado.Error("No puedes eliminar un vehículo que está en el taller")
         }
         documentos.enLote {
-            documentos.solicitudes.listar()
-                .filter { it.vehiculoId == vehiculoId && it.estado == EstadoSolicitud.PENDIENTE }
+            documentos.solicitudes.listarDonde("vehiculoId", vehiculoId)
+                .filter { it.estado == EstadoSolicitud.PENDIENTE }
                 .forEach { documentos.solicitudes.guardar(it.id, it.copy(estado = EstadoSolicitud.CANCELADA)) }
             if (ordenes.isEmpty()) {
                 documentos.vehiculos.eliminar(vehiculo.id)

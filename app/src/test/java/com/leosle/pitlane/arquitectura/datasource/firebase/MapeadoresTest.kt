@@ -2,6 +2,7 @@ package com.leosle.pitlane.arquitectura.datasource.firebase
 
 import com.leosle.pitlane.modelo.Avance
 import com.leosle.pitlane.modelo.CambioEstado
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.Conformidad
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.EstadoSolicitud
@@ -10,11 +11,15 @@ import com.leosle.pitlane.modelo.NivelCombustible
 import com.leosle.pitlane.modelo.Notificacion
 import com.leosle.pitlane.modelo.ObservacionCliente
 import com.leosle.pitlane.modelo.Orden
+import com.leosle.pitlane.modelo.ResumenCliente
+import com.leosle.pitlane.modelo.ResumenTecnico
+import com.leosle.pitlane.modelo.ResumenVehiculo
 import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.TipoAvance
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.Vehiculo
+import com.leosle.pitlane.util.Busqueda
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -44,6 +49,28 @@ class MapeadoresTest {
     }
 
     @Test
+    fun soloElClienteLlevaTerminosDeBusqueda() {
+        val cliente = Usuario("u4", "María José", "Pérez", "72345678", "", "", "", Rol.CLIENTE)
+        val tecnico = cliente.copy(id = "u5", rol = Rol.TECNICO)
+        val jefe = cliente.copy(id = "u6", rol = Rol.JEFE)
+
+        assertEquals(Busqueda.terminosDePersona("María José", "Pérez", "72345678"), cliente.aDocumento()["terminos"])
+        assertFalse(tecnico.aDocumento().containsKey("terminos"))
+        assertFalse(jefe.aDocumento().containsKey("terminos"))
+        assertEquals(cliente.copy(contrasena = ""), cliente.aDocumento().aUsuario("u4"))
+    }
+
+    @Test
+    fun vehiculoLlevaTerminosDePlacaYLaLecturaLosIgnora() {
+        val vehiculo = Vehiculo("v2", "u1", "ABC-123", "Toyota", "Yaris", 2018, "Rojo")
+
+        val documento = vehiculo.aDocumento()
+
+        assertEquals(Busqueda.terminosDePlaca("ABC-123"), documento["terminosPlaca"])
+        assertEquals(vehiculo, documento.aVehiculo("v2"))
+    }
+
+    @Test
     fun usuarioConRolDesconocidoFallaEnLugarDeAdivinar() {
         val documento = mapOf<String, Any?>("nombres" to "X", "rol" to "SUPERUSUARIO")
 
@@ -68,6 +95,110 @@ class MapeadoresTest {
         )
 
         assertEquals(solicitud, solicitud.aDocumento().aSolicitud("s1"))
+    }
+
+    private val resumenCliente = ResumenCliente("Ana", "Ruiz", "12345678", "999111222")
+    private val resumenVehiculo = ResumenVehiculo("ABC-123", "Toyota", "Yaris", 2018, "Rojo")
+    private val resumenTecnico = ResumenTecnico("Luis", "Ramos")
+
+    @Test
+    fun solicitudConInstantaneasLasEscribeComoMapasYLasLee() {
+        val solicitud = Solicitud(
+            id = "s1", clienteId = "u1", vehiculoId = "v1", descripcion = "No arranca", sintomas = emptyList(),
+            fechaLlegada = 10L, fotos = emptyList(), estado = EstadoSolicitud.PENDIENTE, creadaEn = 5L,
+            cliente = resumenCliente, vehiculo = resumenVehiculo
+        )
+
+        val documento = solicitud.aDocumento()
+
+        assertEquals(
+            mapOf("nombres" to "Ana", "apellidos" to "Ruiz", "dni" to "12345678", "telefono" to "999111222"),
+            documento["cliente"]
+        )
+        assertEquals(
+            mapOf("placa" to "ABC-123", "marca" to "Toyota", "modelo" to "Yaris", "anio" to 2018, "color" to "Rojo"),
+            documento["vehiculo"]
+        )
+        assertFalse(documento.containsKey("tecnico"))
+        assertEquals(solicitud, documento.aSolicitud("s1"))
+    }
+
+    @Test
+    fun solicitudAnteriorAlRellenoSeLeeSinInstantaneasYNoLasEscribe() {
+        val legado = mapOf<String, Any?>(
+            "clienteId" to "u1", "vehiculoId" to "v1", "descripcion" to "No arranca", "estado" to "PENDIENTE", "creadaEn" to 5L
+        )
+
+        val solicitud = legado.aSolicitud("s1")
+
+        assertNull(solicitud.cliente)
+        assertNull(solicitud.vehiculo)
+        assertFalse(solicitud.aDocumento().containsKey("cliente"))
+        assertFalse(solicitud.aDocumento().containsKey("vehiculo"))
+    }
+
+    @Test
+    fun ordenConInstantaneasSeConvierteIdaYVueltaYAnteriorAlRellenoSeLeeSinEllas() {
+        val orden = Orden(
+            id = "o1", numero = "ORD-0001", clienteId = "u1", vehiculoId = "v1", solicitudId = null, falla = "Batería",
+            kilometraje = 10, combustible = NivelCombustible.MEDIO, observaciones = "", fotos = emptyList(),
+            tecnicoId = "u9", estado = EstadoOrden.INGRESADO, historial = emptyList(), creadaEn = 1L,
+            cliente = resumenCliente, vehiculo = resumenVehiculo, tecnico = resumenTecnico
+        )
+
+        val documento = orden.aDocumento()
+
+        assertEquals(mapOf("nombres" to "Luis", "apellidos" to "Ramos"), documento["tecnico"])
+        assertEquals(orden, documento.aOrden("o1"))
+        val legada = orden.copy(cliente = null, vehiculo = null, tecnico = null).aDocumento()
+            .filterKeys { it !in setOf("cliente", "vehiculo", "tecnico") }.aOrden("o1")
+        assertNull(legada.cliente)
+        assertNull(legada.vehiculo)
+        assertNull(legada.tecnico)
+        assertEquals("Batería", legada.falla)
+    }
+
+    @Test
+    fun laOrdenYLaSolicitudDeLaVersion2EscribenElEsquemaYLoLeen() {
+        val orden = Orden(
+            id = "o1", numero = "ORD-0001", clienteId = "u1", vehiculoId = "v1", solicitudId = null, falla = "Batería",
+            kilometraje = 10, combustible = NivelCombustible.MEDIO, observaciones = "", fotos = emptyList(),
+            tecnicoId = "u9", estado = EstadoOrden.INGRESADO, historial = emptyList(), creadaEn = 1L,
+            cliente = resumenCliente, vehiculo = resumenVehiculo, tecnico = resumenTecnico, esquema = ESQUEMA_ACTUAL
+        )
+        val solicitud = Solicitud(
+            id = "s1", clienteId = "u1", vehiculoId = "v1", descripcion = "No arranca", sintomas = emptyList(),
+            fechaLlegada = 10L, fotos = emptyList(), estado = EstadoSolicitud.PENDIENTE, creadaEn = 5L,
+            cliente = resumenCliente, vehiculo = resumenVehiculo, esquema = ESQUEMA_ACTUAL
+        )
+
+        assertEquals(2, orden.aDocumento()["esquema"])
+        assertEquals(2, solicitud.aDocumento()["esquema"])
+        assertEquals(orden, orden.aDocumento().aOrden("o1"))
+        assertEquals(solicitud, solicitud.aDocumento().aSolicitud("s1"))
+    }
+
+    @Test
+    fun elDocumentoSinEsquemaEsDeLaVersion1YSeEscribeDeNuevoSinEl() {
+        val ordenLegada = mapOf<String, Any?>(
+            "numero" to "ORD-0001", "clienteId" to "u1", "vehiculoId" to "v1", "falla" to "Batería",
+            "combustible" to "MEDIO", "tecnicoId" to "u9", "estado" to "INGRESADO", "creadaEn" to 1L,
+            "cliente" to mapOf("nombres" to "Ana", "apellidos" to "Ruiz", "dni" to "12345678", "telefono" to "999111222"),
+            "vehiculo" to mapOf("placa" to "ABC-123", "marca" to "Toyota", "modelo" to "Yaris", "anio" to 2018, "color" to "Rojo")
+        )
+        val solicitudLegada = mapOf<String, Any?>(
+            "clienteId" to "u1", "vehiculoId" to "v1", "descripcion" to "No arranca", "estado" to "PENDIENTE", "creadaEn" to 5L
+        )
+
+        val orden = ordenLegada.aOrden("o1")
+        val solicitud = solicitudLegada.aSolicitud("s1")
+
+        assertEquals(1, orden.esquema)
+        assertEquals(1, solicitud.esquema)
+        assertFalse(orden.aDocumento().containsKey("esquema"))
+        assertFalse(solicitud.aDocumento().containsKey("esquema"))
+        assertEquals(1, (ordenLegada + ("esquema" to 1)).aOrden("o1").esquema)
+        assertFalse((ordenLegada + ("esquema" to 1)).aOrden("o1").aDocumento().containsKey("esquema"))
     }
 
     @Test
@@ -122,7 +253,14 @@ class MapeadoresTest {
     fun avanceSeConvierteIdaYVuelta() {
         val avance = Avance("a1", "o1", "u9", TipoAvance.TRABAJO_REALIZADO, "Cambio de fusible", listOf(foto), 8L)
 
-        assertEquals(avance, avance.aDocumento().aAvance("a1"))
+        assertEquals(avance, avance.aDocumento().aAvance("a1", "o1"))
+    }
+
+    @Test
+    fun elAvanceNoGuardaSuOrdenNiElAccesoPorqueLosDaLaRuta() {
+        val avance = Avance("a1", "o1", "u9", TipoAvance.HALLAZGO, "Fusible quemado", emptyList(), 8L)
+
+        assertEquals(setOf("tecnicoId", "tipo", "descripcion", "fotos", "fechaHora"), avance.aDocumento().keys)
     }
 
     @Test

@@ -40,6 +40,18 @@ data class Vehiculo(
 }
 
 /**
+ * Datos del cliente tal como estaban el día del ingreso o la solicitud. Es una instantánea: un cambio posterior en su
+ * perfil no se propaga, así la ficha conserva lo que era cierto ese día y las listas no consultan `usuarios`.
+ */
+data class ResumenCliente(val nombres: String, val apellidos: String, val dni: String, val telefono: String)
+
+/** Datos del vehículo al momento del ingreso o la solicitud; instantánea, no se actualiza con el vehículo. */
+data class ResumenVehiculo(val placa: String, val marca: String, val modelo: String, val anio: Int, val color: String)
+
+/** Nombre del técnico asignado; en la orden se actualiza solo cuando el Jefe reasigna la orden. */
+data class ResumenTecnico(val nombres: String, val apellidos: String)
+
+/**
  * Foto asociada a una solicitud, orden o avance. [ruta] puede ser la dirección de un archivo o un recurso
  * de ejemplo con el formato `recurso:nombre_del_drawable`.
  */
@@ -48,6 +60,9 @@ data class Foto(
     val ruta: String,
     val fechaHora: Long
 )
+
+/** Versión de esquema de `ordenes` y `solicitudes` con instantáneas; un documento sin el campo es la versión 1. */
+const val ESQUEMA_ACTUAL = 2
 
 /** Aviso de falla enviado por el cliente antes de llevar su vehículo al taller. */
 data class Solicitud(
@@ -60,7 +75,13 @@ data class Solicitud(
     val fotos: List<Foto>,
     val estado: EstadoSolicitud,
     val creadaEn: Long,
-    val ordenId: String? = null
+    val ordenId: String? = null,
+    /** Instantánea del cliente; nula en las solicitudes anteriores al relleno. */
+    val cliente: ResumenCliente? = null,
+    /** Instantánea del vehículo; nula en las solicitudes anteriores al relleno. */
+    val vehiculo: ResumenVehiculo? = null,
+    /** Versión de esquema: 2 si tiene la instantánea; 1 (sin el campo en el documento) si es anterior. */
+    val esquema: Int = 1
 )
 
 /**
@@ -115,7 +136,13 @@ data class Orden(
     val editadaPor: String? = null,
     val editadaEn: Long? = null,
     val conformidad: Conformidad? = null,
-    val observacionesCliente: List<ObservacionCliente> = emptyList()
+    val observacionesCliente: List<ObservacionCliente> = emptyList(),
+    /** Instantáneas del ingreso; nulas en las órdenes anteriores al relleno. */
+    val cliente: ResumenCliente? = null,
+    val vehiculo: ResumenVehiculo? = null,
+    val tecnico: ResumenTecnico? = null,
+    /** Versión de esquema: 2 si tiene las instantáneas; 1 (sin el campo en el documento) si es anterior. */
+    val esquema: Int = 1
 ) {
     /** Verdadero mientras el técnico todavía trabaja en la orden (Ingresado o En reparación). */
     val enCurso: Boolean get() = estado == EstadoOrden.INGRESADO || estado == EstadoOrden.EN_REPARACION
@@ -162,3 +189,12 @@ data class Notificacion(
     /** Indica que el aviso corresponde al ingreso del vehículo y debe abrir el comprobante. */
     val esIngreso: Boolean = false
 )
+
+/** Instantánea de este usuario como cliente. */
+fun Usuario.comoResumenCliente() = ResumenCliente(nombres, apellidos, dni, telefono)
+
+/** Instantánea de este usuario como técnico. */
+fun Usuario.comoResumenTecnico() = ResumenTecnico(nombres, apellidos)
+
+/** Instantánea de este vehículo. */
+fun Vehiculo.comoResumen() = ResumenVehiculo(placa, marca, modelo, anio, color)

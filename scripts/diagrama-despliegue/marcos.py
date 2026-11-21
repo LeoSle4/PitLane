@@ -43,19 +43,18 @@ def cubo(l, t, r, b, estereotipo, nombre, fondo="#FFFFFF", borde="#9E9E9E", gros
 
 RUTAS = [
     ("A", "Estación de desarrollo → Smartphone", "Instalación del APK (ADB o archivo)"),
-    ("B", "Estación de desarrollo → Proyecto Firebase", "firebase deploy: reglas de seguridad y funciones"),
+    ("B", "Estación de desarrollo → Proyecto Firebase", "firebase deploy: reglas de seguridad, índices y funciones"),
     ("1", "Smartphone → Authentication", "HTTPS · inicio de sesión, registro y recuperación de contraseña"),
     ("2", "Smartphone → Cloud Storage", "HTTPS · subida y lectura de fotos, sujetas a storage.rules"),
     ("3", "Smartphone → Cloud Firestore", "HTTPS/gRPC · lectura, escritura y escucha en tiempo real, sujetas a firestore.rules"),
-    ("4", "Smartphone → Cloud Functions", "HTTPS · funciones invocables: crear técnico, desactivar cuenta, unir cliente por DNI"),
-    ("5", "Cloud Firestore ↔ Cloud Functions", "Disparadores por escritura y escrituras con Admin SDK (notificaciones)"),
-    ("6", "Cloud Functions → Authentication", "Admin SDK · crear y desactivar cuentas, asignar el rol"),
-    ("7", "Cloud Functions → Cloud Messaging", "HTTP v1 · envío del aviso push"),
-    ("8", "Cloud Messaging → Smartphone", "Conexión persistente de Google Play services · entrega del aviso"),
+    ("4", "Smartphone → Cloud Functions", "HTTPS · funciones invocables: registrar cliente, crear técnico, desactivar y reactivar cuenta, verificar placa, recuperar contraseña con código"),
+    ("5", "Cloud Firestore ↔ Cloud Functions", "Disparadores por escritura y escrituras con Admin SDK (bandeja de avisos, última actividad)"),
+    ("6", "Cloud Functions → Authentication", "Admin SDK · crear y desactivar cuentas, asignar rol y claims"),
 ]
 NOTAS = [
     ("Proyecto", "Plan Blaze (lo exigen Storage y Functions) con alerta de presupuesto de USD 1"),
-    ("Región", "southamerica-east1 (São Paulo): la más cercana a Lima; la región de Firestore no se puede cambiar después"),
+    ("Región", "Funciones en southamerica-west1 (Santiago), la más cercana a Lima; la región de Firestore no se puede cambiar después"),
+    ("Avisos", "notificarOrden escribe en usuarios/{id}/notificaciones; la app escucha su bandeja y muestra el aviso local (sin Cloud Messaging)"),
 ]
 
 def insignia(x, y, txt):
@@ -89,19 +88,18 @@ def construir(esp, salida):
     # teléfono: entorno de ejecución dentro de la caja del dispositivo
     env = caja(n, ["APK", "GPS"], M)
     env = (env[0], env[1] - ETQ, env[2], env[3] + 4)
-    anc = caja(n, ["p1", "p2", "p3", "p4", "p8"], 0)
+    anc = caja(n, ["p1", "p2", "p3", "p4"], 0)
     dev = (min(env[0] - M, anc[0] - M), env[1] - ETQ - M + 6, max(env[2] + M, anc[2] + M), cy("p4"))
     # servicios de Firebase (todos con la misma altura)
-    arriba, abajo = cy("T_ST"), cy("Bb_FCM")
+    arriba, abajo = cy("T_ST"), cy("Bb_FS")
     def servicio(ids):
         c = caja(n, ids, M)
         return (c[0], arriba, c[2], abajo)
     st = servicio(["A_FOTOS", "A_SRULES"])
-    fcm = servicio(["L_FCM"])
     fs = servicio(["DB", "A_RULES"])
     au = servicio(["A_USERS"])
     # Cloud Functions
-    mitad = max(abs(cx("A_FN") - cx(k)) for k in ("T7", "T4", "T5", "T6")) + M
+    mitad = max(abs(cx("A_FN") - cx(k)) for k in ("T4", "T5", "T6")) + M
     mitad = max(mitad, (n["A_FN"][2] - n["A_FN"][0]) / 2 + M)
     fn = (cx("A_FN") - mitad, cy("T4"), cx("A_FN") + mitad, n["A_FN"][3] + M)
     # proyecto Firebase
@@ -115,7 +113,7 @@ def construir(esp, salida):
     capas += cubo(*ws, "«workstation»", "Estación de desarrollo", fondo="#F3E5F5", borde="#6A1B9A")
     capas += cubo(*dev, "«device»", "Smartphone Android [1..*]", fondo="#E3F2FD", borde="#1565C0")
     capas += cubo(*env, "«execution environment»", "Android 8.0 (API 26) o superior", fondo="#FFFFFF", borde="#1565C0")
-    for rect, nombre in ((st, "Cloud Storage"), (fcm, "Firebase Cloud Messaging"), (fs, "Cloud Firestore"), (au, "Firebase Authentication")):
+    for rect, nombre in ((st, "Cloud Storage"), (fs, "Cloud Firestore"), (au, "Firebase Authentication")):
         capas += cubo(*rect, "«Firebase PaaS»", nombre, fondo="#FAFAFA", borde="#616161")
     capas += cubo(*fn, "«Firebase · execution environment»", "Cloud Functions", fondo="#FAFAFA", borde="#616161")
 
@@ -134,7 +132,7 @@ def construir(esp, salida):
     ins = []
     ins += insignia((xa + xb) / 2, y0, "A")
     etiquetas = {("A_WS", "pB"): "B", ("p1", "T_AUTH"): "1", ("p2", "T_ST"): "2", ("p3", "T_FS"): "3", ("p4", "T4"): "4",
-                 ("Bb_FS", "T5"): "5", ("Bb_AUTH", "T6"): "6", ("Bb_FCM", "T7"): "7", ("p8", "T_FCM"): "8"}
+                 ("Bb_FS", "T5"): "5", ("Bb_AUTH", "T6"): "6"}
     for k, e in etiquetas.items():
         x, y = punto_medio_vertical(ar[k])
         if e == "4":  # cruza la fila de servicios: la insignia va en el tramo libre sobre ellos

@@ -11,6 +11,7 @@ import com.leosle.pitlane.modelo.ObservacionCliente
 import com.leosle.pitlane.util.Validador
 import kotlinx.coroutines.flow.first
 import com.leosle.pitlane.modelo.DatosOrden
+import com.leosle.pitlane.modelo.ESQUEMA_ACTUAL
 import com.leosle.pitlane.modelo.EstadoOrden
 import com.leosle.pitlane.modelo.EstadoSolicitud
 import com.leosle.pitlane.modelo.Foto
@@ -20,6 +21,9 @@ import com.leosle.pitlane.modelo.OrdenDetallada
 import com.leosle.pitlane.modelo.ResultadoIngreso
 import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.TipoAvance
+import com.leosle.pitlane.modelo.comoResumen
+import com.leosle.pitlane.modelo.comoResumenCliente
+import com.leosle.pitlane.modelo.comoResumenTecnico
 import com.leosle.pitlane.util.Reloj
 import com.leosle.pitlane.util.Resultado
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +34,10 @@ import kotlinx.coroutines.flow.map
  * Órdenes de ingreso y sus cambios de estado. Los avisos al cliente no se crean aquí: los genera la fuente
  * de documentos al escribirse la orden.
  */
+/** Estados que el servidor entrega al panel del Jefe (los de [Orden.enTaller]) y al del técnico (los de [Orden.enCurso]). */
+private val ESTADOS_EN_CURSO = listOf(EstadoOrden.INGRESADO, EstadoOrden.EN_REPARACION).map { it.name }
+private val ESTADOS_EN_TALLER = ESTADOS_EN_CURSO + EstadoOrden.LISTO.name
+
 class OrdenRepository(
     private val usuarios: IUsuariosDataSource,
     private val documentos: IDocumentosDataSource,
@@ -60,30 +68,39 @@ class OrdenRepository(
 
     /** Emite la orden cada vez que cambia, solo si el usuario puede verla: el Jefe todas, el técnico las suyas y el cliente las suyas. */
     override fun observarOrden(ordenId: String, usuarioId: String): Flow<OrdenDetallada?> =
-        ordenesDetalladas(usuarios, documentos)
-            .map { lista ->
+        ordenDetallada(ordenId, usuarios, documentos)
+            .map { detalle ->
                 val usuario = usuarios.obtenerUsuario(usuarioId)
-                lista.firstOrNull { it.orden.id == ordenId }?.takeIf { puedeVer(usuario, it.orden) }
+                detalle?.takeIf { puedeVer(usuario, it.orden) }
             }
             .distinctUntilChanged()
 
     /** Emite las órdenes del cliente de la más reciente a la más antigua. */
     override fun observarOrdenesDeCliente(clienteId: String): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarDonde("clienteId", clienteId), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             if (!actor.esJefeOPropio(clienteId)) emptyList()
             else lista.filter { it.orden.clienteId == clienteId }.sortedByDescending { it.orden.creadaEn }
         }
 
     /** Emite las órdenes que siguen vivas en el taller, de la más reciente a la más antigua. */
     override fun observarOrdenesActivas(): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarEnLista("estado", ESTADOS_EN_TALLER), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             if (!actor.esJefe()) emptyList()
             else lista.filter { it.orden.enTaller }.sortedByDescending { it.orden.creadaEn }
         }
 
     /** Emite las órdenes en curso del técnico: primero En reparación, luego Ingresado, de la más antigua a la más reciente. */
     override fun observarOrdenesDeTecnico(tecnicoId: String): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarEnLista("estado", ESTADOS_EN_CURSO), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             if (!actor.esJefeOPropio(tecnicoId)) emptyList()
             else lista.filter { it.orden.tecnicoId == tecnicoId && it.orden.enCurso }
                 .sortedWith(
@@ -94,7 +111,10 @@ class OrdenRepository(
 
     /** Emite las órdenes del vehículo de la más reciente a la más antigua; el cliente solo recibe las suyas y el técnico las usa para ver el historial. */
     override fun observarOrdenesDeVehiculo(vehiculoId: String): Flow<List<OrdenDetallada>> =
-        combine(ordenesDetalladas(usuarios, documentos), usuarios.usuarioActual) { lista, actor ->
+        combine(
+            ordenesDetalladasDe(documentos.ordenes.observarDonde("vehiculoId", vehiculoId), usuarios, documentos),
+            usuarios.usuarioActual
+        ) { lista, actor ->
             lista.filter { it.orden.vehiculoId == vehiculoId && (actor.esJefe() || actor?.rol == Rol.TECNICO || (actor != null && it.orden.clienteId == actor.id)) }
                 .sortedByDescending { it.orden.creadaEn }
         }
@@ -109,7 +129,7 @@ class OrdenRepository(
         if (datos.kilometraje < 0) return Resultado.Error("Ingresa un kilometraje válido")
         if (datos.fotos.isEmpty()) return Resultado.Error("Agrega al menos una foto del estado del vehículo")
         if (datos.fotos.size > MAXIMO_FOTOS) return Resultado.Error("Máximo 6 fotos")
-        if (documentos.ordenes.listar().any { it.vehiculoId == datos.vehiculoId && it.enCurso }) {
+        if (documentos.ordenes.listarDonde("vehiculoId", datos.vehiculoId).any { it.enCurso }) {
             return Resultado.Error("Este vehículo ya tiene una orden en curso")
         }
         val tecnico = usuarios.obtenerUsuario(datos.tecnicoId)?.takeIf { it.activo && it.rol == Rol.TECNICO }
@@ -134,12 +154,16 @@ class OrdenRepository(
             tecnicoId = tecnico.id,
             estado = EstadoOrden.INGRESADO,
             historial = listOf(CambioEstado(EstadoOrden.INGRESADO, ahora, jefeId, usuarioNombre = nombreDe(jefeId))),
-            creadaEn = ahora
+            creadaEn = ahora,
+            cliente = cliente.comoResumenCliente(),
+            vehiculo = vehiculo.comoResumen(),
+            tecnico = tecnico.comoResumenTecnico(),
+            esquema = ESQUEMA_ACTUAL
         )
         // Con solicitud de origen se atiende esa; sin ella, las pendientes del mismo vehículo (HU-23)
         val solicitudesAtendidas = datos.solicitudId?.let { listOf(it) }
-            ?: documentos.solicitudes.listar()
-                .filter { it.vehiculoId == datos.vehiculoId && it.estado == EstadoSolicitud.PENDIENTE }
+            ?: documentos.solicitudes.listarDonde("vehiculoId", datos.vehiculoId)
+                .filter { it.estado == EstadoSolicitud.PENDIENTE }
                 .map { it.id }
         documentos.enLote {
             documentos.ordenes.guardar(orden.id, orden)
@@ -178,6 +202,8 @@ class OrdenRepository(
             combustible = combustible,
             observaciones = observaciones.trim(),
             tecnicoId = tecnico.id,
+            // La instantánea solo cambia al reasignar: las reglas exigen que `tecnico` y `tecnicoId` cambien juntos
+            tecnico = if (tecnico.id != orden.tecnicoId) tecnico.comoResumenTecnico() else orden.tecnico,
             editadaPor = usuarioId,
             editadaEn = reloj.ahora()
         )
@@ -245,7 +271,7 @@ class OrdenRepository(
         val orden = documentos.ordenes.obtener(ordenId) ?: return Resultado.Error("No se encontró la orden")
         if (orden.tecnicoId != tecnicoId) return Resultado.Error(MENSAJE_NO_ASIGNADA)
         if (orden.estado != EstadoOrden.EN_REPARACION) return Resultado.Error("Primero inicia la reparación")
-        val tieneTrabajo = documentos.avances.listar().any { it.ordenId == ordenId && it.tipo == TipoAvance.TRABAJO_REALIZADO }
+        val tieneTrabajo = documentos.avancesDe(ordenId).listar().any { it.tipo == TipoAvance.TRABAJO_REALIZADO }
         if (!tieneTrabajo) return Resultado.Error("Registra el trabajo realizado antes de marcar como listo")
         val ahora = reloj.ahora()
         val lista = orden.copy(
@@ -263,7 +289,7 @@ class OrdenRepository(
         if (!usuarios.usuarioActual.value.esJefe()) return emptyList()
         val texto = consulta.trim().lowercase()
         val textoPlaca = texto.replace("-", "")
-        return ordenesDetalladas(usuarios, documentos).first()
+        return ordenesDetalladasDe(documentos.ordenes.observarDonde("estado", EstadoOrden.LISTO.name), usuarios, documentos).first()
             .filter { it.orden.estado == EstadoOrden.LISTO }
             .filter { detalle ->
                 val placa = detalle.vehiculo?.placa.orEmpty().replace("-", "").lowercase()

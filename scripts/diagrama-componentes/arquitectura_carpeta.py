@@ -9,7 +9,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, DIR)
 import marcos
 
-ETIQUETAS_CARPETA = ["vista/", "viewmodel/", "repositorio/  ·  impl/", "datasource/  ·  local/", None]
+ETIQUETAS_CARPETA = ["vista/", "viewmodel/", "repositorio/  ·  impl/", "datasource/  ·  firebase/", None]
 EXTRA = 400   # ancho agregado a la derecha del lienzo
 TOP = 60      # alto agregado arriba para el marco de arquitectura/ sin pisar el título
 MONO = "Menlo, Monaco, Courier New, monospace"
@@ -90,16 +90,27 @@ def agregar(svg):
     ancho = 270
     vm_cy = vm[1] + vm[3] / 2
     repo_cy = repo[1] + repo[3] / 2
-    y_modelo = vm_cy - 42
-    y_util = max(repo_cy - 42, y_modelo + 84 + 30)
-    modelo = caja_texto(x_ext, y_modelo, ancho, 84, "#E0F2F1", "#00695C", ["modelo/", "Entidades · Enumeraciones", "Proyecciones · DatosFormulario"])
-    util = caja_texto(x_ext, y_util, ancho, 84, "#ECEFF1", "#455A64", ["util/", "Resultado · Validador", "Fechas · Textos · Reloj"])
+    alto_caja = 104
+    y_modelo = vm_cy - alto_caja / 2
+    y_util = max(repo_cy - alto_caja / 2, y_modelo + alto_caja + 30)
+    modelo = caja_texto(x_ext, y_modelo, ancho, alto_caja, "#E0F2F1", "#00695C",
+                        ["modelo/", "Entidades · Enumeraciones", "Proyecciones · DatosFormulario", "lo usan las cuatro capas"])
+    util = caja_texto(x_ext, y_util, ancho, alto_caja, "#ECEFF1", "#455A64",
+                      ["util/", "Resultado · Validador · Búsqueda", "Fechas · Textos · Reloj", "lo usan las cuatro capas"])
 
-    x_codo = der + 40
-    flechas = [
-        flecha([(vm[0] + vm[2], vm_cy), (x_codo, vm_cy), (x_codo, y_modelo + 42), (x_ext, y_modelo + 42)], "usa", "#00695C"),
-        flecha([(repo[0] + repo[2], repo_cy), (x_codo + 16, repo_cy), (x_codo + 16, y_util + 42), (x_ext, y_util + 42)], "usa", "#455A64"),
-    ]
+    # Cada capa (vista, viewmodel, repositorio y datasource) se une a modelo/ y a util/ por un bus vertical a la derecha
+    x_m, x_u = der + 34, der + 62
+    mid_m, mid_u = y_modelo + alto_caja / 2, y_util + alto_caja / 2
+    flechas = []
+    for color, x_bus, fraccion, mid, caja in (("#00695C", x_m, 0.35, mid_m, modelo), ("#455A64", x_u, 0.7, mid_u, util)):
+        ys = []
+        for capa in (vista, vm, repo, ds):
+            y = capa[1] + capa[3] * fraccion
+            ys.append(y)
+            flechas.append(f'<path d="M{capa[0] + capa[2]:.1f},{y:.1f} L{x_bus:.1f},{y:.1f}" fill="none" stroke="{color}" stroke-width="1.4" stroke-dasharray="7,4"/>')
+            flechas.append(f'<circle cx="{capa[0] + capa[2]:.1f}" cy="{y:.1f}" r="3" fill="{color}"/>')
+        flechas.append(f'<path d="M{x_bus:.1f},{min(ys + [mid]):.1f} L{x_bus:.1f},{max(ys + [mid]):.1f}" fill="none" stroke="{color}" stroke-width="1.4" stroke-dasharray="7,4"/>')
+        flechas.append(flecha([(x_bus, mid), (x_ext, mid)], "usa", color))
     # Insertar el marco de arquitectura/ antes de las capas, y lo demás al final del grafo
     primera = re.search(r'<rect x="[-\d.]+" y="[-\d.]+" width="[\d.]+" height="[\d.]+" rx="10" fill="#FFFFFF" stroke="#9E9E9E"', svg)
     svg = svg[:primera.start()] + inserto_antes + "\n" + svg[primera.start():]

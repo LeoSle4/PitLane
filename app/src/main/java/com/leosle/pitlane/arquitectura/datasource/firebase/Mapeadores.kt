@@ -10,11 +10,15 @@ import com.leosle.pitlane.modelo.NivelCombustible
 import com.leosle.pitlane.modelo.Notificacion
 import com.leosle.pitlane.modelo.ObservacionCliente
 import com.leosle.pitlane.modelo.Orden
+import com.leosle.pitlane.modelo.ResumenCliente
+import com.leosle.pitlane.modelo.ResumenTecnico
+import com.leosle.pitlane.modelo.ResumenVehiculo
 import com.leosle.pitlane.modelo.Rol
 import com.leosle.pitlane.modelo.Solicitud
 import com.leosle.pitlane.modelo.TipoAvance
 import com.leosle.pitlane.modelo.Usuario
 import com.leosle.pitlane.modelo.Vehiculo
+import com.leosle.pitlane.util.Busqueda
 
 /**
  * Conversión entre el modelo y los documentos de Firestore. El identificador es el del documento y no se
@@ -32,6 +36,9 @@ private fun Documento.largoONulo(campo: String): Long? = (this[campo] as? Number
 
 private fun Documento.entero(campo: String): Int = (this[campo] as? Number)?.toInt() ?: 0
 
+/** La versión de esquema; un documento sin el campo es de la versión 1. */
+private fun Documento.esquema(): Int = (this["esquema"] as? Number)?.toInt() ?: 1
+
 private fun Documento.booleano(campo: String, porDefecto: Boolean): Boolean = this[campo] as? Boolean ?: porDefecto
 
 @Suppress("UNCHECKED_CAST")
@@ -47,6 +54,7 @@ private fun Documento.textos(campo: String): List<String> = this[campo] as? List
 private inline fun <reified E : Enum<E>> Documento.enumeracion(campo: String): E =
     enumValueOf<E>(requireNotNull(this[campo] as? String) { "Falta el campo $campo" })
 
+/** Solo los clientes llevan `terminos` (búsqueda por `array-contains`); el técnico y el Jefe no se buscan. */
 internal fun Usuario.aDocumento(): Documento = mapOf(
     "nombres" to nombres,
     "apellidos" to apellidos,
@@ -56,7 +64,7 @@ internal fun Usuario.aDocumento(): Documento = mapOf(
     "rol" to rol.name,
     "activo" to activo,
     "tieneCuenta" to tieneCuenta
-)
+) + if (rol == Rol.CLIENTE) mapOf("terminos" to Busqueda.terminosDePersona(nombres, apellidos, dni)) else emptyMap()
 
 internal fun Documento.aUsuario(id: String): Usuario = Usuario(
     id = id,
@@ -78,7 +86,8 @@ internal fun Vehiculo.aDocumento(): Documento = mapOf(
     "modelo" to modelo,
     "anio" to anio,
     "color" to color,
-    "activo" to activo
+    "activo" to activo,
+    "terminosPlaca" to Busqueda.terminosDePlaca(placa)
 )
 
 internal fun Documento.aVehiculo(id: String): Vehiculo = Vehiculo(
@@ -96,6 +105,37 @@ private fun Foto.aDocumento(): Documento = mapOf("id" to id, "ruta" to ruta, "fe
 
 private fun Documento.aFoto(): Foto = Foto(id = texto("id"), ruta = texto("ruta"), fechaHora = largo("fechaHora"))
 
+private fun ResumenCliente.aDocumento(): Documento =
+    mapOf("nombres" to nombres, "apellidos" to apellidos, "dni" to dni, "telefono" to telefono)
+
+private fun Documento.aResumenCliente(): ResumenCliente =
+    ResumenCliente(texto("nombres"), texto("apellidos"), texto("dni"), texto("telefono"))
+
+private fun ResumenVehiculo.aDocumento(): Documento =
+    mapOf("placa" to placa, "marca" to marca, "modelo" to modelo, "anio" to anio, "color" to color)
+
+private fun Documento.aResumenVehiculo(): ResumenVehiculo =
+    ResumenVehiculo(texto("placa"), texto("marca"), texto("modelo"), entero("anio"), texto("color"))
+
+private fun ResumenTecnico.aDocumento(): Documento = mapOf("nombres" to nombres, "apellidos" to apellidos)
+
+private fun Documento.aResumenTecnico(): ResumenTecnico = ResumenTecnico(texto("nombres"), texto("apellidos"))
+
+/**
+ * Agrega al documento las instantáneas que existan; las ausentes (documentos anteriores al relleno) no se escriben.
+ * El `esquema` solo se escribe desde la versión 2: un documento de la versión 1 sigue sin el campo hasta que el relleno
+ * le da las instantáneas y la versión juntas.
+ */
+private fun Documento.conInstantaneas(
+    esquema: Int, cliente: ResumenCliente?, vehiculo: ResumenVehiculo?, tecnico: ResumenTecnico? = null
+): Documento =
+    this + listOfNotNull(
+        if (esquema >= 2) "esquema" to esquema else null,
+        cliente?.let { "cliente" to it.aDocumento() },
+        vehiculo?.let { "vehiculo" to it.aDocumento() },
+        tecnico?.let { "tecnico" to it.aDocumento() }
+    )
+
 internal fun Solicitud.aDocumento(): Documento = mapOf(
     "clienteId" to clienteId,
     "vehiculoId" to vehiculoId,
@@ -106,7 +146,7 @@ internal fun Solicitud.aDocumento(): Documento = mapOf(
     "estado" to estado.name,
     "creadaEn" to creadaEn,
     "ordenId" to ordenId
-)
+).conInstantaneas(esquema, cliente, vehiculo)
 
 internal fun Documento.aSolicitud(id: String): Solicitud = Solicitud(
     id = id,
@@ -118,7 +158,10 @@ internal fun Documento.aSolicitud(id: String): Solicitud = Solicitud(
     fotos = documentos("fotos").map { it.aFoto() },
     estado = enumeracion<EstadoSolicitud>("estado"),
     creadaEn = largo("creadaEn"),
-    ordenId = textoONulo("ordenId")
+    ordenId = textoONulo("ordenId"),
+    cliente = subdocumento("cliente")?.aResumenCliente(),
+    vehiculo = subdocumento("vehiculo")?.aResumenVehiculo(),
+    esquema = esquema()
 )
 
 private fun CambioEstado.aDocumento(): Documento = mapOf(
@@ -170,7 +213,7 @@ internal fun Orden.aDocumento(): Documento = mapOf(
     "editadaEn" to editadaEn,
     "conformidad" to conformidad?.aDocumento(),
     "observacionesCliente" to observacionesCliente.map { it.aDocumento() }
-)
+).conInstantaneas(esquema, cliente, vehiculo, tecnico)
 
 internal fun Documento.aOrden(id: String): Orden = Orden(
     id = id,
@@ -193,11 +236,15 @@ internal fun Documento.aOrden(id: String): Orden = Orden(
     editadaPor = textoONulo("editadaPor"),
     editadaEn = largoONulo("editadaEn"),
     conformidad = subdocumento("conformidad")?.aConformidad(),
-    observacionesCliente = documentos("observacionesCliente").map { it.aObservacionCliente() }
+    observacionesCliente = documentos("observacionesCliente").map { it.aObservacionCliente() },
+    cliente = subdocumento("cliente")?.aResumenCliente(),
+    vehiculo = subdocumento("vehiculo")?.aResumenVehiculo(),
+    tecnico = subdocumento("tecnico")?.aResumenTecnico(),
+    esquema = esquema()
 )
 
+/** El avance vive en `ordenes/{ordenId}/avances/{id}`: la ruta da su orden, así que el documento no la repite. */
 internal fun Avance.aDocumento(): Documento = mapOf(
-    "ordenId" to ordenId,
     "tecnicoId" to tecnicoId,
     "tipo" to tipo.name,
     "descripcion" to descripcion,
@@ -205,9 +252,9 @@ internal fun Avance.aDocumento(): Documento = mapOf(
     "fechaHora" to fechaHora
 )
 
-internal fun Documento.aAvance(id: String): Avance = Avance(
+internal fun Documento.aAvance(id: String, ordenId: String): Avance = Avance(
     id = id,
-    ordenId = texto("ordenId"),
+    ordenId = ordenId,
     tecnicoId = texto("tecnicoId"),
     tipo = enumeracion<TipoAvance>("tipo"),
     descripcion = texto("descripcion"),
