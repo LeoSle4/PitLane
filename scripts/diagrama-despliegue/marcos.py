@@ -50,11 +50,13 @@ RUTAS = [
     ("4", "Smartphone → Cloud Functions", "HTTPS · funciones invocables: registrar cliente, crear técnico, desactivar y reactivar cuenta, verificar placa, recuperar contraseña con código"),
     ("5", "Cloud Firestore ↔ Cloud Functions", "Disparadores por escritura y escrituras con Admin SDK (bandeja de avisos, última actividad)"),
     ("6", "Cloud Functions → Authentication", "Admin SDK · crear y desactivar cuentas, asignar rol y claims"),
+    ("7", "Cloud Functions → Firebase Cloud Messaging", "Admin SDK · notificarOrden envía el push de datos a los tokens de usuarios/{id}/tokensDispositivo y borra los inválidos"),
+    ("8", "Firebase Cloud Messaging → Smartphone", "Push (FCM) · FirebaseMessagingService muestra la notificación con la app en segundo plano o cerrada"),
 ]
 NOTAS = [
     ("Proyecto", "Plan Blaze (lo exigen Storage y Functions) con alerta de presupuesto de USD 1"),
     ("Región", "Funciones en southamerica-west1 (Santiago), la más cercana a Lima; la región de Firestore no se puede cambiar después"),
-    ("Avisos", "notificarOrden escribe en usuarios/{id}/notificaciones; la app escucha su bandeja y muestra el aviso local (sin Cloud Messaging)"),
+    ("Avisos", "notificarOrden escribe en usuarios/{id}/notificaciones y envía un push por Firebase Cloud Messaging a los tokens FCM del cliente (tokensDispositivo)"),
 ]
 
 def insignia(x, y, txt):
@@ -88,7 +90,7 @@ def construir(esp, salida):
     # teléfono: entorno de ejecución dentro de la caja del dispositivo
     env = caja(n, ["APK", "GPS"], M)
     env = (env[0], env[1] - ETQ, env[2], env[3] + 4)
-    anc = caja(n, ["p1", "p2", "p3", "p4"], 0)
+    anc = caja(n, ["p1", "p2", "p3", "p4", "p5"], 0)
     dev = (min(env[0] - M, anc[0] - M), env[1] - ETQ - M + 6, max(env[2] + M, anc[2] + M), cy("p4"))
     # servicios de Firebase (todos con la misma altura)
     arriba, abajo = cy("T_ST"), cy("Bb_FS")
@@ -98,13 +100,14 @@ def construir(esp, salida):
     st = servicio(["A_FOTOS", "A_SRULES"])
     fs = servicio(["DB", "A_RULES"])
     au = servicio(["A_USERS"])
+    fc = servicio(["A_FCM"])
     # Cloud Functions
-    mitad = max(abs(cx("A_FN") - cx(k)) for k in ("T4", "T5", "T6")) + M
+    mitad = max(abs(cx("A_FN") - cx(k)) for k in ("T4", "T5", "T6", "T7")) + M
     mitad = max(mitad, (n["A_FN"][2] - n["A_FN"][0]) / 2 + M)
     fn = (cx("A_FN") - mitad, cy("T4"), cx("A_FN") + mitad, n["A_FN"][3] + M)
     # proyecto Firebase
     proy = (min(st[0], fn[0], cx("pB") - 24) - M, cy("pB"),
-            max(au[2], fn[2]) + M + D, fn[3] + M)
+            max(fc[2], au[2], fn[2]) + M + D, fn[3] + M)
 
     # paquete del proyecto
     capas.append(f'<rect x="{proy[0]:.1f}" y="{proy[1]:.1f}" width="{proy[2]-proy[0]:.1f}" height="{proy[3]-proy[1]:.1f}" rx="8" fill="#FFFFFF" stroke="#9E9E9E" stroke-width="1.2"/>')
@@ -113,7 +116,7 @@ def construir(esp, salida):
     capas += cubo(*ws, "«workstation»", "Estación de desarrollo", fondo="#F3E5F5", borde="#6A1B9A")
     capas += cubo(*dev, "«device»", "Smartphone Android [1..*]", fondo="#E3F2FD", borde="#1565C0")
     capas += cubo(*env, "«execution environment»", "Android 8.0 (API 26) o superior", fondo="#FFFFFF", borde="#1565C0")
-    for rect, nombre in ((st, "Cloud Storage"), (fs, "Cloud Firestore"), (au, "Firebase Authentication")):
+    for rect, nombre in ((st, "Cloud Storage"), (fs, "Cloud Firestore"), (au, "Firebase Authentication"), (fc, "Firebase Cloud Messaging")):
         capas += cubo(*rect, "«Firebase PaaS»", nombre, fondo="#FAFAFA", borde="#616161")
     capas += cubo(*fn, "«Firebase · execution environment»", "Cloud Functions", fondo="#FAFAFA", borde="#616161")
 
@@ -132,7 +135,7 @@ def construir(esp, salida):
     ins = []
     ins += insignia((xa + xb) / 2, y0, "A")
     etiquetas = {("A_WS", "pB"): "B", ("p1", "T_AUTH"): "1", ("p2", "T_ST"): "2", ("p3", "T_FS"): "3", ("p4", "T4"): "4",
-                 ("Bb_FS", "T5"): "5", ("Bb_AUTH", "T6"): "6"}
+                 ("Bb_FS", "T5"): "5", ("Bb_AUTH", "T6"): "6", ("Bb_FCM", "T7"): "7", ("p5", "T_FCM"): "8"}
     for k, e in etiquetas.items():
         x, y = punto_medio_vertical(ar[k])
         if e == "4":  # cruza la fila de servicios: la insignia va en el tramo libre sobre ellos

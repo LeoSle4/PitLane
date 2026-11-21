@@ -31,23 +31,23 @@ artefacto("A_BUILD", "Android Studio · Gradle\\nservicio-electrico-freddy.apk",
 w(f'  s_wd [shape=box, {T}, fixedsize=true, width={ESP_WS_DEV}, height=0.1, label=""];')
 artefacto("APK", "servicio-electrico-freddy.apk\\nKotlin · MVVM", 2.9, 0.75)
 ancla("M_dev", "g_eje")
-artefacto("GPS", "MensajesPushService\\naviso local desde la bandeja", 2.9, 0.75)
+artefacto("GPS", "MensajesPushService\\nFirebaseMessagingService", 2.9, 0.75)
 fila("A_BUILD", "s_wd", "APK", "M_dev", "GPS")
 
 # r2: segundo artefacto de la estación y anclas inferiores del teléfono
 artefacto("A_CLI", "Firebase CLI\\nfirebase deploy", 3.0, 0.75, "g_B")
-for a, g in (("p2", "g_st"), ("p4", "g_eje"), ("p3", "g_fs"), ("p1", "g_auth")):
+for a, g in (("p2", "g_st"), ("p4", "g_eje"), ("p3", "g_fs"), ("p1", "g_auth"), ("p5", "g_fcm")):
     ancla(a, g)
-fila("A_CLI", "p2", "p4", "p3", "p1")
+fila("A_CLI", "p2", "p4", "p3", "p1", "p5")
 
 # r3: borde inferior de la estación
 ancla("A_WS", "g_B")
 # r4: borde superior del proyecto Firebase
 ancla("pB", "g_B")
 # r5: bordes superiores de los servicios
-for a, g in (("T_ST", "g_st"), ("M5", "g_eje"), ("T_FS", "g_fs"), ("T_AUTH", "g_auth")):
+for a, g in (("T_ST", "g_st"), ("M5", "g_eje"), ("T_FS", "g_fs"), ("T_AUTH", "g_auth"), ("T_FCM", "g_fcm")):
     ancla(a, g)
-fila("T_ST", "M5", "T_FS", "T_AUTH")
+fila("T_ST", "M5", "T_FS", "T_AUTH", "T_FCM")
 
 # r6: contenido de los servicios
 artefacto("A_FOTOS", "Fotos JPG / PNG", 1.8, 0.6, "g_st")
@@ -58,30 +58,32 @@ artefacto("DB", "BD NoSQL · TTL\\ncolecciones, subcolecciones\\ny reservas de v
 artefacto("A_RULES", "firestore.rules\\nfirestore.indexes.json", 2.1, 0.7)
 w(f'  g2 [shape=box, {T}, fixedsize=true, width=0.35, height=0.1, label=""];')
 artefacto("A_USERS", "Cuentas de usuario\\n(correo y contraseña)\\nclaims: usuarioId, rol", 2.4, 1.0, "g_auth")
-fila("A_FOTOS", "A_SRULES", "g1", "M6", "DB", "A_RULES", "g2", "A_USERS")
+w(f'  g3 [shape=box, {T}, fixedsize=true, width=0.35, height=0.1, label=""];')
+artefacto("A_FCM", "Mensajes de datos (push)\\na los tokens de\\ntokensDispositivo", 2.4, 1.0, "g_fcm")
+fila("A_FOTOS", "A_SRULES", "g1", "M6", "DB", "A_RULES", "g2", "A_USERS", "g3", "A_FCM")
 
 # r7: bordes inferiores de los servicios
-for a, g in (("M7", "g_eje"), ("Bb_FS", "g_fs"), ("Bb_AUTH", "g_auth")):
+for a, g in (("M7", "g_eje"), ("Bb_FS", "g_fs"), ("Bb_AUTH", "g_auth"), ("Bb_FCM", "g_fcm")):
     ancla(a, g)
-fila("M7", "Bb_FS", "Bb_AUTH")
+fila("M7", "Bb_FS", "Bb_AUTH", "Bb_FCM")
 
 # r8: bordes superiores de Cloud Functions
-for a, g in (("T4", "g_eje"), ("T5", "g_fs"), ("T6", "g_auth")):
+for a, g in (("T4", "g_eje"), ("T5", "g_fs"), ("T6", "g_auth"), ("T7", "g_fcm")):
     ancla(a, g)
-fila("T4", "T5", "T6")
+fila("T4", "T5", "T6", "T7")
 
 # r9: artefacto de Cloud Functions
-artefacto("A_FN", "index.js · Node.js 22 · firebase-admin\\ninvocables: registrarCliente, crearTecnico, desactivarCuenta,\\nreactivarCuenta, verificarPlaca, solicitarCodigo,\\nrestablecerContrasena\\ndisparadores de Firestore: notificarOrden,\\nactividadPorOrden, actividadPorSolicitud", 5.6, 1.9, "g_fs")
+artefacto("A_FN", "index.js · Node.js 22 · firebase-admin\\ninvocables: registrarCliente, crearTecnico, desactivarCuenta,\\nreactivarCuenta, verificarPlaca, solicitarCodigo,\\nrestablecerContrasena\\ndisparadores de Firestore: notificarOrden (envía el push por FCM),\\nactividadPorOrden, actividadPorSolicitud", 5.6, 1.9, "g_fs")
 
 # alineación vertical (invisibles)
 w('  edge [style=invis];')
 w('  A_BUILD -> A_CLI -> A_WS;')
 w('  M_dev -> p4; p4 -> M5 [minlen=3]; M5 -> M6 -> M7 -> T4; T5 -> A_FN;')
-w('  T_ST -> A_FOTOS; T_FS -> DB -> Bb_FS; T_AUTH -> A_USERS -> Bb_AUTH;')
+w('  T_ST -> A_FOTOS; T_FS -> DB -> Bb_FS; T_AUTH -> A_USERS -> Bb_AUTH; T_FCM -> A_FCM -> Bb_FCM;')
 # rutas visibles
 w('  edge [style=solid];')
 w('  A_WS -> pB [weight=50];')
 w('  p1 -> T_AUTH [minlen=3, weight=50]; p2 -> T_ST [minlen=3, weight=50]; p3 -> T_FS [minlen=3, weight=50]; p4 -> T4 [minlen=6, weight=50];')
-w('  Bb_FS -> T5 [weight=50]; Bb_AUTH -> T6 [weight=50];')
+w('  Bb_FS -> T5 [weight=50]; Bb_AUTH -> T6 [weight=50]; Bb_FCM -> T7 [weight=50]; p5 -> T_FCM [minlen=3, weight=50];')
 w('}')
 open(sys.argv[1], "w").write("\n".join(L))
