@@ -37,7 +37,7 @@ Node 22, región `southamerica-west1`. Son las operaciones que la app no puede h
 | `desactivarCuenta` | Jefe, o el cliente sobre su propia cuenta | Inhabilita la cuenta y revoca sus sesiones |
 | `reactivarCuenta` | Jefe | Vuelve a habilitar la cuenta |
 | `verificarPlaca` | cualquier sesión | Dice si una placa ya existe; solo el Jefe recibe el dueño |
-| `notificarOrden` | automática | Crea el aviso del cliente cuando se registra una orden o cambia su estado |
+| `notificarOrden` | automática | Crea el aviso del cliente cuando se registra una orden o cambia su estado y lo envía por push (FCM) a sus dispositivos |
 | `solicitarCodigo` | sin sesión | Envía por correo un código de 6 dígitos para restablecer la contraseña |
 | `restablecerContrasena` | sin sesión | Cambia la contraseña si el código es correcto y sigue vigente |
 
@@ -113,7 +113,7 @@ comprobando si hay instantánea); sirve a los scripts de migración y al diagnó
 El token de notificaciones vive en `usuarios/{usuarioId}/tokensDispositivo/{token}`, con `{token, expiraEn}`: un
 documento por dispositivo y el propio token como id. Así un usuario con dos teléfonos no pisa el token del otro y volver a
 guardar el mismo token solo actualiza su documento. El dueño los escribe y borra; nadie los lee desde la app, ni el Jefe
-(los lee el servidor). Ninguna Cloud Function lee hoy esta colección.
+(los lee el servidor). `notificarOrden` la lee para enviar el push por FCM.
 
 `expiraEn` es una fecha (`Timestamp`) que la app renueva a 60 días cada vez que abre; las reglas aceptan hasta 90. Para que
 Firestore borre solo los tokens de teléfonos que ya no se usan, activa una vez la política TTL (la ejecutas tú, no la hace
@@ -214,6 +214,14 @@ escribe en la bandeja del cliente con el mismo id idempotente `n-{id del evento}
 completo con `merge`, así que un documento sin ese campo haría que la escritura lo agregara y las reglas la rechazaran;
 además el traslado copia los documentos tal cual. Las reglas no lo miran: manda la ruta. La colección de primer nivel
 `notificaciones` ya no tiene reglas.
+
+**Push por FCM.** Después de crear la notificación, `notificarOrden` lee `usuarios/{clienteId}/tokensDispositivo` y envía
+con `sendEachForMulticast` (`src/push.js`) un mensaje solo de datos (`orden_id`, `notificacion_id`, `es_ingreso`, `titulo`,
+`mensaje`) con prioridad alta: la app arma la notificación del sistema con la app en segundo plano o cerrada, y usa el id
+de la notificación como id de Android para no duplicarla con el aviso de Firestore. Los tokens que FCM rechaza como
+`registration-token-not-registered` o `invalid-registration-token` se borran. Un fallo del push se registra y no hace
+reintentar el disparador. En el emulador no se envía nada: queda un registro en el log de la función. No hace falta
+configurar secretos: la cuenta de servicio del proyecto ya puede enviar mensajes.
 
 La subcolección se sigue llamando `notificaciones` a propósito: la política TTL de `expiraEn` es por grupo de colecciones
 (`--collection-group=notificaciones`), así que la misma política alcanza a todas las bandejas sin tocarla (ver

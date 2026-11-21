@@ -1,6 +1,7 @@
 import { onDocumentWritten } from 'firebase-functions/firestore';
 import { avisoDeOrden } from './avisos.js';
 import { bd, Timestamp } from './comun.js';
+import { enviarPush } from './push.js';
 
 const ALREADY_EXISTS = 6;
 /** Las notificaciones vencen a los 90 días; la política TTL de Firestore las borra al pasar `expiraEn`. */
@@ -38,5 +39,9 @@ export const notificarOrden = onDocumentWritten('ordenes/{ordenId}', async (even
     });
   } catch (error) {
     if (error.code !== ALREADY_EXISTS) throw error;
+    // Un reintento del evento: el aviso ya se creó y su push ya se intentó
+    return;
   }
+  // El push es un extra de la notificación: no lanza, así que un fallo de FCM nunca hace reintentar el disparador
+  await enviarPush(cliente.ref, `n-${event.id}`, aviso, event.params.ordenId, !anterior);
 });

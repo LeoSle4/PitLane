@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { avisoDeOrden } from '../src/avisos.js';
 import { normalizarHistorial } from '../src/historial.js';
+import { mensajePush, tokenInvalido, tokensParaBorrar } from '../src/push.js';
 import { normalizarCuenta, validarCuenta } from '../src/validacion.js';
 
 const valida = () => ({
@@ -85,5 +86,35 @@ describe('normalizarHistorial', () => {
     assert.deepEqual(normalizarHistorial(undefined), { historial: undefined, cambio: false });
     assert.deepEqual(normalizarHistorial([]), { historial: [], cambio: false });
     assert.deepEqual(normalizarHistorial([null, 'x']), { historial: [null, 'x'], cambio: false });
+  });
+});
+
+describe('push FCM', () => {
+  it('arma un mensaje solo de datos, con textos y prioridad alta', () => {
+    const mensaje = mensajePush(['t1', 't2'], 'n-e1', { titulo: 'Vehículo listo', mensaje: 'ABC-123 está listo' }, 'o1', true);
+    assert.deepEqual(mensaje, {
+      tokens: ['t1', 't2'],
+      data: { orden_id: 'o1', notificacion_id: 'n-e1', es_ingreso: 'true', titulo: 'Vehículo listo', mensaje: 'ABC-123 está listo' },
+      android: { priority: 'high' },
+    });
+    assert.equal(mensaje.notification, undefined);
+    assert.equal(mensajePush(['t'], 'n-e2', { titulo: 'a', mensaje: 'b' }, 'o1', false).data.es_ingreso, 'false');
+  });
+
+  it('solo trata como inválidos los tokens no registrados o mal formados', () => {
+    assert.equal(tokenInvalido('messaging/registration-token-not-registered'), true);
+    assert.equal(tokenInvalido('messaging/invalid-registration-token'), true);
+    assert.equal(tokenInvalido('messaging/internal-error'), false);
+    assert.equal(tokenInvalido(undefined), false);
+  });
+
+  it('elige para borrar solo los tokens rechazados por inválidos', () => {
+    const respuestas = [
+      { success: true },
+      { success: false, error: { code: 'messaging/registration-token-not-registered' } },
+      { success: false, error: { code: 'messaging/server-unavailable' } },
+      { success: false, error: { code: 'messaging/invalid-registration-token' } },
+    ];
+    assert.deepEqual(tokensParaBorrar(['a', 'b', 'c', 'd'], respuestas), ['b', 'd']);
   });
 });
