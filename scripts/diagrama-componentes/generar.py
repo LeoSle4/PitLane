@@ -65,7 +65,7 @@ for c in orden_cols:
     ancho = cfg["ancho_vista"] + (0.5 if c == "NOT" else 0)
     nodo(f"V_{c}", "View", cl[1], "view", ancho, grupo=f"g_{c}")
 nodo("V_NAV", "Android", "NavegacionView", "android", 2.6, linea2="actividades y rutas por rol")
-nodo("V_MSG", "Android", "MensajesPushService", "android", 2.6, linea2="aviso local desde la bandeja")
+nodo("V_MSG", "Android", "MensajesPushService", "android", 2.6, linea2="FirebaseMessagingService")
 w('    }')
 
 # ---------- VIEWMODEL ----------
@@ -109,7 +109,7 @@ w('    }')
 
 # ---------- SDK ----------
 w('  FSDK [shape=component, style=filled, fillcolor="#FFF3E0", color="#E65100", fixedsize=true, width=11.4, height=0.95, group="g_eje",')
-w('        label=<<I>«library»</I><BR/>Firebase SDK para Android<BR/>firebase-auth · firebase-firestore · firebase-storage · firebase-functions>];')
+w('        label=<<I>«library»</I><BR/>Firebase SDK para Android<BR/>firebase-auth · firebase-firestore · firebase-storage · firebase-functions · firebase-messaging>];')
 
 # ---------- FIREBASE ----------
 w('    { rank=same;')
@@ -118,9 +118,10 @@ espaciador("spr_nube", 1.8)
 nodo("C_ST", "service", "Cloud Storage", "svc", 2.4, linea2="+ Security Rules")
 nodo("C_AUTH", "service", "Firebase Authentication", "svc", 2.4)
 nodo("C_FS", "service", "Cloud Firestore", "svc", 2.4, linea2="+ Security Rules")
+nodo("C_FCM", "service", "Firebase Cloud Messaging", "svc", 2.4)
 punto("M_nube")
 w('    }')
-nodo("C_FN", "service", "Cloud Functions", "svc", 8.2, linea2="Admin SDK · invocables y disparadores", grupo="g_eje")
+nodo("C_FN", "service", "Cloud Functions", "svc", 8.2, linea2="Admin SDK · invocables, disparadores y envío de push", grupo="g_eje")
 
 # ---------- aristas ----------
 def con_eje(pref, ini, fin, eje):
@@ -151,11 +152,12 @@ w('  { rank=same; A_USU -> A_DOC -> A_FOT [style=invis]; }')
 w('  A_USU -> D_USU; A_DOC -> D_DOC; A_FOT -> D_FOT;')
 w('  D_USU -> FSDK; D_DOC -> FSDK [weight=300]; D_FOT -> FSDK;')
 w('  FSDK -> C_ST; FSDK -> C_AUTH; FSDK -> C_FS;')
+w('  FSDK -> C_FCM [dir=both, arrowtail=vee];')
 w('  FSDK -> C_FN;')
 w('  C_FS -> C_FN [dir=both, arrowtail=vee];')
-w('  C_FN -> C_AUTH;')
+w('  C_FN -> C_AUTH; C_FN -> C_FCM;')
 # orden horizontal
-w('  { rank=same; spl_nube -> C_ST -> C_AUTH -> M_nube -> C_FS -> spr_nube [style=invis]; }')
+w('  { rank=same; spl_nube -> C_ST -> C_AUTH -> M_nube -> C_FS -> C_FCM -> spr_nube [style=invis]; }')
 w('  M_vista -> M_vm -> M_ifaz -> M_repo -> A_DOC [style=invis];')
 w('  FSDK -> M_nube [style=invis, weight=300]; M_nube -> C_FN [style=invis, weight=300];')
 w('  edge [style=dashed, arrowhead=vee];')

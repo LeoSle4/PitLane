@@ -31,7 +31,7 @@ def construir(SL, SR, salida_svg):
         "repo": (["DEP", "sp_ifaz", "spr_ifaz", "spr_repo", "A_USU", "A_DOC", "A_FOT"] + [f"I_{c}" for c in cols] + [f"R_{c}" for c in cols],
                  "Capa de Datos — Repository", "implementa las interfaces de acceso a datos"),
         "ds": (["D_USU", "D_DOC", "D_FOT", "spl_ds", "spr_ds"], "Capa de Datos — Fuentes remotas", "encapsulan el Firebase SDK"),
-        "nube": (["C_ST", "C_AUTH", "C_FS", "C_FN", "spl_nube", "spr_nube"], "Firebase · Google Cloud", ""),
+        "nube": (["C_ST", "C_AUTH", "C_FS", "C_FCM", "C_FN", "spl_nube", "spr_nube"], "Firebase · Google Cloud", ""),
     }
     M = 16
     ETQ = 40  # alto reservado para el titulo de cada capa
